@@ -1,6 +1,16 @@
 'use client';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 
+interface ContractInputProps {
+  codeSnippet: string;
+  setCodeSnippet: (val: string) => void;
+  isPostDeployment: boolean;
+  setIsPostDeployment: (val: boolean) => void;
+  loading: boolean;
+  error?: string;
+  onAudit: () => void;
+}
+
 export default function ContractInput({
   codeSnippet,
   setCodeSnippet,
@@ -9,7 +19,7 @@ export default function ContractInput({
   loading,
   error,
   onAudit,
-}) {
+}: ContractInputProps) {
   const handleLoadSample = () => {
     setCodeSnippet(SAMPLE_SOROBAN_CONTRACT);
   };

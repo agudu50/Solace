@@ -1,12 +1,24 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
+
+interface ContractTelemetry {
+  contractId: string;
+  status: string;
+  ttlRemainingLedgers: number;
+  rentStatus: string;
+  storageType: string;
+  invariantsPassed: number;
+  invariantsFailed: number;
+  lastInvoked: string;
+  authorizedSigners: number;
+}
 
 export default function MonitorPage() {
-  const [contractId, setContractId] = useState('');
-  const [monitoring, setMonitoring] = useState(false);
-  const [metrics, setMetrics] = useState(null);
+  const [contractId, setContractId] = useState<string>('');
+  const [monitoring, setMonitoring] = useState<boolean>(false);
+  const [metrics, setMetrics] = useState<ContractTelemetry | null>(null);
 
-  const handleStartMonitor = (e) => {
+  const handleStartMonitor = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contractId.trim()) return;
     setMonitoring(true);

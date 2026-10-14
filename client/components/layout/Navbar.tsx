@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NAV_LINKS } from '../../lib/constants';
+import { NAV_LINKS, NavLink } from '../../lib/constants';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -26,7 +26,7 @@ export default function Navbar() {
 
         {/* Navigation Links */}
         <nav className="flex items-center gap-1 sm:gap-2">
-          {NAV_LINKS.map((link) => {
+          {NAV_LINKS.map((link: NavLink) => {
             const isActive = pathname === link.href;
             return (
               <Link

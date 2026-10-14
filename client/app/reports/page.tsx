@@ -1,12 +1,23 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
+
+interface VerifiedReport {
+  hash: string;
+  contract: string;
+  auditType: string;
+  riskScore: number;
+  isSecure: boolean;
+  auditor: string;
+  timestamp: string;
+  notFound?: boolean;
+}
 
 export default function ReportsPage() {
-  const [searchHash, setSearchHash] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState(null);
+  const [searchHash, setSearchHash] = useState<string>('');
+  const [searching, setSearching] = useState<boolean>(false);
+  const [searchResult, setSearchResult] = useState<VerifiedReport | null>(null);
 
-  const mockReports = [
+  const mockReports: VerifiedReport[] = [
     {
       hash: 'ec6a4eb00b6281f6f765ff3d94bf187d153dd42a78627164dbf837e83023defe',
       contract: 'Solace Core Contract',
@@ -27,7 +38,7 @@ export default function ReportsPage() {
     },
   ];
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchHash.trim()) return;
     setSearching(true);
@@ -35,7 +46,18 @@ export default function ReportsPage() {
       const found = mockReports.find((r) =>
         r.hash.toLowerCase().includes(searchHash.trim().toLowerCase())
       );
-      setSearchResult(found || { notFound: true });
+      setSearchResult(
+        found || {
+          hash: searchHash,
+          contract: '',
+          auditType: '',
+          riskScore: 0,
+          isSecure: false,
+          auditor: '',
+          timestamp: '',
+          notFound: true,
+        }
+      );
       setSearching(false);
     }, 400);
   };

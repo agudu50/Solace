@@ -1,10 +1,15 @@
-export const NAV_LINKS = [
+export interface NavLink {
+  href: string;
+  label: string;
+}
+
+export const NAV_LINKS: NavLink[] = [
   { href: '/', label: 'Audit Studio' },
   { href: '/reports', label: 'Verified Reports' },
   { href: '/monitor', label: 'Live Monitor' },
 ];
 
-export const SAMPLE_SOROBAN_CONTRACT = `// Solace Sample Soroban Smart Contract
+export const SAMPLE_SOROBAN_CONTRACT: string = `// Solace Sample Soroban Smart Contract
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, symbol_short};
 

@@ -1,8 +1,28 @@
 'use client';
 import { useState } from 'react';
+import { AuditReportData } from '../../lib/api';
 
-export default function AuditReportView({ report, loading, onChainPayload, contractHash }) {
-  const [copiedCli, setCopiedCli] = useState(false);
+interface OnChainPayload {
+  functionName?: string;
+  contractId?: string | null;
+  parameters?: Record<string, any>;
+  cliCommand?: string;
+}
+
+interface AuditReportViewProps {
+  report: AuditReportData | null;
+  loading: boolean;
+  onChainPayload?: OnChainPayload | null;
+  contractHash?: string;
+}
+
+export default function AuditReportView({
+  report,
+  loading,
+  onChainPayload,
+  contractHash,
+}: AuditReportViewProps) {
+  const [copiedCli, setCopiedCli] = useState<boolean>(false);
 
   const handleCopyCli = () => {
     if (onChainPayload?.cliCommand) {
