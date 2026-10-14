@@ -1,0 +1,41 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --e-global-color-accent: #C80552;
+  --e-global-color-accent-hover: #A00441;
+  --e-global-color-accent-subtle: rgba(200, 5, 82, 0.12);
+  --e-global-color-accent-border: rgba(200, 5, 82, 0.35);
+}
+
+/* Global custom selection styling */
+::selection {
+  background-color: var(--e-global-color-accent);
+  color: #ffffff;
+}
+
+/* Accent utilities mapped directly to var(--e-global-color-accent) */
+.text-accent {
+  color: var(--e-global-color-accent);
+}
+
+.bg-accent {
+  background-color: var(--e-global-color-accent);
+}
+
+.bg-accent-hover:hover {
+  background-color: var(--e-global-color-accent-hover);
+}
+
+.bg-accent-subtle {
+  background-color: var(--e-global-color-accent-subtle);
+}
+
+.border-accent {
+  border-color: var(--e-global-color-accent);
+}
+
+.border-accent-subtle {
+  border-color: var(--e-global-color-accent-border);
+}

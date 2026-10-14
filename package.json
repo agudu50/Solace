@@ -1,0 +1,13 @@
+{
+  "name": "solace-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Solace - AI-powered smart contract security auditing platform for Stellar",
+  "scripts": {
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "audit": "npm --prefix server run audit"
+  }
+}
