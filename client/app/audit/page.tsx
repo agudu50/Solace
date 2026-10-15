@@ -288,63 +288,67 @@ impl SolaceContract {
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
       {/* Main Studio Canvas */}
       <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
-        {/* Top Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 sm:mb-6 gap-3 sm:gap-4">
-          <div className="w-full md:w-auto">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                <span>Live Security Engine</span>
-              </span>
-              <span className="text-xs font-mono text-slate-400">
-                Stellar Soroban v22
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Interactive Code Audit Studio
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Autonomous Gemini AI AST inspection & verification on Stellar Soroban
-            </p>
-          </div>
+        {/* Top Header Card (Enhanced Hero) */}
+        <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap">
-            {/* View Tabs */}
-            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-0.5 sm:p-1 rounded-full shadow-sm flex text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveTab('STUDIO')}
-                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full font-semibold transition text-xs ${
-                  activeTab === 'STUDIO'
-                    ? 'bg-accent text-white shadow-md shadow-accent/25'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Audit Studio</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('INVARIANTS')}
-                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full font-semibold transition text-xs ${
-                  activeTab === 'INVARIANTS'
-                    ? 'bg-accent text-white shadow-md shadow-accent/25'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Audit Pass Rate</span>
-              </button>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                  <span>Live Security Engine</span>
+                </span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                  Stellar Soroban v22 Protocol
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                Interactive Code Audit Studio
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+                Autonomous Gemini AI AST inspection &amp; verification on Stellar Soroban
+              </p>
             </div>
 
-            <Link
-              href="/"
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Back to</span>
-              <span>Dashboard</span>
-            </Link>
+            <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap shrink-0">
+              {/* View Tabs */}
+              <div className="bg-slate-100/90 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1 rounded-full shadow-xs flex text-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('STUDIO')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold transition text-xs select-none ${
+                    activeTab === 'STUDIO'
+                      ? 'bg-accent text-white shadow-md shadow-accent/25'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Audit Studio</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('INVARIANTS')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold transition text-xs select-none ${
+                    activeTab === 'INVARIANTS'
+                      ? 'bg-accent text-white shadow-md shadow-accent/25'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Audit Pass Rate</span>
+                </button>
+              </div>
+
+              <Link
+                href="/"
+                className="px-4 py-2 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Dashboard</span>
+              </Link>
+            </div>
           </div>
         </div>
 

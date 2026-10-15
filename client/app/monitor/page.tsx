@@ -75,41 +75,46 @@ export default function MonitorPage() {
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
       <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {/* Top Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-200/80 dark:border-slate-800 gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
-                <Activity className="w-3.5 h-3.5 text-accent" />
-                <span>Post-Deployment Telemetry</span>
-              </span>
-              <span className="text-xs font-mono text-slate-400">
-                Stellar Soroban v22
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Live Contract Monitor
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Real-time health monitoring, storage TTL tracking, and post-deployment security checks for live Soroban contracts.
-            </p>
-          </div>
+        {/* Top Header Card (Enhanced Hero) */}
+        <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <Link
-              href="/reports"
-              className="text-xs px-4 py-2 rounded-full bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 shadow-sm transition flex items-center gap-1.5 whitespace-nowrap font-semibold"
-            >
-              <span>Verified Ledger Reports</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-            <Link
-              href="/audit"
-              className="text-xs px-4 py-2 rounded-full bg-accent hover:bg-accent-hover text-white shadow-md shadow-accent/25 transition flex items-center gap-1.5 whitespace-nowrap font-bold"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Launch Audit Studio</span>
-            </Link>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
+                  <Activity className="w-3.5 h-3.5 text-accent" />
+                  <span>Post-Deployment Telemetry</span>
+                </span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                  Stellar Soroban v22 Protocol
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                Live Contract Monitor
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+                Real-time health monitoring, storage TTL tracking, and post-deployment security checks for live Soroban contracts.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 flex-wrap shrink-0">
+              <Link
+                href="/reports"
+                className="text-xs px-4 py-2 rounded-full bg-slate-100/90 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap font-bold"
+              >
+                <span>Ledger Reports</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/audit"
+                className="text-xs px-5 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white shadow-md shadow-accent/25 transition flex items-center gap-2 whitespace-nowrap font-bold hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Launch Audit Studio</span>
+              </Link>
+            </div>
           </div>
         </div>
 
