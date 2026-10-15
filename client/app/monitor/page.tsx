@@ -135,7 +135,7 @@ export default function MonitorPage() {
                 rel="noopener noreferrer"
                 className="text-xs text-accent hover:opacity-80 transition underline underline-offset-2"
               >
-                View on Stellar Expert ↗
+                View on Stellar Expert
               </a>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">

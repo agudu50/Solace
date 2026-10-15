@@ -138,10 +138,9 @@ function ReportsContent() {
           href={`https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap"
+          className="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition flex items-center whitespace-nowrap"
         >
-          <span>Contract on Stellar Expert</span>
-          <span>↗</span>
+          Contract on Stellar Expert
         </a>
       </div>
 

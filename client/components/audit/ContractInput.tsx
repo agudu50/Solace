@@ -123,7 +123,7 @@ export default function ContractInput({
           <h2 className="text-lg font-semibold text-slate-200">Contract Code Input</h2>
           {loadedFileName && (
             <span className="text-[11px] font-mono text-accent bg-accent-subtle px-2 py-0.5 rounded border border-accent-subtle">
-              📄 {loadedFileName}
+              {loadedFileName}
             </span>
           )}
         </div>

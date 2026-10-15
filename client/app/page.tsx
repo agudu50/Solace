@@ -39,8 +39,6 @@ export default function Home() {
   const [walletNotice, setWalletNotice] = useState<string>('');
   const [showWalletPrompt, setShowWalletPrompt] = useState<boolean>(false);
 
-  const DEMO_TESTNET_ADDRESS = 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI';
-
   const handleConnectWallet = async () => {
     setConnectingWallet(true);
     setWalletNotice('');
@@ -48,21 +46,19 @@ export default function Home() {
       const key = await connectWallet();
       setWalletKey(key);
     } catch (err: any) {
-      if (err.message === 'FREIGHTER_NOT_INSTALLED') {
-        setWalletNotice('Freighter extension not detected.');
+      const msg = err?.message || 'Connection failed.';
+      if (msg === 'FREIGHTER_NOT_INSTALLED') {
         setShowWalletPrompt(true);
+      } else if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('cancel')) {
+        setWalletNotice('Connection cancelled.');
+        setTimeout(() => setWalletNotice(''), 3500);
       } else {
-        setWalletNotice(err.message || 'Connection failed.');
+        setWalletNotice(msg);
+        setTimeout(() => setWalletNotice(''), 4000);
       }
     } finally {
       setConnectingWallet(false);
     }
-  };
-
-  const handleUseDemoWallet = () => {
-    setWalletKey(DEMO_TESTNET_ADDRESS);
-    setWalletNotice('');
-    setShowWalletPrompt(false);
   };
 
   const handleAudit = async () => {
@@ -168,42 +164,24 @@ export default function Home() {
             </div>
           ) : (
             <div className="flex flex-col items-end gap-1.5">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleConnectWallet}
-                  disabled={connectingWallet}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-lg transition border border-slate-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {connectingWallet ? (
-                    <>
-                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span>
-                      <span>Connecting...</span>
-                    </>
-                  ) : (
-                    <span>Connect Freighter Wallet</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUseDemoWallet}
-                  className="px-3 py-2 bg-slate-900 hover:bg-slate-850 text-accent text-xs font-semibold rounded-lg transition border border-accent-subtle"
-                  title="Use Testnet Auditor Account without extension"
-                >
-                  Demo Account
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleConnectWallet}
+                disabled={connectingWallet}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-white text-sm font-semibold rounded-lg transition border border-slate-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {connectingWallet ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span>
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  <span>Connect Freighter Wallet</span>
+                )}
+              </button>
               {walletNotice && (
-                <div className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded px-2.5 py-1 flex items-center gap-2 mt-1">
+                <div className="text-[11px] text-slate-300 bg-slate-850 border border-slate-750 rounded px-2.5 py-1 flex items-center gap-1.5 mt-1 transition animate-in fade-in">
                   <span>{walletNotice}</span>
-                  <a
-                    href="https://www.freighter.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline font-bold hover:text-white whitespace-nowrap"
-                  >
-                    Install Freighter ↗
-                  </a>
                 </div>
               )}
             </div>
@@ -265,7 +243,7 @@ export default function Home() {
                     onClick={handleCopyHash}
                     className="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700 whitespace-nowrap"
                   >
-                    {copiedHash ? '✓ Copied' : 'Copy Hash'}
+                    {copiedHash ? 'Copied' : 'Copy Hash'}
                   </button>
                 </div>
               )}
@@ -290,13 +268,13 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition"
                     >
-                      View Tx on Stellar Expert ↗
+                      View Tx on Stellar Expert
                     </a>
                     <a
                       href={`/reports?hash=${contractHash}`}
                       className="px-3 py-1.5 rounded bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
                     >
-                      Verify in Reports Page →
+                      Verify in Reports Page
                     </a>
                   </div>
                 </div>
@@ -365,10 +343,12 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setShowWalletPrompt(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-sm"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center"
               title="Close"
             >
-              ✕
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
 
             {/* Header Icon */}
@@ -405,18 +385,17 @@ export default function Home() {
                 href="https://www.freighter.app/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2.5 px-4 bg-accent bg-accent-hover text-white font-bold rounded-lg text-sm text-center flex items-center justify-center gap-2 shadow-lg transition"
+                className="w-full py-2.5 px-4 bg-accent bg-accent-hover text-white font-bold rounded-lg text-sm text-center flex items-center justify-center shadow-lg transition"
               >
-                <span>Install Freighter (freighter.app)</span>
-                <span>↗</span>
+                Install Freighter (freighter.app)
               </a>
 
               <button
                 type="button"
-                onClick={handleUseDemoWallet}
-                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold rounded-lg text-sm border border-slate-700 transition flex items-center justify-center gap-2"
+                onClick={() => setShowWalletPrompt(false)}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-750 text-slate-300 font-semibold rounded-lg text-sm border border-slate-700 transition flex items-center justify-center"
               >
-                <span>Continue with Testnet Demo Account</span>
+                Close
               </button>
             </div>
           </div>

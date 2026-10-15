@@ -43,7 +43,12 @@ export async function connectWallet(): Promise<string> {
   const response = await Promise.race([accessPromise, timeoutPromise]);
 
   if ((response as any)?.error) {
-    throw new Error((response as any).error.message || 'Freighter access request rejected.');
+    const errPayload = (response as any).error;
+    const errorMsg =
+      typeof errPayload === 'string'
+        ? errPayload
+        : errPayload?.message || 'Freighter access request rejected.';
+    throw new Error(errorMsg);
   }
 
   const publicKey =
