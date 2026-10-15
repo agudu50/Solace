@@ -35,14 +35,34 @@ export default function Home() {
   } | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const [anchoring, setAnchoring] = useState<boolean>(false);
+  const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
+  const [walletNotice, setWalletNotice] = useState<string>('');
+  const [showWalletPrompt, setShowWalletPrompt] = useState<boolean>(false);
+
+  const DEMO_TESTNET_ADDRESS = 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI';
 
   const handleConnectWallet = async () => {
+    setConnectingWallet(true);
+    setWalletNotice('');
     try {
       const key = await connectWallet();
       setWalletKey(key);
     } catch (err: any) {
-      setError(err.message || 'Failed to connect wallet.');
+      if (err.message === 'FREIGHTER_NOT_INSTALLED') {
+        setWalletNotice('Freighter extension not detected.');
+        setShowWalletPrompt(true);
+      } else {
+        setWalletNotice(err.message || 'Connection failed.');
+      }
+    } finally {
+      setConnectingWallet(false);
     }
+  };
+
+  const handleUseDemoWallet = () => {
+    setWalletKey(DEMO_TESTNET_ADDRESS);
+    setWalletNotice('');
+    setShowWalletPrompt(false);
   };
 
   const handleAudit = async () => {
@@ -130,18 +150,63 @@ export default function Home() {
           <p className="text-slate-400 mt-1">Autonomous smart contract security auditing, bug detection, and on-chain verification.</p>
         </div>
 
-        <div>
+        <div className="relative">
           {walletKey ? (
-            <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-xs font-mono text-accent">
-              Connected: {walletKey.slice(0, 4)}...{walletKey.slice(-4)}
+            <div className="flex items-center gap-2">
+              <div className="bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-lg text-xs font-mono text-accent flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                <span>{walletKey.slice(0, 4)}...{walletKey.slice(-4)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWalletKey('')}
+                className="text-xs px-2.5 py-2 bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg border border-slate-750 transition"
+                title="Disconnect Wallet"
+              >
+                Disconnect
+              </button>
             </div>
           ) : (
-            <button
-              onClick={handleConnectWallet}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-lg transition border border-slate-700"
-            >
-              Connect Freighter Wallet
-            </button>
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleConnectWallet}
+                  disabled={connectingWallet}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-lg transition border border-slate-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {connectingWallet ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span>
+                      <span>Connecting...</span>
+                    </>
+                  ) : (
+                    <span>Connect Freighter Wallet</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUseDemoWallet}
+                  className="px-3 py-2 bg-slate-900 hover:bg-slate-850 text-accent text-xs font-semibold rounded-lg transition border border-accent-subtle"
+                  title="Use Testnet Auditor Account without extension"
+                >
+                  Demo Account
+                </button>
+              </div>
+              {walletNotice && (
+                <div className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded px-2.5 py-1 flex items-center gap-2 mt-1">
+                  <span>{walletNotice}</span>
+                  <a
+                    href="https://www.freighter.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-bold hover:text-white whitespace-nowrap"
+                  >
+                    Install Freighter ↗
+                  </a>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -285,6 +350,78 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* System Prompt Modal when Freighter is not detected */}
+      {showWalletPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setShowWalletPrompt(false)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-750 rounded-2xl max-w-md w-full p-6 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowWalletPrompt(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-sm"
+              title="Close"
+            >
+              ✕
+            </button>
+
+            {/* Header Icon */}
+            <div className="w-12 h-12 rounded-xl bg-accent-subtle border border-accent-subtle flex items-center justify-center mb-4 text-accent text-xl font-black">
+              S
+            </div>
+
+            <div className="mb-2">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50 uppercase tracking-wider">
+                Wallet Required
+              </span>
+              <h3 className="text-xl font-bold text-white mt-2">
+                Freighter Extension Not Detected
+              </h3>
+            </div>
+
+            <p className="text-sm text-slate-300 leading-relaxed mt-2">
+              To sign Stellar transactions or connect your personal keys, please install the official{' '}
+              <strong className="text-white">Freighter Wallet</strong> browser extension or mobile app.
+            </p>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 my-4 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-slate-200 font-semibold mb-1">
+                <span>Available Platforms:</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-slate-400">
+                <li>Chrome, Firefox, Edge, & Brave Browser Extension</li>
+                <li>Freighter Mobile App (iOS & Android)</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2 mt-5">
+              <a
+                href="https://www.freighter.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-4 bg-accent bg-accent-hover text-white font-bold rounded-lg text-sm text-center flex items-center justify-center gap-2 shadow-lg transition"
+              >
+                <span>Install Freighter (freighter.app)</span>
+                <span>↗</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={handleUseDemoWallet}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold rounded-lg text-sm border border-slate-700 transition flex items-center justify-center gap-2"
+              >
+                <span>Continue with Testnet Demo Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

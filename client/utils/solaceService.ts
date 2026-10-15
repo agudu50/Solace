@@ -7,19 +7,54 @@ export const CONTRACT_ID: string =
   process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
 
 /**
- * Connect to Freighter browser extension wallet
+ * Connect to Freighter browser extension wallet with timeout guards
  */
 export async function connectWallet(): Promise<string> {
-  const installed = await isConnected();
-  if (!installed) {
-    throw new Error('Freighter wallet is not installed. Please install it from freighter.app');
+  if (typeof window === 'undefined') {
+    throw new Error('Wallet connection is only supported in browser environments.');
   }
 
-  const response = await requestAccess();
-  const publicKey = typeof response === 'string' ? response : (response as any)?.address;
-  if (!publicKey) {
-    throw new Error('User rejected wallet connection request.');
+  // 1. Check if window.freighter exists or isConnected() responds within 2 seconds
+  let hasFreighter = Boolean((window as any).freighter);
+  
+  if (!hasFreighter) {
+    try {
+      const connPromise = isConnected();
+      const timeoutPromise = new Promise<{ isConnected: boolean }>((resolve) =>
+        setTimeout(() => resolve({ isConnected: false }), 2000)
+      );
+      const connResult = await Promise.race([connPromise, timeoutPromise]);
+      hasFreighter = connResult?.isConnected === true;
+    } catch {
+      hasFreighter = false;
+    }
   }
+
+  if (!hasFreighter) {
+    throw new Error('FREIGHTER_NOT_INSTALLED');
+  }
+
+  // 2. Request access with a 10s timeout in case popup is ignored
+  const accessPromise = requestAccess();
+  const timeoutPromise = new Promise<{ address?: string; error?: any }>((resolve) =>
+    setTimeout(() => resolve({ error: { message: 'Wallet connection request timed out.' } }), 10000)
+  );
+
+  const response = await Promise.race([accessPromise, timeoutPromise]);
+
+  if ((response as any)?.error) {
+    throw new Error((response as any).error.message || 'Freighter access request rejected.');
+  }
+
+  const publicKey =
+    typeof response === 'string'
+      ? response
+      : (response as any)?.address || (response as any)?.publicKey;
+
+  if (!publicKey) {
+    throw new Error('No public key returned by Freighter wallet.');
+  }
+
   return publicKey;
 }
 
