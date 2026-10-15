@@ -223,9 +223,16 @@ impl MyContract {
         type="button"
         onClick={onAudit}
         disabled={loading || !codeSnippet.trim()}
-        className="mt-4 w-full py-3 px-4 bg-accent bg-accent-hover disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-lg transition shadow-lg"
+        className="mt-4 w-full py-3 px-4 bg-accent bg-accent-hover disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-lg transition shadow-lg flex items-center justify-center gap-2"
       >
-        {loading ? 'Gemini AI Analyzing Code...' : 'Run Security Audit'}
+        {loading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span>
+            <span>Auditing Smart Contract...</span>
+          </>
+        ) : (
+          'Audit Smart Contract'
+        )}
       </button>
     </div>
   );

@@ -127,11 +127,23 @@ export default function MonitorPage() {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-            <h3 className="text-base font-bold text-white mb-4">Post-Deployment Monitoring Telemetry</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-bold text-white">Post-Deployment Monitoring Telemetry</h3>
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${metrics.contractId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-accent hover:opacity-80 transition underline underline-offset-2"
+              >
+                View on Stellar Expert ↗
+              </a>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between py-2 border-b border-slate-850">
                 <span className="text-slate-400">Contract ID</span>
-                <span className="font-mono text-accent text-xs">{metrics.contractId}</span>
+                <span className="font-mono text-accent text-xs truncate max-w-[200px]" title={metrics.contractId}>
+                  {metrics.contractId}
+                </span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-850">
                 <span className="text-slate-400">Storage Class</span>

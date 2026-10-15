@@ -28,6 +28,12 @@ export default function Home() {
   const [contractHash, setContractHash] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [walletKey, setWalletKey] = useState<string>('');
+  const [anchorResult, setAnchorResult] = useState<{
+    transactionHash: string;
+    contractId: string;
+    explorerUrl: string;
+  } | null>(null);
+  const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const [anchoring, setAnchoring] = useState<boolean>(false);
 
   const handleConnectWallet = async () => {
@@ -45,6 +51,7 @@ export default function Home() {
     setError('');
     setReport(null);
     setContractHash('');
+    setAnchorResult(null);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/audit`, {
@@ -76,6 +83,7 @@ export default function Home() {
       return;
     }
     setAnchoring(true);
+    setError('');
     try {
       const response = await fetch(`${API_BASE_URL}/api/contract/record`, {
         method: 'POST',
@@ -89,7 +97,11 @@ export default function Home() {
       });
       const data = await response.json();
       if (data.success) {
-        alert(`Audit successfully recorded on Stellar Testnet!\n\nTx Hash: ${data.transactionHash}\nContract: ${data.contractId}\n\nView on Stellar Expert: ${data.explorerUrl}`);
+        setAnchorResult({
+          transactionHash: data.transactionHash,
+          contractId: data.contractId,
+          explorerUrl: data.explorerUrl,
+        });
       } else {
         setError(data.error || 'Failed to anchor audit on Soroban ledger.');
       }
@@ -98,6 +110,13 @@ export default function Home() {
     } finally {
       setAnchoring(false);
     }
+  };
+
+  const handleCopyHash = () => {
+    if (!contractHash) return;
+    navigator.clipboard.writeText(contractHash);
+    setCopiedHash(true);
+    setTimeout(() => setCopiedHash(false), 2000);
   };
 
   return (
@@ -167,7 +186,57 @@ export default function Home() {
           )}
 
           {report && !loading && (
-            <div className="flex-grow space-y-6 overflow-y-auto max-h-[500px] pr-2">
+            <div className="flex-grow space-y-5 overflow-y-auto max-h-[520px] pr-2">
+              {/* Hash and On-Chain status */}
+              {contractHash && (
+                <div className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div className="overflow-hidden">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block">Audit Hash</span>
+                    <span className="text-xs font-mono text-accent truncate block max-w-sm">
+                      {contractHash}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleCopyHash}
+                    className="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700 whitespace-nowrap"
+                  >
+                    {copiedHash ? '✓ Copied' : 'Copy Hash'}
+                  </button>
+                </div>
+              )}
+
+              {/* On-Chain Anchored Confirmation */}
+              {anchorResult && (
+                <div className="bg-emerald-950/30 border border-emerald-800/60 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                      Permanently Anchored on Stellar Testnet
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-3">
+                    Audit findings cryptographically anchored in contract{' '}
+                    <span className="font-mono text-accent">{anchorResult.contractId.slice(0, 8)}...</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <a
+                      href={anchorResult.explorerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition"
+                    >
+                      View Tx on Stellar Expert ↗
+                    </a>
+                    <a
+                      href={`/reports?hash=${contractHash}`}
+                      className="px-3 py-1.5 rounded bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                    >
+                      Verify in Reports Page →
+                    </a>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-950 border border-slate-800 p-4 rounded-lg">
                   <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Risk Score</span>
