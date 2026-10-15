@@ -19,5 +19,5 @@ debug = 0
 strip = "symbols"
 debug-assertions = false
 panic = "abort"
-code-coverage = false
 lto = true
+

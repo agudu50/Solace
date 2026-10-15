@@ -28,11 +28,13 @@ Examples:
   let targetFilePath = targetFileArg;
   if (!targetFilePath) {
     const candidates = [
+      path.join(process.cwd(), '..', 'contract', 'src', 'lib.rs'),
+      path.join(process.cwd(), 'contract', 'src', 'lib.rs'),
       path.join(process.cwd(), '..', 'contracts', 'src', 'lib.rs'),
       path.join(process.cwd(), 'contracts', 'src', 'lib.rs'),
-      path.resolve(import.meta.dirname, '../../../contracts/src/lib.rs'),
+      path.resolve(import.meta.dirname, '../../../contract/src/lib.rs'),
     ];
-    targetFilePath = candidates.find((p) => fs.existsSync(p)) || path.join('contracts', 'src', 'lib.rs');
+    targetFilePath = candidates.find((p) => fs.existsSync(p)) || path.join('contract', 'src', 'lib.rs');
   }
 
   console.log('='.repeat(70));
@@ -50,12 +52,13 @@ Examples:
   const contractHash = crypto.createHash('sha256').update(contractCode).digest('hex');
 
   console.log(`[+] SHA-256 Hash:    ${contractHash}`);
-  console.log('[*] Invoking Gemini 3.8 Flash security engine...\n');
+  console.log('[*] Invoking Gemini AI security engine...\n');
 
   try {
     const report = await analyzeContractWithAI(contractCode, isPostDeployment);
 
     console.log('--- AUDIT REPORT SUMMARY ---');
+    console.log(`AI Engine:   Gemini (${report.modelUsed || 'adaptive fallback'})`);
     console.log(`Risk Score:  ${report.riskScore}/100`);
     console.log(`Security:    ${report.isSecure ? 'VERIFIED SECURE' : 'ACTION REQUIRED / VULNERABLE'}`);
     console.log(`Summary:     ${report.summary}\n`);

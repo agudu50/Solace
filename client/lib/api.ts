@@ -18,6 +18,7 @@ export interface AuditReportData {
   summary: string;
   vulnerabilities: Vulnerability[];
   postDeploymentRecommendations: string[];
+  modelUsed?: string;
 }
 
 export interface AuditApiResponse {
@@ -41,6 +42,8 @@ export interface HealthCheckResponse {
   service?: string;
   status?: string;
   model?: string;
+  engine?: string;
+  candidateModels?: string[];
   timestamp?: string;
 }
 
@@ -70,5 +73,25 @@ export async function checkServerHealth(): Promise<HealthCheckResponse> {
     return { healthy: data.status === 'healthy', ...data };
   } catch {
     return { healthy: false };
+  }
+}
+
+export async function fetchContractInfo() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/contract/info`);
+    if (!response.ok) throw new Error('Failed to fetch contract info');
+    return await response.json();
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function fetchOnChainAudit(hash: string) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/contract/audit/${encodeURIComponent(hash)}`);
+    if (!response.ok) throw new Error('Failed to fetch on-chain audit');
+    return await response.json();
+  } catch (error: any) {
+    return { success: false, found: false, error: error.message };
   }
 }

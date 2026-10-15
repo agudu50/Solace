@@ -20,7 +20,7 @@ export default function Footer() {
             Live Monitor
           </Link>
           <span>•</span>
-          <span className="font-mono text-slate-500">Gemini 3.8 Flash</span>
+          <span className="font-mono text-slate-500">Gemini AI Engine</span>
         </div>
       </div>
     </footer>

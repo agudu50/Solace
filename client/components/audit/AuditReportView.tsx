@@ -36,11 +36,18 @@ export default function AuditReportView({
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col h-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-slate-200">Audit Dashboard & Findings</h2>
-        {contractHash && (
-          <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 truncate max-w-[200px]" title={contractHash}>
-            Hash: {contractHash.slice(0, 10)}...{contractHash.slice(-6)}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {report?.modelUsed && (
+            <span className="text-[11px] font-mono text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+              Engine: {report.modelUsed}
+            </span>
+          )}
+          {contractHash && (
+            <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 truncate max-w-[200px]" title={contractHash}>
+              Hash: {contractHash.slice(0, 10)}...{contractHash.slice(-6)}
+            </span>
+          )}
+        </div>
       </div>
 
       {!report && !loading && (

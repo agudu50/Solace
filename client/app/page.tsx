@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { connectWallet } from '../utils/solaceService';
+import ContractInput from '../components/audit/ContractInput';
 
 interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -17,11 +18,14 @@ interface AuditReport {
   postDeploymentRecommendations: string[];
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export default function Home() {
   const [codeSnippet, setCodeSnippet] = useState<string>('');
   const [isPostDeployment, setIsPostDeployment] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [report, setReport] = useState<AuditReport | null>(null);
+  const [contractHash, setContractHash] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [walletKey, setWalletKey] = useState<string>('');
   const [anchoring, setAnchoring] = useState<boolean>(false);
@@ -40,9 +44,10 @@ export default function Home() {
     setLoading(true);
     setError('');
     setReport(null);
+    setContractHash('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/audit', {
+      const response = await fetch(`${API_BASE_URL}/api/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ codeSnippet, isPostDeployment }),
@@ -51,6 +56,9 @@ export default function Home() {
       const data = await response.json();
       if (data.success) {
         setReport(data.data || data.report);
+        if (data.contractHash) {
+          setContractHash(data.contractHash);
+        }
       } else {
         setError(data.error || 'Failed to generate audit report.');
       }
@@ -63,15 +71,33 @@ export default function Home() {
   };
 
   const handleAnchorOnChain = async () => {
-    if (!walletKey) {
-      setError('Please connect your Freighter wallet first.');
+    if (!report || !contractHash) {
+      setError('Please run an audit first before anchoring on-chain.');
       return;
     }
     setAnchoring(true);
-    setTimeout(() => {
-      alert('Audit successfully recorded on the Soroban smart contract ledger!');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/contract/record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contractHash,
+          riskScore: report.riskScore,
+          isSecure: report.isSecure,
+          auditType: isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT',
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert(`Audit successfully recorded on Stellar Testnet!\n\nTx Hash: ${data.transactionHash}\nContract: ${data.contractId}\n\nView on Stellar Expert: ${data.explorerUrl}`);
+      } else {
+        setError(data.error || 'Failed to anchor audit on Soroban ledger.');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Error recording audit onto the Stellar ledger.');
+    } finally {
       setAnchoring(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -79,7 +105,7 @@ export default function Home() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-800 pb-6 gap-4">
         <div>
           <span className="text-xs font-bold px-2.5 py-1 bg-accent-subtle text-accent border border-accent-subtle rounded-full tracking-wider uppercase">
-            Powered by Gemini 3.8 Flash & Soroban SDK
+            Powered by Gemini AI Engine & Soroban SDK
           </span>
           <h1 className="text-4xl font-extrabold tracking-tight mt-2 text-white">Solace AI</h1>
           <p className="text-slate-400 mt-1">Autonomous smart contract security auditing, bug detection, and on-chain verification.</p>
@@ -102,38 +128,15 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-slate-200">Contract Code Input</h2>
-            
-            <label className="flex items-center cursor-pointer gap-2 text-sm text-slate-400">
-              <input
-                type="checkbox"
-                checked={isPostDeployment}
-                onChange={(e) => setIsPostDeployment(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-accent focus:ring-accent h-4 w-4"
-              />
-              Post-Deployment Mode
-            </label>
-          </div>
-
-          <textarea
-            value={codeSnippet}
-            onChange={(e) => setCodeSnippet(e.target.value)}
-            placeholder="// Paste your Rust / Soroban smart contract code here..."
-            className="w-full flex-grow h-80 bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-sm text-slate-200 focus:outline-none focus:border-accent transition resize-none"
-          />
-
-          {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
-
-          <button
-            onClick={handleAudit}
-            disabled={loading || !codeSnippet.trim()}
-            className="mt-4 w-full py-3 px-4 bg-accent bg-accent-hover disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-lg transition shadow-lg"
-          >
-            {loading ? 'Gemini 3.8 Flash Analyzing Code...' : 'Run Security Audit'}
-          </button>
-        </div>
+        <ContractInput
+          codeSnippet={codeSnippet}
+          setCodeSnippet={setCodeSnippet}
+          isPostDeployment={isPostDeployment}
+          setIsPostDeployment={setIsPostDeployment}
+          loading={loading}
+          error={error}
+          onAudit={handleAudit}
+        />
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col">
           <div className="flex justify-between items-center mb-4">

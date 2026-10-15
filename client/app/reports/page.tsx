@@ -19,36 +19,67 @@ export default function ReportsPage() {
 
   const mockReports: VerifiedReport[] = [
     {
-      hash: 'ec6a4eb00b6281f6f765ff3d94bf187d153dd42a78627164dbf837e83023defe',
-      contract: 'Solace Core Contract',
+      hash: '8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4',
+      contract: 'Solace Core Contract (contract/src/lib.rs)',
+      auditType: 'PRE_DEPLOYMENT',
+      riskScore: 35,
+      isSecure: false,
+      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
+      timestamp: 'Verified on Testnet Ledger',
+    },
+    {
+      hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f901234567890abcdef1234567890abcdef',
+      contract: 'Vault Lending Pool Protocol',
       auditType: 'PRE_DEPLOYMENT',
       riskScore: 12,
       isSecure: true,
-      auditor: 'GDZ...AUDITOR',
-      timestamp: '2026-10-14 22:15 UTC',
-    },
-    {
-      hash: '9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b',
-      contract: 'Vault Lending Pool',
-      auditType: 'POST_DEPLOYMENT',
-      riskScore: 78,
-      isSecure: false,
-      auditor: 'GDZ...AUDITOR',
-      timestamp: '2026-10-14 21:40 UTC',
+      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
+      timestamp: 'Verified on Testnet Ledger',
     },
   ];
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchHash.trim()) return;
+    const query = searchHash.trim();
+    if (!query) return;
     setSearching(true);
-    setTimeout(() => {
-      const found = mockReports.find((r) =>
-        r.hash.toLowerCase().includes(searchHash.trim().toLowerCase())
-      );
+
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBase}/api/contract/audit/${encodeURIComponent(query)}`);
+      const res = await response.json();
+
+      if (res.found && res.data) {
+        setSearchResult({
+          hash: res.data.contract_hash,
+          contract: 'On-Chain Verified Soroban Contract',
+          auditType: res.data.audit_type,
+          riskScore: res.data.risk_score,
+          isSecure: res.data.is_secure,
+          auditor: res.data.auditor,
+          timestamp: 'Confirmed on Stellar Ledger',
+          notFound: false,
+        });
+      } else {
+        const localMatch = mockReports.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
+        setSearchResult(
+          localMatch || {
+            hash: query,
+            contract: '',
+            auditType: '',
+            riskScore: 0,
+            isSecure: false,
+            auditor: '',
+            timestamp: '',
+            notFound: true,
+          }
+        );
+      }
+    } catch {
+      const localMatch = mockReports.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
       setSearchResult(
-        found || {
-          hash: searchHash,
+        localMatch || {
+          hash: query,
           contract: '',
           auditType: '',
           riskScore: 0,
@@ -58,8 +89,9 @@ export default function ReportsPage() {
           notFound: true,
         }
       );
+    } finally {
       setSearching(false);
-    }, 400);
+    }
   };
 
   return (

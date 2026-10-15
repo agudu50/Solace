@@ -2,7 +2,7 @@
 
 **AI-Powered Smart Contract Security Auditing & Bug Detection for Stellar & Soroban**
 
-Solace is an automated smart contract security platform engineered specifically for the **Stellar** and **Soroban** ecosystem. Combining Google's **Gemini 3.8 Flash** model with on-chain Soroban smart contracts, Solace enables developers to audit code for critical vulnerabilities, enforce authorization rules, and record immutable audit proofs directly onto the Stellar ledger.
+Solace is an automated smart contract security platform engineered specifically for the **Stellar** and **Soroban** ecosystem. Combining Google's adaptive **Gemini AI Engine** (featuring multi-model fallback across high-performance Gemini Flash models) with on-chain Soroban smart contracts, Solace enables developers to audit code for critical vulnerabilities, enforce authorization rules, and record immutable audit proofs directly onto the Stellar ledger.
 
 ---
 
@@ -11,6 +11,8 @@ Solace is an automated smart contract security platform engineered specifically 
 - **Dual-Mode AI Auditing**:
   - **PRE-DEPLOYMENT**: Static source code analysis targeting authorization checks, unsafe unwrapping, reentrancy, and integer overflow.
   - **POST-DEPLOYMENT**: Live inspection of contract instance/persistent storage, rent TTL, upgrade vectors, and monitoring telemetry.
+- **Adaptive Multi-Model Resiliency**:
+  - Automatically queries active Gemini models (`gemini-3.5-flash`, `gemini-3.8-flash`, etc.) with exponential backoff to ensure continuous uptime even during regional or experimental demand spikes.
 - **Freighter Wallet & On-Chain Anchoring**:
   - Directly connect your [Freighter Wallet](https://www.freighter.app/) in the browser via `@stellar/freighter-api`.
   - Sign and anchor verified audit records onto the Stellar Soroban ledger with one click.
@@ -25,7 +27,31 @@ Solace is an automated smart contract security platform engineered specifically 
   - **Verified Reports** (`/reports`): Search and verify on-chain audit reports by contract SHA-256 hash.
   - **Live Monitor** (`/monitor`): Post-deployment telemetry, storage rent TTL tracking, and security invariants.
 - **Custom Design System**: Powered by Tailwind CSS with a custom accent token system (`var(--e-global-color-accent)` set to `#C80552`).
-- **Developer CLI**: Run command-line audits directly on `.rs` files and generate ready-to-execute `stellar contract invoke` payloads.
+---
+
+## 🏆 Built during Stellar 14 (5 – 17 October 2026)
+
+*Solace is a brand new project conceived, designed, and built from scratch during the Stellar 14 Build Days.*
+
+### What was built during Stellar 14:
+- **Rust Soroban Smart Contract ([`contract/`](contract/src/lib.rs))**:
+  - Implemented `record_audit` and `get_audit` with persistent storage rent management.
+  - Successfully compiled to WebAssembly (`solace_core.wasm`, 1,950 bytes optimized) and deployed to **Stellar Testnet**.
+- **Backend AI Engine & Soroban Service ([`server/`](server/src/index.js))**:
+  - Integrated Google's adaptive Gemini AI engine via `@google/genai` with automatic candidate model fallback.
+  - Built `@stellar/stellar-sdk` Soroban service for programmatic transaction signing and ledger querying.
+  - Implemented real-time terminal telemetry with color-coded status codes and millisecond latency tracking.
+- **Frontend Web Studio ([`client/`](client/app/page.tsx))**:
+  - 100% strict TypeScript Next.js 14 App Router frontend.
+  - Custom Tailwind CSS design system driven by `--e-global-color-accent` (`#C80552`).
+  - Freighter wallet integration via `@stellar/freighter-api`.
+  - Three dedicated views: **Audit Studio** (`/`), **Verified Reports** (`/reports`), and **Live Monitor** (`/monitor`).
+
+### 🌐 Network & Deployed Contract Information
+- **Network**: Stellar Testnet (`https://soroban-testnet.stellar.org`)
+- **Contract ID**: [`CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ`](https://stellar.expert/explorer/testnet/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ)
+- **Auditor Address**: [`GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI`](https://stellar.expert/explorer/testnet/account/GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI)
+- **Wasm Hash**: `b4d97348c0e5f429ea1329fbcc3f533b082a27a26b2de704c5a161d08ccc69c4`
 
 ---
 
@@ -41,7 +67,7 @@ Solace/
 │   ├── src/
 │   │   ├── controllers/       # Request validation & Soroban payload formatting
 │   │   ├── routes/            # REST endpoints (/api/audit, /api/health)
-│   │   ├── services/          # Gemini 3.8 Flash integration via @google/genai
+│   │   ├── services/          # Adaptive Gemini AI Engine via @google/genai (multi-model fallback)
 │   │   ├── scripts/           # Terminal audit runner (runAudit.js)
 │   │   └── index.js           # Server entry point (port 5000)
 │   ├── .env.example           # Environment template for keys and RPC
@@ -218,7 +244,7 @@ cargo build --target wasm32-unknown-unknown --release
 Health check endpoint reporting service availability and model status.
 
 ### `POST /api/audit`
-Analyzes a smart contract code snippet using Gemini 3.8 Flash.
+Analyzes a smart contract code snippet using the adaptive Gemini AI Security Engine.
 
 **Request Body**:
 ```json
