@@ -76,13 +76,13 @@ export default function AuditReportView({
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-950 border border-slate-800 p-4 rounded-lg">
               <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Risk Score</span>
-              <p className={`text-3xl font-black mt-1 ${report.riskScore > 50 ? 'text-red-400' : 'text-emerald-400'}`}>
+              <p className={`text-3xl font-black mt-1 ${report.riskScore > 50 ? 'text-red-400' : 'text-accent'}`}>
                 {report.riskScore} <span className="text-sm font-normal text-slate-500">/ 100</span>
               </p>
             </div>
             <div className="bg-slate-950 border border-slate-800 p-4 rounded-lg">
               <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Security Status</span>
-              <p className={`text-xl font-bold mt-2 ${report.isSecure ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <p className={`text-xl font-bold mt-2 ${report.isSecure ? 'text-accent' : 'text-amber-400'}`}>
                 {report.isSecure ? 'Secure' : 'Vulnerabilities Found'}
               </p>
             </div>

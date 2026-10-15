@@ -119,16 +119,16 @@ function ReportsContent() {
   };
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-800 pb-6 gap-4">
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-200/80 gap-4">
         <div>
-          <span className="text-xs font-bold px-2.5 py-1 bg-accent-subtle text-accent border border-accent-subtle rounded-full tracking-wider uppercase">
+          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent-subtle uppercase tracking-wider">
             Ledger Provenance
           </span>
-          <h1 className="text-3xl font-extrabold tracking-tight mt-2 text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5 text-slate-900">
             Verified On-Chain Reports
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Cryptographically signed smart contract audit reports stored persistently on Stellar via{' '}
             <span className="font-mono text-accent">SolaceContract::record_audit</span>.
           </p>
@@ -138,7 +138,7 @@ function ReportsContent() {
           href={`https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition flex items-center whitespace-nowrap"
+          className="text-xs px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 shadow-sm transition flex items-center whitespace-nowrap font-semibold"
         >
           Contract on Stellar Expert
         </a>
@@ -150,14 +150,14 @@ function ReportsContent() {
         <button
           type="button"
           onClick={() => executeLookup('07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a')}
-          className="text-xs font-mono px-2.5 py-1 rounded-full bg-slate-850 hover:bg-slate-800 text-accent border border-slate-750 transition"
+          className="text-xs font-mono px-3 py-1 rounded-full bg-white hover:bg-slate-50 text-accent border border-slate-200/80 shadow-sm transition font-medium"
         >
           # Vault Audit (Live On-Chain)
         </button>
         <button
           type="button"
           onClick={() => executeLookup('8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4')}
-          className="text-xs font-mono px-2.5 py-1 rounded-full bg-slate-850 hover:bg-slate-800 text-slate-300 border border-slate-750 transition"
+          className="text-xs font-mono px-3 py-1 rounded-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 shadow-sm transition font-medium"
         >
           # Solace Core Contract
         </button>
@@ -171,12 +171,12 @@ function ReportsContent() {
             value={searchHash}
             onChange={(e) => setSearchHash(e.target.value)}
             placeholder="Search by contract hash (e.g. 07c390518ca81e3...)..."
-            className="flex-grow bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-sm text-slate-200 font-mono focus:outline-none focus:border-accent transition"
+            className="flex-grow bg-white border border-slate-200/80 rounded-2xl px-4 py-3 text-sm text-slate-800 font-mono focus:outline-none focus:border-accent shadow-sm transition"
           />
           <button
             type="submit"
             disabled={searching}
-            className="px-6 py-3 bg-accent bg-accent-hover disabled:bg-slate-800 text-white font-bold rounded-lg text-sm transition"
+            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold rounded-2xl text-sm shadow-sm transition"
           >
             {searching ? 'Querying Ledger...' : 'Lookup Report'}
           </button>
@@ -187,43 +187,43 @@ function ReportsContent() {
       {searchResult && (
         <div className="mb-8">
           {searchResult.notFound ? (
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-400">
-              No on-chain audit record found for hash <span className="font-mono text-accent">{searchHash}</span>.
+            <div className="p-5 bg-white border border-slate-200/80 rounded-3xl text-sm text-slate-500 shadow-sm">
+              No on-chain audit record found for hash <span className="font-mono text-slate-800">{searchHash}</span>.
             </div>
           ) : (
-            <div className="p-5 bg-slate-900 border border-accent-subtle rounded-xl shadow-lg">
+            <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-sm">
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-accent-subtle text-accent border border-accent-subtle">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent-subtle uppercase">
                     Live Ledger Record
                   </span>
-                  <h3 className="text-lg font-bold text-white mt-1.5">{searchResult.contract}</h3>
-                  <p className="text-xs font-mono text-slate-400 mt-0.5 break-all">{searchResult.hash}</p>
+                  <h3 className="text-lg font-bold text-slate-900 mt-1.5">{searchResult.contract}</h3>
+                  <p className="text-xs font-mono text-slate-500 mt-0.5 break-all">{searchResult.hash}</p>
                 </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded whitespace-nowrap ${searchResult.isSecure ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${searchResult.isSecure ? 'bg-accent-subtle text-accent border border-accent-subtle' : 'bg-red-100 text-red-800'}`}>
                   {searchResult.isSecure ? 'SECURE' : 'ACTION REQUIRED'}
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-800 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-100 text-xs">
                 <div>
-                  <span className="text-slate-500">Risk Score</span>
-                  <p className={`font-bold text-base mt-0.5 ${searchResult.riskScore > 50 ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {searchResult.riskScore} <span className="text-xs font-normal text-slate-500">/ 100</span>
+                  <span className="text-slate-400">Risk Score</span>
+                  <p className={`font-bold text-base mt-0.5 ${searchResult.riskScore > 50 ? 'text-red-600' : 'text-accent'}`}>
+                    {searchResult.riskScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Audit Type</span>
-                  <p className="text-white font-bold text-sm mt-0.5">{searchResult.auditType}</p>
+                  <span className="text-slate-400">Audit Type</span>
+                  <p className="text-slate-900 font-bold text-sm mt-0.5">{searchResult.auditType}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Auditor Address</span>
-                  <p className="text-white font-mono text-xs mt-0.5 truncate" title={searchResult.auditor}>
+                  <span className="text-slate-400">Auditor Address</span>
+                  <p className="text-slate-800 font-mono text-xs mt-0.5 truncate" title={searchResult.auditor}>
                     {searchResult.auditor.slice(0, 8)}...{searchResult.auditor.slice(-6)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Recorded Timestamp</span>
-                  <p className="text-slate-300 text-xs mt-0.5">{searchResult.timestamp}</p>
+                  <span className="text-slate-400">Recorded Timestamp</span>
+                  <p className="text-slate-600 text-xs mt-0.5">{searchResult.timestamp}</p>
                 </div>
               </div>
             </div>
@@ -232,28 +232,28 @@ function ReportsContent() {
       )}
 
       {/* Recent Ledger Records */}
-      <h2 className="text-lg font-semibold text-slate-200 mb-4">Recent Verified Audits</h2>
-      <div className="space-y-4">
+      <h2 className="text-base font-bold text-slate-900 mb-4">Recent Verified Audits</h2>
+      <div className="space-y-3">
         {mockReports.map((item, idx) => (
           <div
             key={idx}
             onClick={() => executeLookup(item.hash)}
-            className="bg-slate-900 border border-slate-800 p-5 rounded-xl hover:border-slate-700 cursor-pointer transition"
+            className="bg-white border border-slate-200/80 p-5 rounded-3xl hover:border-slate-300 shadow-sm cursor-pointer transition"
           >
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white text-base">{item.contract}</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="font-bold text-slate-900 text-sm sm:text-base">{item.contract}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                   {item.auditType}
                 </span>
               </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded w-fit ${item.isSecure ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-red-950 text-red-300 border border-red-800'}`}>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full w-fit ${item.isSecure ? 'bg-accent-subtle text-accent border border-accent-subtle' : 'bg-red-50 text-red-700'}`}>
                 {item.isSecure ? 'SECURE' : 'ACTION REQUIRED'}
               </span>
             </div>
-            <p className="text-xs font-mono text-slate-400 mb-3 truncate">Hash: {item.hash}</p>
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-850">
-              <span>Auditor: <span className="font-mono text-slate-400">{item.auditor.slice(0, 8)}...{item.auditor.slice(-6)}</span></span>
+            <p className="text-xs font-mono text-slate-500 mb-3 truncate">Hash: {item.hash}</p>
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-100">
+              <span>Auditor: <span className="font-mono text-slate-600">{item.auditor.slice(0, 8)}...{item.auditor.slice(-6)}</span></span>
               <span>{item.timestamp}</span>
             </div>
           </div>

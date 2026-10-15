@@ -59,15 +59,15 @@ export default function MonitorPage() {
   };
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8 border-b border-slate-800 pb-6">
-        <span className="text-xs font-bold px-2.5 py-1 bg-accent-subtle text-accent border border-accent-subtle rounded-full tracking-wider uppercase">
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div className="mb-6 pb-4 border-b border-slate-200/80">
+        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent-subtle uppercase tracking-wider">
           Post-Deployment Security
         </span>
-        <h1 className="text-3xl font-extrabold tracking-tight mt-2 text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5 text-slate-900">
           Live Contract Monitor
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
           Real-time health monitoring, storage TTL tracking, and post-deployment security checks for live Soroban contracts.
         </p>
       </div>
@@ -80,12 +80,12 @@ export default function MonitorPage() {
             value={contractId}
             onChange={(e) => setContractId(e.target.value)}
             placeholder="Enter Deployed Soroban Contract ID (e.g. CA3D5K...)..."
-            className="flex-grow bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-sm text-slate-200 font-mono focus:outline-none focus:border-accent transition"
+            className="flex-grow bg-white border border-slate-200/80 rounded-2xl px-4 py-3 text-sm text-slate-800 font-mono focus:outline-none focus:border-accent shadow-sm transition"
           />
           <button
             type="submit"
             disabled={monitoring}
-            className="px-6 py-3 bg-accent bg-accent-hover text-white font-bold rounded-lg text-sm transition"
+            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold rounded-2xl text-sm shadow-sm transition"
           >
             {monitoring ? 'Inspecting Contract...' : 'Inspect Live Contract'}
           </button>
@@ -96,66 +96,66 @@ export default function MonitorPage() {
       {metrics && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+            <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
                 Network Status
               </span>
-              <p className="text-2xl font-black text-emerald-400 mt-1">{metrics.status}</p>
-              <span className="text-xs text-slate-400 mt-1 block">Contract responsive on Testnet</span>
+              <p className="text-2xl font-black text-accent mt-1">{metrics.status}</p>
+              <span className="text-xs text-slate-500 mt-1 block">Contract responsive on Testnet</span>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+            <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
                 Storage Rent TTL
               </span>
-              <p className="text-2xl font-black text-white mt-1">
+              <p className="text-2xl font-black text-slate-900 mt-1">
                 {metrics.ttlRemainingLedgers.toLocaleString()}{' '}
-                <span className="text-xs font-normal text-slate-400">ledgers remaining</span>
+                <span className="text-xs font-normal text-slate-500">ledgers remaining</span>
               </p>
-              <span className="text-xs text-emerald-400 mt-1 block">No immediate archival risk</span>
+              <span className="text-xs text-accent mt-1 block">No immediate archival risk</span>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+            <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
                 Security Invariants
               </span>
-              <p className="text-2xl font-black text-emerald-400 mt-1">
+              <p className="text-2xl font-black text-accent mt-1">
                 {metrics.invariantsPassed} / {metrics.invariantsPassed + metrics.invariantsFailed}
               </p>
-              <span className="text-xs text-slate-400 mt-1 block">All automated health checks passing</span>
+              <span className="text-xs text-slate-500 mt-1 block">All automated health checks passing</span>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+          <div className="bg-white border border-slate-200/80 p-6 rounded-3xl shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-white">Post-Deployment Monitoring Telemetry</h3>
+              <h3 className="text-base font-bold text-slate-900">Post-Deployment Monitoring Telemetry</h3>
               <a
                 href={`https://stellar.expert/explorer/testnet/contract/${metrics.contractId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-accent hover:opacity-80 transition underline underline-offset-2"
+                className="text-xs text-accent font-semibold hover:underline"
               >
                 View on Stellar Expert
               </a>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between py-2 border-b border-slate-850">
-                <span className="text-slate-400">Contract ID</span>
-                <span className="font-mono text-accent text-xs truncate max-w-[200px]" title={metrics.contractId}>
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-500">Contract ID</span>
+                <span className="font-mono text-slate-800 text-xs truncate max-w-[200px]" title={metrics.contractId}>
                   {metrics.contractId}
                 </span>
               </div>
-              <div className="flex justify-between py-2 border-b border-slate-850">
-                <span className="text-slate-400">Storage Class</span>
-                <span className="font-medium text-slate-200">{metrics.storageType}</span>
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-500">Storage Class</span>
+                <span className="font-medium text-slate-800">{metrics.storageType}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-slate-850">
-                <span className="text-slate-400">Authorized Signers</span>
-                <span className="font-medium text-slate-200">{metrics.authorizedSigners} Address</span>
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-500">Authorized Signers</span>
+                <span className="font-medium text-slate-800">{metrics.authorizedSigners} Address</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-slate-850">
-                <span className="text-slate-400">Last Ledger Activity</span>
-                <span className="font-medium text-slate-200">{metrics.lastInvoked}</span>
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-500">Last Ledger Activity</span>
+                <span className="font-medium text-slate-800">{metrics.lastInvoked}</span>
               </div>
             </div>
           </div>
@@ -163,8 +163,8 @@ export default function MonitorPage() {
       )}
 
       {!metrics && !monitoring && (
-        <div className="p-12 text-center bg-slate-900 border border-dashed border-slate-800 rounded-xl text-slate-500">
-          <p className="font-medium text-slate-400">No live contract monitored yet.</p>
+        <div className="p-12 text-center bg-white border border-dashed border-slate-200/80 rounded-3xl text-slate-400 shadow-sm">
+          <p className="font-medium text-slate-600">No live contract monitored yet.</p>
           <p className="text-xs mt-1">
             Provide a deployed Stellar Soroban contract ID to inspect TTL rent, access controls, and invariants.
           </p>
