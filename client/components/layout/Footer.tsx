@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200/80 bg-white/60 mt-16 py-6 text-xs text-slate-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <footer className="border-t border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-[#0f1422]/60 mt-16 py-6 text-xs text-slate-500 dark:text-slate-400 transition-colors">
+      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-700">Solace</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Solace</span>
           <span>•</span>
           <span>Autonomous AI Smart Contract Auditor & Ledger Provenance for Stellar Soroban</span>
         </div>
