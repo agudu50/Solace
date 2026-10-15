@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ShieldCheck,
   Shield,
   FileCheck,
+  FileCode,
   Activity,
   ArrowUpRight,
   TrendingUp,
@@ -20,13 +21,67 @@ import {
   Zap,
 } from 'lucide-react';
 
+interface ActiveAuditInfo {
+  contractName: string;
+  subtitle: string;
+  contractHash: string;
+  riskScore: number;
+  isSecure: boolean;
+  summary: string;
+  vulnerabilitiesCount: number;
+  auditType: string;
+  timestamp: string;
+  date: string;
+  linesCount: number;
+}
+
 export default function DashboardPage() {
   const [selectedAuditMode, setSelectedAuditMode] = useState<'PRE' | 'POST'>('PRE');
+
+  const defaultActiveAudit: ActiveAuditInfo = {
+    contractName: 'Solace Core Security Contract',
+    subtitle: 'contract/src/lib.rs',
+    contractHash: '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a',
+    riskScore: 85,
+    isSecure: true,
+    summary: 'Autonomous Gemini AI AST inspection verified require_auth() invariants and persistent rent protection.',
+    vulnerabilitiesCount: 0,
+    auditType: 'PRE_DEPLOYMENT',
+    timestamp: '12:20 PM',
+    date: '15 Oct 2026',
+    linesCount: 36,
+  };
+
+  const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo>(defaultActiveAudit);
+
+  useEffect(() => {
+    const loadActiveAudit = () => {
+      try {
+        const stored = localStorage.getItem('solace-active-contract-audit');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setActiveAudit((prev) => ({ ...prev, ...parsed }));
+        }
+      } catch (_) {}
+    };
+
+    loadActiveAudit();
+
+    window.addEventListener('storage', loadActiveAudit);
+    window.addEventListener('solace-audit-updated', loadActiveAudit);
+    window.addEventListener('focus', loadActiveAudit);
+
+    return () => {
+      window.removeEventListener('storage', loadActiveAudit);
+      window.removeEventListener('solace-audit-updated', loadActiveAudit);
+      window.removeEventListener('focus', loadActiveAudit);
+    };
+  }, []);
 
   const riskVectors = [
     {
       category: 'Auth Hijack Vulnerability',
-      shortName: 'Auth Guards',
+      shortName: 'Auth',
       score: selectedAuditMode === 'PRE' ? 100 : 100,
       threat: '0% Threat',
       status: 'Guarded',
@@ -35,7 +90,7 @@ export default function DashboardPage() {
     },
     {
       category: 'Storage Rent Eviction (TTL)',
-      shortName: 'State Rent',
+      shortName: 'Storage',
       score: selectedAuditMode === 'PRE' ? 97 : 99,
       threat: selectedAuditMode === 'PRE' ? '3% Threat' : '1% Threat',
       status: 'Safe',
@@ -44,7 +99,7 @@ export default function DashboardPage() {
     },
     {
       category: 'Host Panic Crash Risk',
-      shortName: 'Panic Safety',
+      shortName: 'Safety',
       score: selectedAuditMode === 'PRE' ? 94 : 96,
       threat: selectedAuditMode === 'PRE' ? '6% Threat' : '4% Threat',
       status: 'Safe',
@@ -53,7 +108,7 @@ export default function DashboardPage() {
     },
     {
       category: 'Admin Privilege Escalation',
-      shortName: 'Access Control',
+      shortName: 'Admin',
       score: selectedAuditMode === 'PRE' ? 100 : 98,
       threat: selectedAuditMode === 'PRE' ? '0% Threat' : '2% Threat',
       status: 'Guarded',
@@ -62,7 +117,7 @@ export default function DashboardPage() {
     },
     {
       category: 'Arithmetic Overflow / Underflow',
-      shortName: 'Safe Math',
+      shortName: 'Math',
       score: selectedAuditMode === 'PRE' ? 98 : 100,
       threat: selectedAuditMode === 'PRE' ? '2% Threat' : '0% Threat',
       status: 'Safe',
@@ -71,7 +126,7 @@ export default function DashboardPage() {
     },
     {
       category: 'Bytecode & Gas Spike Exhaustion',
-      shortName: 'Bytecode Wasm',
+      shortName: 'Code',
       score: selectedAuditMode === 'PRE' ? 96 : 97,
       threat: selectedAuditMode === 'PRE' ? '4% Threat' : '3% Threat',
       status: 'Safe',
@@ -381,8 +436,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Smart Contract Risk Header & Filter Toggle (Item 2 & 4: No black buttons, crystal clear risks) */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                {/* Smart Contract Risk Header & Filter Toggle (No container overflow on mobile, brand accent toggle) */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -395,13 +450,13 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end w-full sm:w-auto">
                     {/* Toggle Buttons (Brand Accent when selected, never black) */}
-                    <div className="bg-slate-100/90 dark:bg-slate-900 p-1 rounded-full flex items-center border border-slate-200/80 dark:border-slate-800 shadow-xs shrink-0">
+                    <div className="bg-slate-100/90 dark:bg-slate-900 p-1 rounded-full flex items-center border border-slate-200/80 dark:border-slate-800 shadow-xs">
                       <button
                         type="button"
                         onClick={() => setSelectedAuditMode('PRE')}
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
+                        className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
                           selectedAuditMode === 'PRE'
                             ? 'bg-accent text-white shadow-md shadow-accent/25'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
@@ -412,7 +467,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedAuditMode('POST')}
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
+                        className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
                           selectedAuditMode === 'POST'
                             ? 'bg-accent text-white shadow-md shadow-accent/25'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
@@ -423,7 +478,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Overall Risk Rating Badge */}
-                    <div className="bg-accent text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-md shadow-accent/20 whitespace-nowrap shrink-0">
+                    <div className="bg-accent text-white text-xs font-extrabold px-3 py-1 sm:py-1.5 rounded-full shadow-md shadow-accent/20 whitespace-nowrap">
                       +98.2% Security Score
                     </div>
                   </div>
@@ -510,71 +565,111 @@ export default function DashboardPage() {
 
           {/* ================= COLUMN 3 (Right): Card 3 & Card 5 ================= */}
           <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* Card 3: AI Security Precision */}
+            {/* Card 3: AI Analyzed Smart Contract (Auto-updates when audited/loaded) */}
             <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <div>
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">AI Security Precision</h2>
-                    <p className="text-[11px] text-slate-400">Gemini Invariant Fallback Engine</p>
+                {/* Header */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent shrink-0 border border-accent/20 shadow-xs">
+                      <FileCode className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                        AI Analyzed Contract
+                      </h2>
+                      <p className="text-[11px] text-slate-400">Gemini Dual Flash AST Engine</p>
+                    </div>
                   </div>
                   <Link
-                    href="/monitor"
+                    href="/audit"
                     className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition"
-                    title="Monitor live telemetry"
+                    title="Open in Audit Studio"
                   >
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
 
-                <div className="text-center py-2">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                    Exploit Prevention Rate
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                    99.8% Precision
-                  </span>
-                  <span className="text-[10px] text-accent font-semibold block mt-0.5">
-                    0 Exploit Leaks · Dual Fallback Flash
+                {/* Contract Identity & Score Highlight Box */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {activeAudit.contractName}
+                    </span>
+                    <span
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
+                        activeAudit.isSecure
+                          ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800'
+                          : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+                      }`}
+                    >
+                      {activeAudit.isSecure ? 'VERIFIED' : 'ACTION REQ'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                    <span className="truncate">{activeAudit.subtitle}</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 shrink-0">
+                      {activeAudit.linesCount} lines
+                    </span>
+                  </div>
+
+                  {/* Score & Verdict Bar */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                        Security Score
+                      </span>
+                      <span className="text-xl font-black text-slate-900 dark:text-white">
+                        {activeAudit.riskScore}
+                        <span className="text-xs font-normal text-slate-400">/100</span>
+                      </span>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                        Quarantined Flaws
+                      </span>
+                      <span className="text-sm font-bold text-accent">
+                        {activeAudit.vulnerabilitiesCount} detected
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contract Hash Proof Pill */}
+                <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-[11px] flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 overflow-hidden">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">SHA256:</span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300 truncate text-[10px]">
+                      {activeAudit.contractHash.slice(0, 10)}...{activeAudit.contractHash.slice(-8)}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
+                    Live AST
                   </span>
                 </div>
 
-                {/* Smooth Wave / Sparkline Chart */}
-                <div className="h-20 w-full my-2">
-                  <svg className="w-full h-full" viewBox="0 0 200 60" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#C80552" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#C80552" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M0,45 Q25,15 50,30 T100,20 T150,35 T200,25 L200,60 L0,60 Z"
-                      fill="url(#waveGradient)"
-                    />
-                    <path
-                      d="M0,45 Q25,15 50,30 T100,20 T150,35 T200,25"
-                      fill="none"
-                      stroke="#C80552"
-                      strokeWidth="2.5"
-                    />
-                  </svg>
-                </div>
+                {/* AI Summary snippet */}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  {activeAudit.summary}
+                </p>
               </div>
 
-              {/* Two Pill Buttons: Run Audit & Inspect Live (Accent & Slate, never black) */}
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              {/* Action Buttons: Audit in Studio & View Full Report */}
+              <div className="grid grid-cols-2 gap-2 mt-4 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <Link
                   href="/audit"
-                  className="py-2.5 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/20 text-center"
+                  className="py-2.5 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/20 text-center flex items-center justify-center gap-1"
                 >
-                  Run Audit
+                  <span>Audit Studio</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
-                  href="/monitor"
+                  href={`/reports?hash=${activeAudit.contractHash}`}
                   className="py-2.5 px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center"
                 >
-                  Inspect Live
+                  View Report
                 </Link>
               </div>
             </div>
