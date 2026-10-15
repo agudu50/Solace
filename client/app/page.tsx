@@ -152,9 +152,6 @@ export default function DashboardPage() {
                 <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
                   Stellar Soroban v22 Protocol
                 </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                  Dual Gemini AI Fallback
-                </span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
@@ -325,52 +322,60 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                {/* Contracts Submitted & Core Metrics Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                {/* Contracts Submitted & Core Metrics Row (Equalized Heights & Baseline Alignment) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5 items-stretch">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
                       Contracts Submitted
                     </span>
-                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                      1,428
+                    <div className="my-1">
+                      <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
+                        1,428
+                      </div>
                     </div>
-                    <span className="text-[10px] text-accent font-semibold block mt-0.5">
+                    <span className="text-[10px] text-accent font-semibold block leading-tight truncate">
                       +24.6% this epoch
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
                       Verified Secure
                     </span>
-                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                      1,392
+                    <div className="my-1">
+                      <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
+                        1,392
+                      </div>
                     </div>
-                    <span className="text-[10px] text-accent font-semibold block mt-0.5">
+                    <span className="text-[10px] text-accent font-semibold block leading-tight truncate">
                       97.5% pass rate
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
                       Flaws Quarantined
                     </span>
-                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                      36
+                    <div className="my-1">
+                      <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
+                        36
+                      </div>
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mt-0.5">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block leading-tight truncate">
                       0 exploit leaks
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
                       Avg AI Latency
                     </span>
-                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                      840ms
+                    <div className="my-1">
+                      <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
+                        840ms
+                      </div>
                     </div>
-                    <span className="text-[10px] text-accent font-semibold block mt-0.5">
+                    <span className="text-[10px] text-accent font-semibold block leading-tight truncate">
                       Dual Flash Engine
                     </span>
                   </div>

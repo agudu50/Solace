@@ -204,39 +204,39 @@ impl SolaceContract {
   const lineCount = codeSnippet ? codeSnippet.split('\n').length : 0;
 
   return (
-    <div className="w-full min-h-screen bg-[#f4f5f8] pb-24 md:pb-8">
+    <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
       {/* Main Studio Canvas */}
       <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent-subtle uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
                 <span>Live Security Engine</span>
               </span>
               <span className="text-xs font-mono text-slate-400">
                 Stellar Soroban v22
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Interactive Code Audit Studio
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               Autonomous Gemini AI AST inspection & verification on Stellar Soroban
             </p>
           </div>
 
           <div className="flex items-center gap-3 self-stretch sm:self-auto flex-wrap">
             {/* View Tabs */}
-            <div className="bg-white border border-slate-200/80 p-1 rounded-full shadow-sm flex text-xs">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-1 rounded-full shadow-sm flex text-xs">
               <button
                 type="button"
                 onClick={() => setActiveTab('STUDIO')}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition ${
                   activeTab === 'STUDIO'
-                    ? 'bg-accent text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-accent text-white shadow-md shadow-accent/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -247,8 +247,8 @@ impl SolaceContract {
                 onClick={() => setActiveTab('INVARIANTS')}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition ${
                   activeTab === 'INVARIANTS'
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-accent text-white shadow-md shadow-accent/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -258,7 +258,7 @@ impl SolaceContract {
 
             <Link
               href="/"
-              className="px-4 py-2 rounded-full bg-white border border-slate-200/80 text-slate-700 text-xs font-semibold hover:bg-slate-50 shadow-sm transition flex items-center gap-1.5"
+              className="px-4 py-2 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Dashboard</span>
@@ -271,31 +271,31 @@ impl SolaceContract {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left 7 Columns: Code Editor & Audit Action */}
             <div className="lg:col-span-7 flex flex-col gap-4">
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+              <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
                 <div>
                   {/* Top Control Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                     {/* Load Presets */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-500">Load:</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Load:</span>
                       <button
                         type="button"
                         onClick={handleLoadVault}
-                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-full transition"
+                        className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-full transition"
                       >
                         Vault Protocol
                       </button>
                       <button
                         type="button"
                         onClick={handleLoadSolaceCore}
-                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-full transition"
+                        className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-full transition"
                       >
                         Solace Core
                       </button>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-full transition flex items-center gap-1"
+                        className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-full transition flex items-center gap-1"
                       >
                         <Upload className="w-3 h-3" />
                         <span>Upload File</span>
@@ -311,34 +311,34 @@ impl SolaceContract {
                         <button
                           type="button"
                           onClick={handleClear}
-                          className="px-2.5 py-1 text-slate-400 hover:text-slate-700 text-xs transition"
+                          className="px-2.5 py-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs transition"
                         >
                           Clear
                         </button>
                       )}
                     </div>
 
-                    {/* Pre / Post Deploy Toggle */}
-                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-full text-xs">
+                    {/* Pre / Post Deploy Toggle (Brand accent, no black) */}
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 p-1 rounded-full text-xs">
                       <button
                         type="button"
                         onClick={() => setIsPostDeployment(false)}
                         className={`px-3 py-1 rounded-full font-semibold transition ${
                           !isPostDeployment
-                            ? 'bg-slate-900 text-white shadow-sm'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-accent text-white shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Pre-Deploy
                       </button>
-                      <span className="text-slate-300">|</span>
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
                       <button
                         type="button"
                         onClick={() => setIsPostDeployment(true)}
                         className={`px-3 py-1 rounded-full font-semibold transition ${
                           isPostDeployment
                             ? 'bg-accent text-white shadow-sm'
-                            : 'text-slate-600 hover:text-slate-900'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Post-Deploy
@@ -367,8 +367,8 @@ impl SolaceContract {
                 </div>
 
                 {/* Bottom Action Footer */}
-                <div className="pt-4 mt-3 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <span className="text-xs text-slate-500">
+                <div className="pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     {isPostDeployment
                       ? 'Validates live persistent storage rent TTL and archival eviction risks.'
                       : 'Analyzes AST authorization rules & panic vulnerabilities.'}
@@ -378,7 +378,7 @@ impl SolaceContract {
                     type="button"
                     onClick={handleAudit}
                     disabled={loading || !codeSnippet.trim()}
-                    className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 text-white text-xs font-bold transition shadow-sm whitespace-nowrap flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-bold transition shadow-md shadow-accent/25 whitespace-nowrap flex items-center justify-center gap-2"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>{loading ? 'Gemini AI Analyzing Code...' : 'Audit Smart Contract'}</span>
@@ -395,9 +395,9 @@ impl SolaceContract {
 
             {/* Right 5 Columns: Findings & On-Chain Verification */}
             <div className="lg:col-span-5 flex flex-col gap-4">
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col h-full min-h-[500px]">
-                <div className="flex justify-between items-center pb-3 mb-3 border-b border-slate-100">
-                  <h2 className="text-sm font-bold text-slate-900">
+              <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col h-full min-h-[500px] transition-colors">
+                <div className="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                     Audit Findings & Ledger Receipt
                   </h2>
                   {report && (
@@ -405,7 +405,7 @@ impl SolaceContract {
                       type="button"
                       onClick={handleAnchorOnChain}
                       disabled={anchoring}
-                      className="px-3.5 py-1 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 text-white text-xs font-semibold transition shadow-sm flex items-center gap-1.5"
+                      className="px-3.5 py-1 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-semibold transition shadow-md shadow-accent/20 flex items-center gap-1.5"
                     >
                       <Shield className="w-3.5 h-3.5" />
                       <span>{anchoring ? 'Anchoring...' : 'Anchor on Soroban'}</span>
@@ -415,11 +415,11 @@ impl SolaceContract {
 
                 {!report && !loading && (
                   <div className="flex-grow flex flex-col items-center justify-center text-center p-8 text-slate-400">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 mb-3">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 mb-3">
                       <Shield className="w-6 h-6 text-accent" />
                     </div>
-                    <span className="text-sm font-bold text-slate-700">Ready for Code Inspection</span>
-                    <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Ready for Code Inspection</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
                       Load a sample Soroban contract or paste Rust code and click Audit Smart Contract to initiate automated vulnerability detection.
                     </p>
                   </div>
@@ -428,10 +428,10 @@ impl SolaceContract {
                 {loading && (
                   <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent mb-3" />
-                    <span className="text-xs font-bold text-slate-800">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
                       Gemini AI Analyzing AST Invariants...
                     </span>
-                    <p className="text-[11px] text-slate-400 mt-1">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                       Evaluating require_auth(), persistent storage bounds, and arithmetic safety.
                     </p>
                   </div>
@@ -441,23 +441,23 @@ impl SolaceContract {
                   <div className="space-y-4 overflow-y-auto max-h-[620px] pr-1">
                     {/* Scores & Status Pill */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-                        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">
+                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
                           Security Score
                         </span>
-                        <div className={`text-2xl font-black mt-0.5 ${report.riskScore > 50 ? 'text-red-600' : 'text-accent'}`}>
+                        <div className={`text-2xl font-black mt-0.5 ${report.riskScore > 50 ? 'text-red-600 dark:text-red-400' : 'text-accent'}`}>
                           {report.riskScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
                         </div>
                       </div>
 
-                      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-                        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">
+                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
                           Audit Verdict
                         </span>
                         <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full mt-1 ${
                           report.isSecure
-                            ? 'bg-accent-subtle text-accent border border-accent-subtle'
-                            : 'bg-red-50 text-red-700 border border-red-200'
+                            ? 'bg-accent-subtle text-accent border border-accent/20'
+                            : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
                         }`}>
                           {report.isSecure ? '• Verified Secure' : '• Action Required'}
                         </span>
@@ -466,14 +466,14 @@ impl SolaceContract {
 
                     {/* Hash Pill */}
                     {contractHash && (
-                      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
-                        <span className="font-mono text-[11px] text-slate-600 truncate mr-2">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between">
+                        <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 truncate mr-2">
                           Hash: {contractHash.slice(0, 16)}...
                         </span>
                         <button
                           type="button"
                           onClick={handleCopyHash}
-                          className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold text-[10px] border border-slate-200 transition flex items-center gap-1"
+                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-[10px] border border-slate-200 dark:border-slate-700 transition flex items-center gap-1"
                         >
                           <Copy className="w-3 h-3" />
                           <span>{copiedHash ? 'Copied' : 'Copy'}</span>
@@ -483,9 +483,9 @@ impl SolaceContract {
 
                     {/* On-Chain Anchored Confirmation */}
                     {anchorResult && (
-                      <div className="p-3 rounded-2xl bg-accent-subtle border border-accent-subtle text-xs">
+                      <div className="p-3 rounded-2xl bg-accent-subtle border border-accent/20 text-xs">
                         <span className="font-bold text-accent block">Permanently Anchored on Stellar Testnet</span>
-                        <p className="text-slate-600 text-[11px] mt-0.5">
+                        <p className="text-slate-600 dark:text-slate-300 text-[11px] mt-0.5">
                           Audit findings cryptographically anchored in contract{' '}
                           <span className="font-mono text-accent">{LIVE_CONTRACT_ID.slice(0, 10)}...</span>
                         </p>
@@ -493,7 +493,7 @@ impl SolaceContract {
                           href={anchorResult.explorerUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs font-semibold text-accent underline mt-1.5 inline-flex items-center gap-1"
+                          className="text-xs font-semibold text-accent underline mt-1.5 inline-flex items-center gap-1 hover:text-accent-hover"
                         >
                           <span>View Transaction on Stellar Expert</span>
                           <ExternalLink className="w-3 h-3" />
@@ -502,31 +502,31 @@ impl SolaceContract {
                     )}
 
                     {/* Executive Summary */}
-                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
-                      <span className="font-bold text-slate-900 block mb-1">Executive Summary</span>
-                      <p className="text-slate-600 leading-relaxed">{report.summary}</p>
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
+                      <span className="font-bold text-slate-900 dark:text-white block mb-1">Executive Summary</span>
+                      <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{report.summary}</p>
                     </div>
 
                     {/* Detected Issues */}
                     {report.vulnerabilities && report.vulnerabilities.length > 0 && (
                       <div className="space-y-2.5">
-                        <span className="text-xs font-bold text-slate-900 block">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block">
                           Detected Issues ({report.vulnerabilities.length})
                         </span>
                         {report.vulnerabilities.map((vuln, i) => (
-                          <div key={i} className="p-3 rounded-2xl bg-red-50/60 border border-red-200/80 text-xs">
+                          <div key={i} className="p-3 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50 text-xs">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-bold text-red-950">{vuln.title}</span>
+                              <span className="font-bold text-red-950 dark:text-red-200">{vuln.title}</span>
                               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">
                                 {vuln.severity}
                               </span>
                             </div>
-                            <p className="text-red-900/80 text-[11px] leading-relaxed mb-2">
+                            <p className="text-red-900/80 dark:text-red-300/80 text-[11px] leading-relaxed mb-2">
                               {vuln.description}
                             </p>
-                            <div className="p-2 rounded-xl bg-white border border-red-200/50 text-[11px]">
+                            <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-red-200/50 dark:border-red-900/50 text-[11px]">
                               <span className="font-bold text-accent block mb-0.5">Recommended Fix:</span>
-                              <span className="text-slate-700 font-mono text-[10px]">{vuln.recommendation}</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-mono text-[10px]">{vuln.recommendation}</span>
                             </div>
                           </div>
                         ))}
@@ -541,11 +541,11 @@ impl SolaceContract {
 
         {/* Tab 2: Invariants */}
         {activeTab === 'INVARIANTS' && (
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80">
+          <div className="bg-white dark:bg-[#111726] rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Audit Pass Rate</h2>
-                <p className="text-xs text-slate-400">Automated Soroban AST invariant analysis across categories</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Audit Pass Rate</h2>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Automated Soroban AST invariant analysis across categories</p>
               </div>
 
               <div className="bg-accent text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
@@ -554,8 +554,8 @@ impl SolaceContract {
             </div>
 
             {/* Bar Chart Visualization with Updated Invariant Categories */}
-            <div className="flex items-end justify-between h-72 px-4 sm:px-12 pt-6 border-b border-dashed border-slate-200">
-              <div className="flex flex-col justify-between h-full text-xs text-slate-400 py-1 pr-4">
+            <div className="flex items-end justify-between h-72 px-4 sm:px-12 pt-6 border-b border-dashed border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col justify-between h-full text-xs text-slate-400 dark:text-slate-500 py-1 pr-4">
                 <span>5k</span>
                 <span>4k</span>
                 <span>3k</span>
@@ -566,38 +566,38 @@ impl SolaceContract {
 
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-44 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                <span className="text-xs font-medium text-slate-600">Auth Guards</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Auth Guards</span>
               </div>
 
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-52 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                <span className="text-xs font-medium text-slate-600">State Rent</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">State Rent</span>
               </div>
 
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-48 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                <span className="text-xs font-medium text-slate-600">Panic Safety</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Panic Safety</span>
               </div>
 
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-64 rounded-2xl bg-accent shadow-md relative overflow-hidden">
                   <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
                 </div>
-                <span className="text-xs font-bold text-slate-900">Access Control</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white">Access Control</span>
               </div>
 
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-46 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                <span className="text-xs font-medium text-slate-600">Safe Math</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Safe Math</span>
               </div>
 
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-50 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                <span className="text-xs font-medium text-slate-600">Bytecode</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Bytecode</span>
               </div>
             </div>
 
-            <div className="pt-4 mt-3 flex items-center justify-between text-xs text-slate-500">
+            <div className="pt-4 mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />
                 <span>Enforced Authorization Protocols</span>
@@ -605,7 +605,7 @@ impl SolaceContract {
               <button
                 type="button"
                 onClick={() => setActiveTab('STUDIO')}
-                className="font-semibold text-slate-900 hover:text-accent underline underline-offset-2 flex items-center gap-1"
+                className="font-semibold text-slate-900 dark:text-white hover:text-accent underline underline-offset-2 flex items-center gap-1"
               >
                 <span>Test Contract Code</span>
                 <ExternalLink className="w-3.5 h-3.5" />

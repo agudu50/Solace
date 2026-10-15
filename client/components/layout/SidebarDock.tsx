@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   FileText,
   Activity,
-  Settings,
 } from 'lucide-react';
 
 interface SidebarDockProps {
@@ -22,7 +21,6 @@ export default function SidebarDock({ onOpenAudit }: SidebarDockProps) {
     { label: 'Audit', href: '/audit', icon: ShieldCheck },
     { label: 'Reports', href: '/reports', icon: FileText },
     { label: 'Monitor', href: '/monitor', icon: Activity },
-    { label: 'Config', href: '/monitor', icon: Settings },
   ];
 
   return (
