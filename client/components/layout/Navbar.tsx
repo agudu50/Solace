@@ -145,27 +145,29 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Center Pill Navigation (Active state is Brand Accent #C80552, never black) */}
-        <nav className="hidden md:flex items-center bg-white dark:bg-[#111726] rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-slate-800">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const IconComponent = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition ${
-                  isActive
-                    ? 'bg-accent text-white shadow-md shadow-accent/25'
-                    : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
-                }`}
-              >
-                <IconComponent className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Center Pill Navigation - Only visible when Auditor Wallet is connected */}
+        {walletKey && (
+          <nav className="hidden md:flex items-center bg-white dark:bg-[#111726] rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-slate-800">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              const IconComponent = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                    isActive
+                      ? 'bg-accent text-white shadow-md shadow-accent/25'
+                      : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <IconComponent className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        )}
 
         {/* Right Tools (Network Switcher, Theme Toggle, Search, Bell, Settings, Wallet) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -206,41 +208,46 @@ export default function Navbar() {
             )}
           </button>
 
-          {/* Search Button (Visible on sm+ to prevent mobile crowding) */}
-          <button
-            type="button"
-            onClick={() => {
-              const hash = prompt('Search contract audit hash:');
-              if (hash) window.location.href = `/reports?hash=${encodeURIComponent(hash)}`;
-            }}
-            className="hidden sm:flex w-9 h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm items-center justify-center transition shrink-0"
-            title="Search audit by hash"
-          >
-            <Search className="w-4 h-4" />
-          </button>
+          {/* Authenticated Auditor Tools (Search, Bell, Settings) - Only visible when connected */}
+          {walletKey && (
+            <>
+              {/* Search Button (Visible on sm+ to prevent mobile crowding) */}
+              <button
+                type="button"
+                onClick={() => {
+                  const hash = prompt('Search contract audit hash:');
+                  if (hash) window.location.href = `/reports?hash=${encodeURIComponent(hash)}`;
+                }}
+                className="hidden sm:flex w-9 h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm items-center justify-center transition shrink-0"
+                title="Search audit by hash"
+              >
+                <Search className="w-4 h-4" />
+              </button>
 
-          {/* Notification Bell (Visible on sm+ to keep mobile bar sleek) */}
-          <div className="relative hidden sm:block">
-            <button
-              type="button"
-              onClick={() => alert(`All Soroban security invariants passing on Stellar ${network === 'mainnet' ? 'Mainnet' : 'Testnet'}.`)}
-              className="w-9 h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm flex items-center justify-center transition"
-              title="System Alerts"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent" />
-            </button>
-          </div>
+              {/* Notification Bell (Visible on sm+ to keep mobile bar sleek) */}
+              <div className="relative hidden sm:block">
+                <button
+                  type="button"
+                  onClick={() => alert(`All Soroban security invariants passing on Stellar ${network === 'mainnet' ? 'Mainnet' : 'Testnet'}.`)}
+                  className="w-9 h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm flex items-center justify-center transition"
+                  title="System Alerts"
+                >
+                  <Bell className="w-4 h-4" />
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent" />
+                </button>
+              </div>
 
-          {/* Settings Button */}
-          <button
-            type="button"
-            onClick={() => setShowSettings(!showSettings)}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm flex items-center justify-center transition shrink-0"
-            title="Security Settings & Network Config"
-          >
-            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+              {/* Settings Button */}
+              <button
+                type="button"
+                onClick={() => setShowSettings(!showSettings)}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm flex items-center justify-center transition shrink-0"
+                title="Security Settings & Network Config"
+              >
+                <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </>
+          )}
 
           {/* Wallet Button (Accent colored, never black) */}
           {walletKey ? (

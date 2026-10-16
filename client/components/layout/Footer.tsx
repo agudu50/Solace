@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
+  const [walletKey, setWalletKey] = useState<string>('');
 
   useEffect(() => {
     try {
@@ -11,6 +12,8 @@ export default function Footer() {
       if (storedNet === 'mainnet' || storedNet === 'testnet') {
         setNetwork(storedNet);
       }
+      const storedWallet = localStorage.getItem('solace_connected_wallet');
+      if (storedWallet) setWalletKey(storedWallet);
     } catch (_) {}
 
     const handleNetworkEvent = (e: any) => {
@@ -20,8 +23,24 @@ export default function Footer() {
       }
     };
 
+    const handleWalletEvent = (e: any) => {
+      const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
+      setWalletKey(key);
+    };
+
     window.addEventListener('solace-network-updated', handleNetworkEvent);
-    return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
+    window.addEventListener('solace-wallet-updated', handleWalletEvent);
+    window.addEventListener('focus', () => {
+      try {
+        const storedWallet = localStorage.getItem('solace_connected_wallet');
+        if (storedWallet) setWalletKey(storedWallet);
+      } catch (_) {}
+    });
+
+    return () => {
+      window.removeEventListener('solace-network-updated', handleNetworkEvent);
+      window.removeEventListener('solace-wallet-updated', handleWalletEvent);
+    };
   }, []);
 
   return (
@@ -33,16 +52,20 @@ export default function Footer() {
           <span className="font-medium text-slate-700 dark:text-slate-200">Autonomous AI Smart Contract Auditor &amp; Ledger Provenance for Stellar Soroban</span>
         </div>
         <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300 font-semibold">
-          <Link href="/" className="hover:text-accent transition">
-            Dashboard
-          </Link>
-          <Link href="/reports" className="hover:text-accent transition">
-            Verified Reports
-          </Link>
-          <Link href="/monitor" className="hover:text-accent transition">
-            Live Monitor
-          </Link>
-          <span>•</span>
+          {walletKey && (
+            <>
+              <Link href="/" className="hover:text-accent transition">
+                Dashboard
+              </Link>
+              <Link href="/reports" className="hover:text-accent transition">
+                Verified Reports
+              </Link>
+              <Link href="/monitor" className="hover:text-accent transition">
+                Live Monitor
+              </Link>
+              <span>•</span>
+            </>
+          )}
           <span className={`font-mono font-bold ${network === 'mainnet' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
             Stellar {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
           </span>
