@@ -29,6 +29,33 @@ export async function auditContract(req, res, next) {
 
     const contractInfo = sorobanService.getContractInfo();
 
+    // Process audit fee deduction from the caller's wallet
+    const userWallet = req.body.userWallet || req.body.auditor || req.body.walletAddress;
+    let feeReceipt = null;
+    if (userWallet) {
+      try {
+        feeReceipt = await sorobanService.processAuditFeePayment({
+          userAddress: userWallet,
+          contractHash,
+        });
+      } catch (fErr) {
+        console.warn(`[!] [Audit] Fee charging warning: ${fErr.message}`);
+      }
+    } else {
+      // Default standard fee info
+      const feeInfo = await sorobanService.getAuditFeeInfo();
+      feeReceipt = {
+        success: true,
+        status: 'PENDING_CONFIRMATION',
+        feeXLM: feeInfo.feeXLM,
+        feeStroops: feeInfo.auditFeeStroops,
+        currency: 'XLM',
+        payer: 'Awaiting User Wallet Connection',
+        contractHash,
+        contractId: contractInfo.contractId,
+      };
+    }
+
     // Soroban invocation payload for record_audit
     const onChainPayload = {
       functionName: 'record_audit',
@@ -51,6 +78,7 @@ export async function auditContract(req, res, next) {
       report,
       contractInfo,
       onChainPayload,
+      feeReceipt,
     });
   } catch (error) {
     console.error(`[!] [Audit] Request failed: ${error.message}`);
@@ -135,6 +163,50 @@ export async function getContractTelemetryHandler(req, res) {
 
     const telemetry = await sorobanService.getContractTelemetry(contractId.trim(), network);
     res.status(200).json(telemetry);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function getAuditFeeHandler(req, res) {
+  try {
+    const network = req.query.network || 'testnet';
+    const feeInfo = await sorobanService.getAuditFeeInfo(network);
+    res.status(200).json(feeInfo);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function payAuditFeeHandler(req, res) {
+  try {
+    const { userAddress, contractHash } = req.body;
+    if (!userAddress || !contractHash) {
+      return res.status(400).json({
+        success: false,
+        error: 'userAddress and contractHash are required to charge the audit fee.',
+      });
+    }
+
+    const receipt = await sorobanService.processAuditFeePayment({
+      userAddress,
+      contractHash,
+    });
+    res.status(200).json(receipt);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function checkAuditFeeStatusHandler(req, res) {
+  try {
+    const { hash } = req.params;
+    if (!hash) {
+      return res.status(400).json({ success: false, error: 'Contract hash is required in URL.' });
+    }
+
+    const status = await sorobanService.isAuditFeePaid(hash);
+    res.status(200).json(status);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

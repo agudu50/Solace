@@ -134,137 +134,6 @@ function ReportsContent() {
   const [copiedCardHash, setCopiedCardHash] = useState<string | null>(null);
   const [copiedCardFixKey, setCopiedCardFixKey] = useState<string | null>(null);
 
-  const mockReports: VerifiedReport[] = [
-    {
-      hash: '2878352a683b097a99f0acb00acb96b43d5b46a9c6298e75a9537298f26daf9d',
-      contract: 'Solace Vault Protocol',
-      auditType: 'PRE_DEPLOYMENT',
-      riskScore: 95,
-      isSecure: false,
-      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
-      timestamp: 'Anchored on Testnet Ledger',
-      date: '16 Oct 2026',
-      time: '02:30 PM',
-      createdAt: 1792070000000,
-      summary:
-        'The contract contains severe access control flaws allowing unauthorized withdrawals and admin hijacking, alongside incorrect state storage management using instance storage for user-specific balances.',
-      vulnerabilities: [
-        {
-          title: 'Missing Authorization on Withdrawal',
-          severity: 'CRITICAL',
-          description:
-            "The withdraw function does not call to.require_auth(), allowing any arbitrary user to drain funds from any other user's balance in the vault.",
-          recommendation:
-            'pub fn withdraw(env: Env, to: Address, amount: i128) {\n    to.require_auth(); // Enforce caller identity & signature\n    let current: i128 = env.storage().instance().get(&DataKey::Balance(to.clone())).unwrap_or(0);\n    if current < amount {\n        panic!("insufficient funds");\n    }\n    env.storage().instance().set(&DataKey::Balance(to), &(current - amount));\n}',
-        },
-        {
-          title: 'Unprotected Administrative Re-initialization',
-          severity: 'CRITICAL',
-          description:
-            'The init function allows re-initialization of the contract administrator at any time, allowing malicious actors to hijack contract ownership.',
-          recommendation:
-            'pub fn init(env: Env, admin: Address) {\n    if env.storage().instance().has(&DataKey::Admin) {\n        panic!("contract already initialized");\n    }\n    env.storage().instance().set(&DataKey::Admin, &admin);\n}',
-        },
-        {
-          title: 'Incorrect State Storage Management for Balances',
-          severity: 'MEDIUM',
-          description:
-            'Using instance storage for user-specific balances causes state bloat on the contract instance and exposes balances to instance rent expiration.',
-          recommendation:
-            'pub fn deposit(env: Env, from: Address, amount: i128) {\n    from.require_auth();\n    let current: i128 = env.storage().persistent().get(&DataKey::Balance(from.clone())).unwrap_or(0);\n    env.storage().persistent().set(&DataKey::Balance(from.clone()), &(current + amount));\n    env.storage().persistent().extend_ttl(&DataKey::Balance(from), 50000, 100000);\n}',
-        },
-      ],
-      codeSnippet: `// Solace Sample Soroban Smart Contract\n#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, symbol_short};\n\n#[contracttype]\npub enum DataKey {\n    Admin,\n    Balance(Address),\n}\n\n#[contract]\npub struct VaultContract;\n\n#[contractimpl]\nimpl VaultContract {\n    pub fn init(env: Env, admin: Address) {\n        env.storage().instance().set(&DataKey::Admin, &admin);\n    }\n\n    pub fn deposit(env: Env, from: Address, amount: i128) {\n        from.require_auth();\n        let current: i128 = env.storage().instance().get(&DataKey::Balance(from.clone())).unwrap_or(0);\n        env.storage().instance().set(&DataKey::Balance(from), &(current + amount));\n    }\n\n    pub fn withdraw(env: Env, to: Address, amount: i128) {\n        let current: i128 = env.storage().instance().get(&DataKey::Balance(to.clone())).unwrap_or(0);\n        if current < amount { panic!("insufficient funds"); }\n        env.storage().instance().set(&DataKey::Balance(to), &(current - amount));\n    }\n}`,
-    },
-    {
-      hash: '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a',
-      contract: 'Solace Vault Protocol (Missing require_auth)',
-      auditType: 'PRE_DEPLOYMENT',
-      riskScore: 85,
-      isSecure: false,
-      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
-      timestamp: 'Anchored on Testnet Ledger',
-      date: '16 Oct 2026',
-      time: '12:20 PM',
-      createdAt: 1792066800000,
-      summary:
-        'Solace AI AST inspection detected 2 critical vulnerability vectors in VaultContract: unauthenticated withdrawal access enabling unauthorized token drains, and unverified administrative re-initialization allowing hostile contract takeovers.',
-      vulnerabilities: [
-        {
-          title: 'Missing Authorization Guard in withdraw()',
-          severity: 'CRITICAL',
-          description:
-            'The withdraw() function modifies storage balances without invoking to.require_auth(). Any testnet caller can specify an arbitrary recipient and withdraw funds from another user’s balance without signing.',
-          recommendation:
-            'pub fn withdraw(env: Env, to: Address, amount: i128) {\n    to.require_auth(); // Enforce caller identity\n    let current: i128 = env.storage().instance().get(&DataKey::Balance(to.clone())).unwrap_or(0);\n    if current < amount {\n        panic!("insufficient funds");\n    }\n    env.storage().instance().set(&DataKey::Balance(to), &(current - amount));\n}',
-        },
-        {
-          title: 'Unprotected Administrative Re-initialization in init()',
-          severity: 'HIGH',
-          description:
-            'The init() function does not verify whether DataKey::Admin has already been written. An attacker can re-invoke init() at any time to overwrite the administrator address.',
-          recommendation:
-            'pub fn init(env: Env, admin: Address) {\n    if env.storage().instance().has(&DataKey::Admin) {\n        panic!("contract already initialized");\n    }\n    env.storage().instance().set(&DataKey::Admin, &admin);\n}',
-        },
-      ],
-      codeSnippet: `// Solace Sample Soroban Smart Contract\n#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, symbol_short};\n\n#[contracttype]\npub enum DataKey {\n    Admin,\n    Balance(Address),\n}\n\n#[contract]\npub struct VaultContract;\n\n#[contractimpl]\nimpl VaultContract {\n    pub fn init(env: Env, admin: Address) {\n        env.storage().instance().set(&DataKey::Admin, &admin);\n    }\n\n    pub fn deposit(env: Env, from: Address, amount: i128) {\n        from.require_auth();\n        let current: i128 = env.storage().instance().get(&DataKey::Balance(from.clone())).unwrap_or(0);\n        env.storage().instance().set(&DataKey::Balance(from), &(current + amount));\n    }\n\n    pub fn withdraw(env: Env, to: Address, amount: i128) {\n        let current: i128 = env.storage().instance().get(&DataKey::Balance(to.clone())).unwrap_or(0);\n        if current < amount { panic!("insufficient funds"); }\n        env.storage().instance().set(&DataKey::Balance(to), &(current - amount));\n    }\n}`,
-    },
-    {
-      hash: '8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4',
-      contract: 'Solace Core Security Contract (contract/src/lib.rs)',
-      auditType: 'PRE_DEPLOYMENT',
-      riskScore: 35,
-      isSecure: true,
-      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
-      timestamp: 'Verified on Testnet Ledger',
-      date: '15 Oct 2026',
-      time: '04:15 PM',
-      createdAt: 1792052400000,
-      summary:
-        'Autonomous Solace Dual Flash AST Engine verified require_auth() invariants and persistent rent protection. Zero unhandled host panics and verified ledger provenance.',
-      vulnerabilities: [],
-    },
-    {
-      hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f901234567890abcdef1234567890abcdef',
-      contract: 'Vault Lending Pool Protocol',
-      auditType: 'PRE_DEPLOYMENT',
-      riskScore: 12,
-      isSecure: true,
-      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
-      timestamp: 'Verified on Testnet Ledger',
-      date: '14 Oct 2026',
-      time: '02:40 PM',
-      createdAt: 1792038000000,
-      summary:
-        'Formal AST verification confirms checked arithmetic with zero unhandled panics. Multi-sig quorum enforced for liquidation parameters.',
-      vulnerabilities: [],
-    },
-    {
-      hash: '3f7a18b2c90e45d120a4b7c89f01e23a456789b0c1d2e3f4a5b6c7d8e9f0a1b2',
-      contract: 'AMM Liquidity Pool Protocol',
-      auditType: 'POST_DEPLOYMENT',
-      riskScore: 95,
-      isSecure: false,
-      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
-      timestamp: 'Anchored on Testnet Ledger',
-      date: '13 Oct 2026',
-      time: '11:10 AM',
-      createdAt: 1792023600000,
-      summary:
-        'Storage rent TTL underflow risk: instance storage TTL is expiring in less than 2,000 ledgers. Immediate TTL bump required to prevent state eviction.',
-      vulnerabilities: [
-        {
-          title: 'Imminent Persistent Storage Rent Eviction',
-          severity: 'CRITICAL',
-          description:
-            'Contract storage TTL has dropped below safety threshold (<2,000 ledgers remaining). Storage entry will be archived by the Stellar network if not bumped immediately.',
-          recommendation:
-            '// Extend storage rent TTL on Stellar Testnet:\nenv.storage().instance().extend_ttl(50000, 100000);',
-        },
-      ],
-    },
-  ];
-
   // Load audit history and network setting
   useEffect(() => {
     try {
@@ -287,19 +156,34 @@ function ReportsContent() {
       const stored = localStorage.getItem('solace_audit_history');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const merged = [...parsed];
-          mockReports.forEach((m) => {
-            if (!merged.some((p) => p.hash.toLowerCase() === m.hash.toLowerCase())) {
-              merged.push(m);
-            }
+        if (Array.isArray(parsed)) {
+          // Clean out any legacy mock entries
+          const cleanHistory = parsed.filter((item: any) => {
+            const hash = (item.hash || '').toLowerCase();
+            const isMockHash =
+              hash.startsWith('2878352a68') ||
+              hash.startsWith('07c390518c') ||
+              hash.startsWith('8e5c8e34be') ||
+              hash.startsWith('3f7a18b2c9') ||
+              hash.startsWith('a1b2c3d4');
+            const isMockName =
+              item.contract === 'Solace Vault Protocol' ||
+              item.contract === 'Vault Lending Pool Protocol';
+            return !isMockHash && !isMockName;
           });
-          setReportsList(merged);
-          return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
+          if (cleanHistory.length !== parsed.length) {
+            localStorage.setItem('solace_audit_history', JSON.stringify(cleanHistory));
+          }
+          setReportsList(cleanHistory);
+        } else {
+          setReportsList([]);
         }
+      } else {
+        setReportsList([]);
       }
-    } catch (_) {}
-    setReportsList(mockReports);
+    } catch (_) {
+      setReportsList([]);
+    }
 
     return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
   }, []);
@@ -316,52 +200,41 @@ function ReportsContent() {
 
     try {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiBase}/api/audit/verify/${encodeURIComponent(query)}`);
-      const res = await response.json();
+      const localMatch = reportsList.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
 
-      const localMatch =
-        reportsList.find((r) => r.hash.toLowerCase().includes(query.toLowerCase())) ||
-        mockReports.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
+      let remoteData: any = null;
+      try {
+        const response = await fetch(`${apiBase}/api/contract/audit/${encodeURIComponent(query)}`);
+        const res = await response.json();
+        if (res.success && res.data) {
+          remoteData = res.data;
+        }
+      } catch (_) {}
 
-      if (res.success && res.data) {
+      if (remoteData) {
         setSearchResult({
-          hash: res.data.contract_hash,
+          hash: remoteData.contract_hash || query,
           contract: localMatch?.contract || 'On-Chain Verified Soroban Contract',
-          auditType: res.data.audit_type,
-          riskScore: res.data.risk_score,
-          isSecure: res.data.is_secure,
-          auditor: res.data.auditor,
-          timestamp: 'Confirmed on Stellar Soroban Testnet',
+          auditType: remoteData.audit_type || 'PRE_DEPLOYMENT',
+          riskScore: remoteData.risk_score ?? (localMatch?.riskScore || 0),
+          isSecure: remoteData.is_secure ?? (localMatch?.isSecure || true),
+          auditor: remoteData.auditor || localMatch?.auditor || 'Solace Signer',
+          timestamp: 'Confirmed on Stellar Soroban Ledger',
           date: localMatch?.date || 'Today',
           time: localMatch?.time || 'Just now',
           createdAt: localMatch?.createdAt || Date.now(),
           summary: localMatch?.summary || 'Cryptographically verified on-chain Soroban audit proof with intact AST invariants.',
           vulnerabilities: localMatch?.vulnerabilities || [],
+          codeSnippet: localMatch?.codeSnippet,
+          notFound: false,
+        });
+      } else if (localMatch) {
+        setSearchResult({
+          ...localMatch,
           notFound: false,
         });
       } else {
-        setSearchResult(
-          localMatch || {
-            hash: query,
-            contract: '',
-            auditType: '',
-            riskScore: 0,
-            isSecure: false,
-            auditor: '',
-            timestamp: '',
-            date: '',
-            time: '',
-            createdAt: Date.now(),
-            notFound: true,
-          }
-        );
-      }
-    } catch {
-      const localMatch =
-        reportsList.find((r) => r.hash.toLowerCase().includes(query.toLowerCase())) ||
-        mockReports.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
-      setSearchResult(
-        localMatch || {
+        setSearchResult({
           hash: query,
           contract: '',
           auditType: '',
@@ -373,8 +246,30 @@ function ReportsContent() {
           time: '',
           createdAt: Date.now(),
           notFound: true,
-        }
-      );
+        });
+      }
+    } catch {
+      const localMatch = reportsList.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
+      if (localMatch) {
+        setSearchResult({
+          ...localMatch,
+          notFound: false,
+        });
+      } else {
+        setSearchResult({
+          hash: query,
+          contract: '',
+          auditType: '',
+          riskScore: 0,
+          isSecure: false,
+          auditor: '',
+          timestamp: '',
+          date: '',
+          time: '',
+          createdAt: Date.now(),
+          notFound: true,
+        });
+      }
     } finally {
       setSearching(false);
     }
@@ -408,7 +303,7 @@ function ReportsContent() {
     setTimeout(() => setCopiedFixIndex(null), 2000);
   };
 
-  const displayList = [...(reportsList.length > 0 ? reportsList : mockReports)];
+  const displayList = [...reportsList];
 
   // Sort list: Always new contracts at top by default
   displayList.sort((a, b) => {
@@ -479,32 +374,26 @@ function ReportsContent() {
           </div>
         </div>
 
-        {/* Quick Hash Sample Buttons */}
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Try sample hashes:</span>
-          <button
-            type="button"
-            onClick={() => executeLookup('07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a')}
-            className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
-              searchHash === '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a'
-                ? 'bg-accent text-white border-accent'
-                : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
-            }`}
-          >
-            # Vault Audit (Has AI Recommendations)
-          </button>
-          <button
-            type="button"
-            onClick={() => executeLookup('8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4')}
-            className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
-              searchHash === '8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4'
-                ? 'bg-accent text-white border-accent'
-                : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
-            }`}
-          >
-            # Solace Core Contract
-          </button>
-        </div>
+        {/* Quick Hash Buttons from Real Inscriptions */}
+        {reportsList.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Recent Inscriptions:</span>
+            {reportsList.slice(0, 3).map((rep) => (
+              <button
+                key={rep.hash}
+                type="button"
+                onClick={() => executeLookup(rep.hash)}
+                className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
+                  searchHash === rep.hash
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
+                }`}
+              >
+                #{rep.contract}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Search Bar - Starts completely EMPTY by default */}
         <form onSubmit={handleSearch} className="mb-6">
@@ -851,25 +740,42 @@ function ReportsContent() {
         </div>
 
         {/* Contract History List */}
-        <div className="space-y-3.5">
-          {displayList.map((item, idx) => {
-            const isExpanded = expandedHash === item.hash;
-            const matchMock = mockReports.find((m) => m.hash.toLowerCase() === item.hash.toLowerCase());
-            const resolvedVulns =
-              item.vulnerabilities && item.vulnerabilities.length > 0
-                ? item.vulnerabilities
-                : matchMock?.vulnerabilities || [];
-            const resolvedSummary = item.summary || matchMock?.summary || '';
+        {displayList.length === 0 ? (
+          <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 rounded-3xl shadow-sm text-center flex flex-col items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center mb-4 shadow-xs">
+              <FileCode className="w-7 h-7" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1.5">
+              No Audit Reports Inscribed Yet
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-5 leading-relaxed">
+              Upload and analyze your Soroban smart contracts in Audit Studio to generate permanent cryptographic AST security proofs.
+            </p>
+            <Link
+              href="/audit"
+              className="px-5 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/25 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Launch Audit Studio</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3.5">
+            {displayList.map((item, idx) => {
+              const isExpanded = expandedHash === item.hash;
+              const resolvedVulns = item.vulnerabilities || [];
+              const resolvedSummary = item.summary || '';
 
-            return (
-              <div
-                key={idx}
-                className={`bg-white dark:bg-[#111726] border p-5 rounded-3xl shadow-sm transition-all duration-200 group ${
-                  isExpanded
-                    ? 'border-accent ring-2 ring-accent/20 shadow-md'
-                    : 'border-slate-200/80 dark:border-slate-800 hover:border-accent/40 dark:hover:border-accent/40 hover:shadow-md'
-                }`}
-              >
+              return (
+                <div
+                  key={idx}
+                  className={`bg-white dark:bg-[#111726] border p-5 rounded-3xl shadow-sm transition-all duration-200 group ${
+                    isExpanded
+                      ? 'border-accent ring-2 ring-accent/20 shadow-md'
+                      : 'border-slate-200/80 dark:border-slate-800 hover:border-accent/40 dark:hover:border-accent/40 hover:shadow-md'
+                  }`}
+                >
                 {/* Title & Status Bar (Clickable to toggle) */}
                 <div
                   className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2.5 cursor-pointer select-none"
@@ -1001,7 +907,7 @@ function ReportsContent() {
                         <span className="text-[11px] font-bold text-slate-900 dark:text-white block uppercase tracking-wider">
                           Detected Invariant Flaws &amp; Actionable Recommendations ({resolvedVulns.length})
                         </span>
-                        {resolvedVulns.map((vuln, vIdx) => {
+                        {resolvedVulns.map((vuln: any, vIdx: number) => {
                           const fixKey = `${item.hash}-${vIdx}`;
                           const isCopied = copiedCardFixKey === fixKey;
                           return (
@@ -1110,6 +1016,7 @@ function ReportsContent() {
             );
           })}
         </div>
+      )}
       </main>
       </WalletGate>
     </div>

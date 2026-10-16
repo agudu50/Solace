@@ -43,47 +43,109 @@ interface ActiveAuditInfo {
 
 export default function DashboardPage() {
   const [selectedAuditMode, setSelectedAuditMode] = useState<'PRE' | 'POST'>('PRE');
-
-  const defaultActiveAudit: ActiveAuditInfo = {
-    contractName: 'Solace Core Security Contract',
-    subtitle: 'contract/src/lib.rs',
-    contractHash: '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a',
-    riskScore: 85,
-    isSecure: true,
-    summary: 'Autonomous Solace Dual Flash AST inspection verified require_auth() invariants and persistent rent protection.',
-    vulnerabilitiesCount: 0,
-    auditType: 'PRE_DEPLOYMENT',
-    timestamp: '12:20 PM',
-    date: '15 Oct 2026',
-    linesCount: 36,
-  };
-
-  const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo>(defaultActiveAudit);
+  const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo | null>(null);
+  const [auditHistory, setAuditHistory] = useState<any[]>([]);
   const { walletKey: connectedWallet, network, connect } = useWallet();
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
 
   useEffect(() => {
-    const loadActiveAudit = () => {
+    const loadAuditData = () => {
       try {
-        const stored = localStorage.getItem('solace-active-contract-audit');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setActiveAudit((prev) => ({ ...prev, ...parsed }));
+        let cleanHistory: any[] = [];
+        const storedHistory = localStorage.getItem('solace_audit_history');
+        if (storedHistory) {
+          const parsed = JSON.parse(storedHistory);
+          if (Array.isArray(parsed)) {
+            // Purge known mock entries so only real scans persist
+            cleanHistory = parsed.filter((item: any) => {
+              const hash = (item.hash || '').toLowerCase();
+              const isMockHash =
+                hash.startsWith('2878352a68') ||
+                hash.startsWith('07c390518c') ||
+                hash.startsWith('8e5c8e34be') ||
+                hash.startsWith('3f7a18b2c9') ||
+                hash.startsWith('a1b2c3d4');
+              const isMockName =
+                item.contract === 'Solace Vault Protocol' ||
+                item.contract === 'Vault Lending Pool Protocol';
+              return !isMockHash && !isMockName;
+            });
+            if (cleanHistory.length !== parsed.length) {
+              localStorage.setItem('solace_audit_history', JSON.stringify(cleanHistory));
+            }
+          }
         }
-      } catch (_) {}
+        setAuditHistory(cleanHistory);
+
+        const storedActive = localStorage.getItem('solace-active-contract-audit');
+        if (storedActive) {
+          const parsedActive = JSON.parse(storedActive);
+          const hash = (parsedActive.contractHash || '').toLowerCase();
+          const isMock =
+            hash.startsWith('2878352a68') ||
+            hash.startsWith('07c390518c') ||
+            hash.startsWith('8e5c8e34be') ||
+            hash.startsWith('3f7a18b2c9') ||
+            parsedActive.contractName === 'Vault Lending Pool Protocol' ||
+            parsedActive.contractName === 'Solace Vault Protocol';
+          if (isMock) {
+            localStorage.removeItem('solace-active-contract-audit');
+            if (cleanHistory.length > 0) {
+              const first = cleanHistory[0];
+              setActiveAudit({
+                contractName: first.contract || 'Soroban Smart Contract',
+                subtitle: (first.contract || 'contract').toLowerCase().replace(/\s+/g, '_') + '.rs',
+                contractHash: first.hash,
+                riskScore: first.riskScore ?? (first.isSecure ? 95 : 60),
+                isSecure: first.isSecure ?? true,
+                summary: first.summary || 'Smart contract AST inspection verified invariants on Stellar Soroban.',
+                vulnerabilitiesCount: first.vulnerabilities?.length || (first.isSecure ? 0 : 1),
+                auditType: first.auditType || 'PRE_DEPLOYMENT',
+                timestamp: first.timestamp || 'Live',
+                date: first.date || new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+                linesCount: first.codeSnippet ? first.codeSnippet.split('\n').length : 36,
+              });
+            } else {
+              setActiveAudit(null);
+            }
+          } else {
+            setActiveAudit(parsedActive);
+          }
+        } else if (cleanHistory.length > 0) {
+          const first = cleanHistory[0];
+          setActiveAudit({
+            contractName: first.contract || 'Soroban Smart Contract',
+            subtitle: (first.contract || 'contract').toLowerCase().replace(/\s+/g, '_') + '.rs',
+            contractHash: first.hash,
+            riskScore: first.riskScore ?? (first.isSecure ? 95 : 60),
+            isSecure: first.isSecure ?? true,
+            summary: first.summary || 'Smart contract AST inspection verified invariants on Stellar Soroban.',
+            vulnerabilitiesCount: first.vulnerabilities?.length || (first.isSecure ? 0 : 1),
+            auditType: first.auditType || 'PRE_DEPLOYMENT',
+            timestamp: first.timestamp || 'Live',
+            date: first.date || new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+            linesCount: first.codeSnippet ? first.codeSnippet.split('\n').length : 36,
+          });
+        } else {
+          setActiveAudit(null);
+        }
+      } catch (_) {
+        setAuditHistory([]);
+        setActiveAudit(null);
+      }
     };
 
-    loadActiveAudit();
+    loadAuditData();
 
-    window.addEventListener('storage', loadActiveAudit);
-    window.addEventListener('solace-audit-updated', loadActiveAudit);
-    window.addEventListener('focus', loadActiveAudit);
+    window.addEventListener('storage', loadAuditData);
+    window.addEventListener('solace-audit-updated', loadAuditData);
+    window.addEventListener('focus', loadAuditData);
 
     return () => {
-      window.removeEventListener('storage', loadActiveAudit);
-      window.removeEventListener('solace-audit-updated', loadActiveAudit);
-      window.removeEventListener('focus', loadActiveAudit);
+      window.removeEventListener('storage', loadAuditData);
+      window.removeEventListener('solace-audit-updated', loadAuditData);
+      window.removeEventListener('focus', loadAuditData);
     };
   }, []);
 
@@ -106,143 +168,199 @@ export default function DashboardPage() {
     }
   };
 
+  // Real Dynamic Metrics
+  const totalSubmitted = auditHistory.length;
+  const verifiedSecure = auditHistory.filter((item) => item.isSecure).length;
+  const totalFlaws = auditHistory.reduce(
+    (acc, item) => acc + (item.vulnerabilities?.length || (item.isSecure ? 0 : 1)),
+    0
+  );
+  const passRate = totalSubmitted > 0 ? Math.round((verifiedSecure / totalSubmitted) * 100) : 0;
+  const overallRiskScore = activeAudit
+    ? activeAudit.riskScore
+    : totalSubmitted > 0
+    ? Math.round(auditHistory.reduce((acc, a) => acc + (a.riskScore || 0), 0) / totalSubmitted)
+    : 0;
+
+  // Real Dynamic Invariant Threat Evaluations
+  const vulnerabilities: any[] = (activeAudit as any)?.vulnerabilities || [];
+  const hasAuthVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().includes('auth')
+  );
+  const hasStorageVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/storage|rent|ttl/)
+  );
+  const hasPanicVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/panic|unwrap|crash/)
+  );
+  const hasAdminVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/admin|governance|privilege/)
+  );
+  const hasMathVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/overflow|underflow|arithmetic/)
+  );
+  const hasGasVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/gas|bytecode|limit/)
+  );
+
+  const isScanningActive = Boolean(activeAudit || totalSubmitted > 0);
+
+  const calcScore = (hasVuln: boolean, penalty: number = 30) => {
+    if (!isScanningActive) return 0;
+    return hasVuln ? Math.max(0, 100 - penalty) : 100;
+  };
+
   const riskVectors = [
     {
       category: 'Auth Hijack Vulnerability',
       shortName: 'Auth',
-      score: selectedAuditMode === 'PRE' ? 100 : 100,
-      threat: '0% Threat',
-      status: 'Guarded',
-      gradientStyle: 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
-      glowColor: '#10b981',
-      barGradient: 'bg-gradient-to-t from-emerald-600 via-teal-500 to-emerald-400',
-      statusColor: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800',
-      borderColor: 'border-emerald-500/40',
-      scoreColor: 'text-emerald-600 dark:text-emerald-400',
+      score: calcScore(hasAuthVuln, 45),
+      threat: !isScanningActive ? 'Awaiting Scan' : hasAuthVuln ? '45% Threat' : '0% Threat',
+      status: !isScanningActive ? 'Standby' : hasAuthVuln ? 'Breached' : 'Guarded',
+      gradientStyle: !isScanningActive
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasAuthVuln
+        ? 'linear-gradient(to top, #991b1b 0%, #ef4444 50%, #f87171 100%)'
+        : 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
+      glowColor: !isScanningActive ? '#94a3b8' : hasAuthVuln ? '#ef4444' : '#10b981',
+      barGradient: !isScanningActive
+        ? 'bg-slate-300 dark:bg-slate-700'
+        : hasAuthVuln
+        ? 'bg-gradient-to-t from-red-600 via-rose-500 to-red-400'
+        : 'bg-gradient-to-t from-emerald-600 via-teal-500 to-emerald-400',
+      statusColor: !isScanningActive
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasAuthVuln
+        ? 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800'
+        : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800',
+      borderColor: !isScanningActive ? 'border-slate-300 dark:border-slate-700' : hasAuthVuln ? 'border-red-500/40' : 'border-emerald-500/40',
+      scoreColor: !isScanningActive ? 'text-slate-400 dark:text-slate-500' : hasAuthVuln ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400',
       detail: 'require_auth() signature enforcement on state mutators',
     },
     {
       category: 'Storage Rent Eviction (TTL)',
       shortName: 'Storage',
-      score: selectedAuditMode === 'PRE' ? 97 : 99,
-      threat: selectedAuditMode === 'PRE' ? '3% Threat' : '1% Threat',
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
-      glowColor: '#06b6d4',
-      barGradient: 'bg-gradient-to-t from-blue-600 via-cyan-500 to-sky-400',
-      statusColor: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border-cyan-300 dark:border-cyan-800',
-      borderColor: 'border-cyan-500/40',
-      scoreColor: 'text-cyan-600 dark:text-cyan-400',
+      score: calcScore(hasStorageVuln, 35),
+      threat: !isScanningActive ? 'Awaiting Scan' : hasStorageVuln ? '35% Threat' : '0% Threat',
+      status: !isScanningActive ? 'Standby' : hasStorageVuln ? 'Eviction Risk' : 'Protected',
+      gradientStyle: !isScanningActive
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasStorageVuln
+        ? 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fbbf24 100%)'
+        : 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
+      glowColor: !isScanningActive ? '#94a3b8' : hasStorageVuln ? '#f59e0b' : '#06b6d4',
+      barGradient: !isScanningActive
+        ? 'bg-slate-300 dark:bg-slate-700'
+        : hasStorageVuln
+        ? 'bg-gradient-to-t from-amber-600 via-orange-500 to-amber-400'
+        : 'bg-gradient-to-t from-blue-600 via-cyan-500 to-sky-400',
+      statusColor: !isScanningActive
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasStorageVuln
+        ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800'
+        : 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border-cyan-300 dark:border-cyan-800',
+      borderColor: !isScanningActive ? 'border-slate-300 dark:border-slate-700' : hasStorageVuln ? 'border-amber-500/40' : 'border-cyan-500/40',
+      scoreColor: !isScanningActive ? 'text-slate-400 dark:text-slate-500' : hasStorageVuln ? 'text-amber-500' : 'text-cyan-600 dark:text-cyan-400',
       detail: 'Persistent vs Instance storage isolation & TTL bump automation',
     },
     {
       category: 'Host Panic Crash Risk',
       shortName: 'Safety',
-      score: selectedAuditMode === 'PRE' ? 94 : 96,
-      threat: selectedAuditMode === 'PRE' ? '6% Threat' : '4% Threat',
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
-      glowColor: '#a855f7',
-      barGradient: 'bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-400',
-      statusColor: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800',
-      borderColor: 'border-purple-500/40',
-      scoreColor: 'text-purple-600 dark:text-purple-400',
+      score: calcScore(hasPanicVuln, 40),
+      threat: !isScanningActive ? 'Awaiting Scan' : hasPanicVuln ? '40% Threat' : '0% Threat',
+      status: !isScanningActive ? 'Standby' : hasPanicVuln ? 'Host Panic' : 'Safe',
+      gradientStyle: !isScanningActive
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasPanicVuln
+        ? 'linear-gradient(to top, #991b1b 0%, #ef4444 50%, #f87171 100%)'
+        : 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
+      glowColor: !isScanningActive ? '#94a3b8' : hasPanicVuln ? '#ef4444' : '#a855f7',
+      barGradient: !isScanningActive
+        ? 'bg-slate-300 dark:bg-slate-700'
+        : hasPanicVuln
+        ? 'bg-gradient-to-t from-red-600 via-rose-500 to-red-400'
+        : 'bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-400',
+      statusColor: !isScanningActive
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasPanicVuln
+        ? 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800'
+        : 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800',
+      borderColor: !isScanningActive ? 'border-slate-300 dark:border-slate-700' : hasPanicVuln ? 'border-red-500/40' : 'border-purple-500/40',
+      scoreColor: !isScanningActive ? 'text-slate-400 dark:text-slate-500' : hasPanicVuln ? 'text-red-500' : 'text-purple-600 dark:text-purple-400',
       detail: 'Elimination of unhandled .unwrap() panics and array indexing crash vectors',
     },
     {
       category: 'Admin Privilege Escalation',
       shortName: 'Admin',
-      score: selectedAuditMode === 'PRE' ? 100 : 98,
-      threat: selectedAuditMode === 'PRE' ? '0% Threat' : '2% Threat',
-      status: 'Guarded',
-      gradientStyle: 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
-      glowColor: '#C80552',
-      barGradient: 'bg-gradient-to-t from-rose-600 via-[#E0105E] to-[#FF4D88]',
-      statusColor: 'text-accent bg-accent-subtle border-accent/30',
-      borderColor: 'border-accent/40',
-      scoreColor: 'text-accent',
+      score: calcScore(hasAdminVuln, 40),
+      threat: !isScanningActive ? 'Awaiting Scan' : hasAdminVuln ? '40% Threat' : '0% Threat',
+      status: !isScanningActive ? 'Standby' : hasAdminVuln ? 'Escalation' : 'Guarded',
+      gradientStyle: !isScanningActive
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasAdminVuln
+        ? 'linear-gradient(to top, #881337 0%, #f43f5e 50%, #fda4af 100%)'
+        : 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
+      glowColor: !isScanningActive ? '#94a3b8' : hasAdminVuln ? '#f43f5e' : '#C80552',
+      barGradient: !isScanningActive
+        ? 'bg-slate-300 dark:bg-slate-700'
+        : hasAdminVuln
+        ? 'bg-gradient-to-t from-rose-600 via-red-500 to-rose-400'
+        : 'bg-gradient-to-t from-rose-600 via-[#E0105E] to-[#FF4D88]',
+      statusColor: !isScanningActive
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasAdminVuln
+        ? 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800'
+        : 'text-accent bg-accent-subtle border-accent/30',
+      borderColor: !isScanningActive ? 'border-slate-300 dark:border-slate-700' : hasAdminVuln ? 'border-rose-500/40' : 'border-accent/40',
+      scoreColor: !isScanningActive ? 'text-slate-400 dark:text-slate-500' : hasAdminVuln ? 'text-rose-500' : 'text-accent',
       detail: 'Multi-sig admin governance and caller address authentication',
     },
     {
       category: 'Arithmetic Overflow / Underflow',
       shortName: 'Math',
-      score: selectedAuditMode === 'PRE' ? 98 : 100,
-      threat: selectedAuditMode === 'PRE' ? '2% Threat' : '0% Threat',
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
-      glowColor: '#f59e0b',
-      barGradient: 'bg-gradient-to-t from-amber-600 via-orange-500 to-amber-400',
-      statusColor: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800',
-      borderColor: 'border-amber-500/40',
-      scoreColor: 'text-amber-600 dark:text-amber-400',
+      score: calcScore(hasMathVuln, 30),
+      threat: !isScanningActive ? 'Awaiting Scan' : hasMathVuln ? '30% Threat' : '0% Threat',
+      status: !isScanningActive ? 'Standby' : hasMathVuln ? 'Overflow' : 'Safe',
+      gradientStyle: !isScanningActive
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
+      glowColor: !isScanningActive ? '#94a3b8' : '#f59e0b',
+      barGradient: !isScanningActive
+        ? 'bg-slate-300 dark:bg-slate-700'
+        : 'bg-gradient-to-t from-amber-600 via-orange-500 to-amber-400',
+      statusColor: !isScanningActive
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800',
+      borderColor: !isScanningActive ? 'border-slate-300 dark:border-slate-700' : 'border-amber-500/40',
+      scoreColor: !isScanningActive ? 'text-slate-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400',
       detail: 'Checked integer operations preventing wrap-around arithmetic exploits',
     },
     {
       category: 'Bytecode & Gas Spike Exhaustion',
       shortName: 'Code',
-      score: selectedAuditMode === 'PRE' ? 96 : 97,
-      threat: selectedAuditMode === 'PRE' ? '4% Threat' : '3% Threat',
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
-      glowColor: '#6366f1',
-      barGradient: 'bg-gradient-to-t from-indigo-600 via-blue-500 to-indigo-400',
-      statusColor: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-800',
-      borderColor: 'border-indigo-500/40',
-      scoreColor: 'text-indigo-600 dark:text-indigo-400',
+      score: calcScore(hasGasVuln, 25),
+      threat: !isScanningActive ? 'Awaiting Scan' : hasGasVuln ? '25% Threat' : '0% Threat',
+      status: !isScanningActive ? 'Standby' : hasGasVuln ? 'Gas Spike' : 'Safe',
+      gradientStyle: !isScanningActive
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
+      glowColor: !isScanningActive ? '#94a3b8' : '#6366f1',
+      barGradient: !isScanningActive
+        ? 'bg-slate-300 dark:bg-slate-700'
+        : 'bg-gradient-to-t from-indigo-600 via-blue-500 to-indigo-400',
+      statusColor: !isScanningActive
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-800',
+      borderColor: !isScanningActive ? 'border-slate-300 dark:border-slate-700' : 'border-indigo-500/40',
+      scoreColor: !isScanningActive ? 'text-slate-400 dark:text-slate-500' : 'text-indigo-600 dark:text-indigo-400',
       detail: 'Optimized Soroban release binary complying with 64KB limits',
     },
   ];
 
-  const recentAudits = [
-    {
-      name: 'Solace Core Contract',
-      subtitle: 'contract/src/lib.rs',
-      date: '15 Oct 2026',
-      time: '12:20 PM',
-      status: 'Successful',
-      hash: '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a',
-      score: '85/100',
-      initials: 'SC',
-      bgColor: 'bg-accent-subtle text-accent border border-accent-subtle',
-      isSecure: true,
-    },
-    {
-      name: 'Vault Lending Pool Protocol',
-      subtitle: 'vault_protocol.rs',
-      date: '15 Oct 2026',
-      time: '11:45 AM',
-      status: 'Successful',
-      hash: '8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4',
-      score: '92/100',
-      initials: 'VP',
-      bgColor: 'bg-blue-100 text-blue-800',
-      isSecure: true,
-    },
-    {
-      name: 'Liquidity Distributor Vault',
-      subtitle: 'distributor.rs',
-      date: '14 Oct 2026',
-      time: '10:15 AM',
-      status: 'Action Required',
-      hash: '11173fe05370006e4579671e6c8a34c55e4428cbfd9fa342bdb4eeb7ab70e8e9',
-      score: '48/100',
-      initials: 'LD',
-      bgColor: 'bg-red-100 text-red-800',
-      isSecure: false,
-    },
-    {
-      name: 'AMM Liquidity Pool',
-      subtitle: 'liquidity_pool.rs',
-      date: '14 Oct 2026',
-      time: '09:30 AM',
-      status: 'Successful',
-      hash: '3f7a18b2c90e45d120a4b7c89f01e23a456789b0c1d2e3f4a5b6c7d8e9f0a1b2',
-      score: '95/100',
-      initials: 'AL',
-      bgColor: 'bg-purple-100 text-purple-800',
-      isSecure: true,
-    },
-  ];
+  // Dynamic calculation of active guards for Live Threat Shield
+  const passingGuardsCount = isScanningActive
+    ? [!hasAuthVuln, !hasStorageVuln, !hasPanicVuln, !hasAdminVuln].filter(Boolean).length
+    : 0;
 
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 pb-24 md:pb-8 transition-colors">
@@ -269,10 +387,24 @@ export default function DashboardPage() {
                   <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
                     Stellar Soroban v22 Protocol
                   </span>
+                  {connectedWallet && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Authenticated Auditor Session</span>
+                    </span>
+                  )}
                 </div>
 
-                <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                  Welcome Back, Security Auditor
+                <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight flex items-center gap-2.5 flex-wrap">
+                  <span>Welcome Back,</span>
+                  {connectedWallet ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-accent-subtle dark:bg-accent/15 border border-accent/25 text-accent font-mono text-base sm:text-2xl lg:text-3xl shadow-xs">
+                      <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-accent shrink-0" />
+                      <span>{connectedWallet.slice(0, 6)}...{connectedWallet.slice(-6)}</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-900 dark:text-white">Security Auditor</span>
+                  )}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-2xl leading-relaxed">
                   Autonomous AST rule verification, persistent storage rent monitoring, and cryptographic on-chain audit proof inscriptions on the Stellar ledger.
@@ -283,7 +415,9 @@ export default function DashboardPage() {
                 {/* Date / Network Epoch Pill */}
                 <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-1.5 sm:gap-2">
                   <Calendar className="w-3.5 h-3.5 text-accent shrink-0" />
-                  <span className="truncate">15 Oct, 2026 · {network === 'mainnet' ? 'Mainnet' : 'Testnet'}</span>
+                  <span className="truncate">
+                    {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} · {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+                  </span>
                 </div>
 
                 {/* Run Security Audit Action Button (Brand accent, never black) */}
@@ -361,15 +495,18 @@ export default function DashboardPage() {
                     <div className="flex justify-between items-center pt-1">
                       <div>
                         <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold block">Verified Inscriptions</span>
-                        <span className="text-base font-bold text-slate-900 dark:text-white">Active Session Ledger</span>
+                        <span className="text-base font-bold text-slate-900 dark:text-white">
+                          {totalSubmitted > 0 ? `${totalSubmitted} Ledger ${totalSubmitted === 1 ? 'Record' : 'Records'}` : 'Session Active'}
+                        </span>
                       </div>
                       <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent-subtle text-accent border border-accent/20">
-                        Ready
+                        {totalSubmitted > 0 ? 'Verified' : 'Ready'}
                       </span>
                     </div>
                   </>
                 ) : null}
               </div>
+
             {/* Card 4: Recent Security Audits */}
             <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between overflow-hidden transition-colors">
               <div>
@@ -387,49 +524,84 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                <div className="space-y-2 sm:space-y-2.5">
-                  {recentAudits.map((item, idx) => (
+                {auditHistory.length === 0 ? (
+                  <div className="py-8 px-3 text-center flex flex-col items-center justify-center">
+                    <div className="w-10 h-10 rounded-2xl bg-accent-subtle border border-accent/20 flex items-center justify-center text-accent mb-3 shadow-xs">
+                      <FileCode className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      No Audit Records Yet
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[240px] mx-auto mb-3.5 leading-relaxed">
+                      Run your first contract inspection in Audit Studio to generate cryptographic proofs on Stellar.
+                    </p>
                     <Link
-                      key={idx}
-                      href={`/reports?hash=${item.hash}`}
-                      className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl sm:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 transition cursor-pointer w-full overflow-hidden"
-                      title={`View audit for ${item.name}`}
+                      href="/audit"
+                      className="px-3.5 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 pr-2">
-                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl ${item.bgColor} flex items-center justify-center font-bold text-[11px] sm:text-xs shrink-0 shadow-sm`}>
-                          {item.initials}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={item.name}>
-                            {item.name}
-                          </div>
-                          <div className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5 shrink-0" />
-                            <span className="truncate">{item.date} • {item.time}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full inline-block ${
-                          item.isSecure
-                            ? 'bg-accent-subtle text-accent border border-accent/20'
-                            : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
-                        }`}>
-                          • {item.status}
-                        </span>
-                        <div className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-                          Score: {item.score}
-                        </div>
-                      </div>
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Start Security Audit</span>
                     </Link>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 sm:space-y-2.5">
+                    {auditHistory.slice(0, 4).map((item: any, idx: number) => {
+                      const name = item.contract || 'Soroban Contract';
+                      const initials = name
+                        .split(' ')
+                        .slice(0, 2)
+                        .map((w: string) => w[0])
+                        .join('')
+                        .toUpperCase();
+                      const scoreVal = item.riskScore ?? (item.isSecure ? 95 : 55);
+                      const dateStr = item.date || item.timestamp || 'Recent';
+
+                      return (
+                        <Link
+                          key={item.hash || idx}
+                          href={`/reports?hash=${item.hash}`}
+                          className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl sm:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 transition cursor-pointer w-full overflow-hidden"
+                          title={`View audit for ${name}`}
+                        >
+                          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 pr-2">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center font-bold text-[11px] sm:text-xs shrink-0 shadow-xs">
+                              {initials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={name}>
+                                {name}
+                              </div>
+                              <div className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 shrink-0" />
+                                <span className="truncate">{dateStr}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full inline-block ${
+                              item.isSecure
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                                : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
+                            }`}>
+                              • {item.isSecure ? 'VERIFIED' : 'ACTION REQ'}
+                            </span>
+                            <div className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-0.5">
+                              Score: {scoreVal}/100
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* View all reports footer link to ensure balanced height */}
               <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-600 dark:text-slate-300 text-[11px] sm:text-xs font-semibold">4 of 3,945 records</span>
+                <span className="text-slate-600 dark:text-slate-300 text-[11px] sm:text-xs font-semibold">
+                  {totalSubmitted > 0 ? `${totalSubmitted} recorded ${totalSubmitted === 1 ? 'audit' : 'audits'}` : '0 recorded audits'}
+                </span>
                 <Link
                   href="/reports"
                   className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-[11px] sm:text-xs"
@@ -478,11 +650,11 @@ export default function DashboardPage() {
                     </span>
                     <div className="my-1">
                       <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
-                        1,428
+                        {totalSubmitted}
                       </div>
                     </div>
                     <span className="text-xs text-accent font-bold block leading-tight">
-                      +24.6% this epoch
+                      {totalSubmitted > 0 ? `+${totalSubmitted} verified this session` : 'Awaiting first contract'}
                     </span>
                   </div>
 
@@ -492,11 +664,11 @@ export default function DashboardPage() {
                     </span>
                     <div className="my-1">
                       <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
-                        1,392
+                        {verifiedSecure}
                       </div>
                     </div>
                     <span className="text-xs text-accent font-bold block leading-tight">
-                      97.5% pass rate
+                      {totalSubmitted > 0 ? `${passRate}% pass rate` : '0% pass rate'}
                     </span>
                   </div>
 
@@ -506,11 +678,11 @@ export default function DashboardPage() {
                     </span>
                     <div className="my-1">
                       <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
-                        36
+                        {totalFlaws}
                       </div>
                     </div>
                     <span className="text-xs text-slate-700 dark:text-slate-200 font-bold block leading-tight">
-                      0 exploit leaks
+                      {totalFlaws > 0 ? `${totalFlaws} flaws isolated` : '0 flaws isolated'}
                     </span>
                   </div>
 
@@ -520,11 +692,11 @@ export default function DashboardPage() {
                     </span>
                     <div className="my-1">
                       <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none">
-                        840ms
+                        {isScanningActive ? '840ms' : '--'}
                       </div>
                     </div>
                     <span className="text-xs text-accent font-bold block leading-tight">
-                      Dual Flash Engine
+                      {isScanningActive ? 'Dual Flash Engine' : 'Dual Flash Engine'}
                     </span>
                   </div>
                 </div>
@@ -534,13 +706,15 @@ export default function DashboardPage() {
                   {/* Row 1: Title and Subtitle with 100% width */}
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block animate-pulse shrink-0" />
+                      <span className={`w-2.5 h-2.5 rounded-full inline-block shrink-0 ${isScanningActive ? 'bg-accent animate-pulse' : 'bg-slate-400'}`} />
                       <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                         Smart Contract Security Risk Index
                       </h3>
                     </div>
                     <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-0.5 ml-4.5">
-                      Static AST Threat Detection &amp; On-Chain Rent Exposure
+                      {isScanningActive
+                        ? 'Static AST Threat Detection & On-Chain Rent Exposure'
+                        : 'Standby — Upload or paste a contract in Audit Studio to activate live AST threat analysis'}
                     </p>
                   </div>
 
@@ -571,8 +745,12 @@ export default function DashboardPage() {
                       </button>
                     </div>
 
-                    <div className="bg-accent text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-md shadow-accent/20 whitespace-nowrap shrink-0">
-                      +98.2% Security Score
+                    <div className={`text-xs font-extrabold px-3 py-1 rounded-full whitespace-nowrap shrink-0 transition-all ${
+                      isScanningActive
+                        ? 'bg-accent text-white shadow-md shadow-accent/20'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                    }`}>
+                      {isScanningActive ? `+${overallRiskScore}% Security Score` : 'Standby'}
                     </div>
                   </div>
                 </div>
@@ -594,7 +772,7 @@ export default function DashboardPage() {
                       <div
                         key={idx}
                         className="flex flex-col items-center gap-1.5 group cursor-pointer flex-1 min-w-0"
-                        title={`${item.category}: ${item.score}% Security (${item.threat}) — ${item.detail}`}
+                        title={`${item.category}: ${isScanningActive ? `${item.score}% Security (${item.threat})` : 'Standby — Scan pending'} — ${item.detail}`}
                       >
                         {/* High-Contrast Security Score Badge (Crystal Clear on Mobile) */}
                         <span
@@ -604,7 +782,7 @@ export default function DashboardPage() {
                             borderColor: `${item.glowColor}60`,
                           }}
                         >
-                          {item.score}%
+                          {isScanningActive ? `${item.score}%` : '0%'}
                         </span>
 
                         {/* Modern Capsule Track (Explicit h-40 on mobile, h-44 on desktop) */}
@@ -619,13 +797,15 @@ export default function DashboardPage() {
                           <div
                             className="w-full rounded-lg sm:rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
                             style={{
-                              height: `${item.score}%`,
+                              height: isScanningActive ? `${Math.max(item.score, 4)}%` : '0%',
                               background: item.gradientStyle,
-                              boxShadow: `0 2px 10px ${item.glowColor}40`,
+                              boxShadow: isScanningActive ? `0 2px 10px ${item.glowColor}40` : 'none',
                             }}
                           >
                             {/* Glass top reflection */}
-                            <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                            {isScanningActive && (
+                              <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                            )}
                           </div>
                         </div>
 
@@ -648,16 +828,22 @@ export default function DashboardPage() {
               <div className="pt-3.5 mt-2 flex flex-wrap items-center justify-between text-xs text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800 gap-2">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#10b981' }} />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Auth Guarded</span>
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: isScanningActive ? (hasAuthVuln ? '#ef4444' : '#10b981') : '#94a3b8' }} />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {isScanningActive ? (hasAuthVuln ? 'Auth Alert' : 'Auth Guarded') : 'Auth'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#06b6d4' }} />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Storage Safe</span>
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: isScanningActive ? (hasStorageVuln ? '#f59e0b' : '#06b6d4') : '#94a3b8' }} />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {isScanningActive ? (hasStorageVuln ? 'Rent Risk' : 'Storage Protected') : 'Storage'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#C80552' }} />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Admin Guarded</span>
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: isScanningActive ? (hasAdminVuln ? '#f43f5e' : '#C80552') : '#94a3b8' }} />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {isScanningActive ? (hasAdminVuln ? 'Escalation Alert' : 'Admin Enforced') : 'Admin'}
+                    </span>
                   </div>
                 </div>
                 <Link
@@ -698,113 +884,145 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                {/* Contract Identity & Score Highlight Box */}
-                <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 mb-2">
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                      {activeAudit.contractName}
-                    </span>
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
-                        activeAudit.isSecure
-                          ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800'
-                          : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
-                      }`}
+                {!activeAudit ? (
+                  <div className="py-8 px-3 text-center flex flex-col items-center justify-center">
+                    <div className="w-10 h-10 rounded-2xl bg-accent-subtle border border-accent/20 flex items-center justify-center text-accent mb-3 shadow-xs">
+                      <Activity className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      No Active Contract Scanned
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[240px] mx-auto mb-3.5 leading-relaxed">
+                      Upload or paste a Soroban contract in Audit Studio to inspect real-time AST threat telemetry.
+                    </p>
+                    <Link
+                      href="/audit"
+                      className="px-3.5 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      {activeAudit.isSecure ? 'VERIFIED' : 'ACTION REQ'}
-                    </span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                      <span>Launch Audit Studio</span>
+                    </Link>
                   </div>
+                ) : (
+                  <>
+                    {/* Contract Identity & Score Highlight Box */}
+                    <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 mb-2">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {activeAudit.contractName}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
+                            activeAudit.isSecure
+                              ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800'
+                              : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+                          }`}
+                        >
+                          {activeAudit.isSecure ? 'VERIFIED' : 'ACTION REQ'}
+                        </span>
+                      </div>
 
-                  <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium mb-2">
-                    <span className="truncate">{activeAudit.subtitle}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">
-                      {activeAudit.linesCount} lines
-                    </span>
-                  </div>
+                      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium mb-2">
+                        <span className="truncate">{activeAudit.subtitle}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                          {activeAudit.linesCount} lines
+                        </span>
+                      </div>
 
-                  {/* Score & Verdict Bar */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
-                    <div>
-                      <span className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
-                        Security Score
-                      </span>
-                      <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
-                        {activeAudit.riskScore}
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">/100</span>
+                      {/* Score & Verdict Bar */}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                        <div>
+                          <span className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
+                            Security Score
+                          </span>
+                          <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                            {activeAudit.riskScore}
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">/100</span>
+                          </span>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
+                            Quarantined Flaws
+                          </span>
+                          <span className="text-xs sm:text-sm font-bold text-accent">
+                            {activeAudit.vulnerabilitiesCount} detected
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Security Wave / Sparkline Chart Attached to Card */}
+                    <div className="h-16 w-full my-2.5 relative rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800/60 p-1.5 overflow-hidden">
+                      <svg className="w-full h-full" viewBox="0 0 200 60" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="analyzedWaveGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#C80552" stopOpacity="0.28" />
+                            <stop offset="100%" stopColor="#C80552" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M0,45 Q25,15 50,30 T100,20 T150,35 T200,25 L200,60 L0,60 Z"
+                          fill="url(#analyzedWaveGradient)"
+                        />
+                        <path
+                          d="M0,45 Q25,15 50,30 T100,20 T150,35 T200,25"
+                          fill="none"
+                          stroke="#C80552"
+                          strokeWidth="2.5"
+                        />
+                      </svg>
+                      <div className="absolute top-1.5 right-2 flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-accent/20 text-[10px] font-bold text-accent shadow-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+                        <span>{activeAudit.riskScore}% Security Curve</span>
+                      </div>
+                    </div>
+
+                    {/* Contract Hash Proof Pill */}
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5 overflow-hidden">
+                        <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase shrink-0">SHA256:</span>
+                        <span className="font-mono text-slate-800 dark:text-slate-200 font-medium truncate text-xs">
+                          {activeAudit.contractHash.slice(0, 10)}...{activeAudit.contractHash.slice(-8)}
+                        </span>
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
+                        Live AST
                       </span>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
-                        Quarantined Flaws
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold text-accent">
-                        {activeAudit.vulnerabilitiesCount} detected
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dynamic Security Wave / Sparkline Chart Attached to Card */}
-                <div className="h-16 w-full my-2.5 relative rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800/60 p-1.5 overflow-hidden">
-                  <svg className="w-full h-full" viewBox="0 0 200 60" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="analyzedWaveGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#C80552" stopOpacity="0.28" />
-                        <stop offset="100%" stopColor="#C80552" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M0,45 Q25,15 50,30 T100,20 T150,35 T200,25 L200,60 L0,60 Z"
-                      fill="url(#analyzedWaveGradient)"
-                    />
-                    <path
-                      d="M0,45 Q25,15 50,30 T100,20 T150,35 T200,25"
-                      fill="none"
-                      stroke="#C80552"
-                      strokeWidth="2.5"
-                    />
-                  </svg>
-                  <div className="absolute top-1.5 right-2 flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-accent/20 text-[10px] font-bold text-accent shadow-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
-                    <span>{activeAudit.riskScore}% Security Curve</span>
-                  </div>
-                </div>
-
-                {/* Contract Hash Proof Pill */}
-                <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase shrink-0">SHA256:</span>
-                    <span className="font-mono text-slate-800 dark:text-slate-200 font-medium truncate text-xs">
-                      {activeAudit.contractHash.slice(0, 10)}...{activeAudit.contractHash.slice(-8)}
-                    </span>
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
-                    Live AST
-                  </span>
-                </div>
-
-                {/* AI Summary snippet */}
-                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium line-clamp-2 leading-relaxed">
-                  {activeAudit.summary}
-                </p>
+                    {/* AI Summary snippet */}
+                    <p className="text-xs text-slate-700 dark:text-slate-300 font-medium line-clamp-2 leading-relaxed">
+                      {activeAudit.summary}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Action Buttons: Audit in Studio & View Full Report */}
               <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <Link
                   href="/audit"
-                  className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/20 text-center flex items-center justify-center gap-1"
+                  className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/20 text-center flex items-center justify-center gap-1 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Audit Studio</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
-                <Link
-                  href={`/reports?hash=${activeAudit.contractHash}`}
-                  className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center"
-                >
-                  View Report
-                </Link>
+                {activeAudit ? (
+                  <Link
+                    href={`/reports?hash=${activeAudit.contractHash}`}
+                    className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    View Report
+                  </Link>
+                ) : (
+                  <Link
+                    href="/reports"
+                    className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    All Reports
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -826,78 +1044,130 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
-                    4 Active Guards
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 transition-all ${
+                    !isScanningActive
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                      : passingGuardsCount === 4
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                      : passingGuardsCount >= 2
+                      ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                      : 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
+                  }`}>
+                    {isScanningActive ? `${passingGuardsCount} / 4 Active Guards` : '0 Active Guards (Standby)'}
                   </span>
                 </div>
 
                 {/* 4 Invariant Security Guards */}
                 <div className="space-y-2 mb-3">
+                  {/* Guard 1: Authorization Guard */}
                   <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        !isScanningActive ? 'bg-slate-400' : hasAuthVuln ? 'bg-red-500' : 'bg-emerald-500'
+                      }`} />
                       <div>
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Authorization Guard
                         </span>
                         <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
-                          require_auth() signature enforcement
+                          {isScanningActive && hasAuthVuln
+                            ? 'Missing require_auth() signature enforcement'
+                            : 'require_auth() signature enforcement'}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
-                      Guarded
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      !isScanningActive
+                        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                        : hasAuthVuln
+                        ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800'
+                        : 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800'
+                    }`}>
+                      {!isScanningActive ? 'Standby' : hasAuthVuln ? 'Breached' : 'Guarded'}
                     </span>
                   </div>
 
+                  {/* Guard 2: Storage Rent Guardian */}
                   <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        !isScanningActive ? 'bg-slate-400' : hasStorageVuln ? 'bg-amber-500' : 'bg-cyan-500'
+                      }`} />
                       <div>
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Storage Rent Guardian
                         </span>
                         <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
-                          TTL auto-bump & state isolation
+                          {isScanningActive && hasStorageVuln
+                            ? 'Instance storage TTL exposure & eviction risk'
+                            : 'TTL auto-bump & state isolation'}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800 shrink-0">
-                      Protected
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      !isScanningActive
+                        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                        : hasStorageVuln
+                        ? 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800'
+                        : 'text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-800'
+                    }`}>
+                      {!isScanningActive ? 'Standby' : hasStorageVuln ? 'Eviction Risk' : 'Protected'}
                     </span>
                   </div>
 
+                  {/* Guard 3: Panic Crash Shield */}
                   <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        !isScanningActive ? 'bg-slate-400' : hasPanicVuln ? 'bg-red-500' : 'bg-purple-500'
+                      }`} />
                       <div>
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Panic Crash Shield
                         </span>
                         <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
-                          Zero unhandled .unwrap() host panics
+                          {isScanningActive && hasPanicVuln
+                            ? 'Host panic vector from unhandled .unwrap()'
+                            : 'Zero unhandled .unwrap() host panics'}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 shrink-0">
-                      Safe
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      !isScanningActive
+                        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                        : hasPanicVuln
+                        ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800'
+                        : 'text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800'
+                    }`}>
+                      {!isScanningActive ? 'Standby' : hasPanicVuln ? 'Host Panic' : 'Safe'}
                     </span>
                   </div>
 
+                  {/* Guard 4: Admin Access Control */}
                   <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        !isScanningActive ? 'bg-slate-400' : hasAdminVuln ? 'bg-red-500' : 'bg-accent'
+                      }`} />
                       <div>
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Admin Access Control
                         </span>
                         <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
-                          Multi-sig role & caller authentication
+                          {isScanningActive && hasAdminVuln
+                            ? 'Admin privilege escalation vector'
+                            : 'Multi-sig role & caller authentication'}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
-                      Enforced
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      !isScanningActive
+                        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                        : hasAdminVuln
+                        ? 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800'
+                        : 'text-accent bg-accent-subtle border-accent/20'
+                    }`}>
+                      {!isScanningActive ? 'Standby' : hasAdminVuln ? 'Escalation' : 'Enforced'}
                     </span>
                   </div>
                 </div>

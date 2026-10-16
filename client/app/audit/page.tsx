@@ -18,9 +18,11 @@ import {
   Sparkles,
   Terminal,
   Code2,
+  Coins,
 } from 'lucide-react';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import WalletGate from '../../components/auth/WalletGate';
+import { useWallet } from '../../context/WalletContext';
 
 interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -187,8 +189,9 @@ function FormattedRecommendation({ text, index }: { text: string; index: number 
 }
 
 export default function AuditStudioPage() {
+  const { walletKey } = useWallet();
   const [activeTab, setActiveTab] = useState<'STUDIO' | 'INVARIANTS'>('STUDIO');
-  const [codeSnippet, setCodeSnippet] = useState<string>(SAMPLE_SOROBAN_CONTRACT);
+  const [codeSnippet, setCodeSnippet] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [isPostDeployment, setIsPostDeployment] = useState<boolean>(false);
   const [editorMode, setEditorMode] = useState<'COLORED' | 'EDIT'>('COLORED');
@@ -205,10 +208,43 @@ export default function AuditStudioPage() {
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const [copiedTxHash, setCopiedTxHash] = useState<boolean>(false);
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
+  const [feeReceipt, setFeeReceipt] = useState<{
+    feeXLM: number;
+    feeStroops: string;
+    currency: string;
+    payer: string;
+    transactionHash?: string;
+    status: string;
+    timestamp?: string;
+  } | null>(null);
+  const [auditFeeConfig, setAuditFeeConfig] = useState<{
+    feeXLM: number;
+    auditFeeStroops: string;
+    currency: string;
+  }>({
+    feeXLM: 1.0,
+    auditFeeStroops: '10000000',
+    currency: 'XLM',
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/contract/fee`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.feeXLM !== undefined) {
+          setAuditFeeConfig({
+            feeXLM: Number(data.feeXLM),
+            auditFeeStroops: String(data.auditFeeStroops || '10000000'),
+            currency: String(data.currency || 'XLM'),
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     try {
@@ -229,60 +265,126 @@ export default function AuditStudioPage() {
     return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
   }, []);
 
+  // Dynamically evaluate AST invariant vectors based on live analysis
+  const vulnerabilities = report?.vulnerabilities || [];
+  const hasAuthVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().includes('auth')
+  );
+  const hasStorageVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/storage|rent|ttl/)
+  );
+  const hasPanicVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/panic|unwrap|crash/)
+  );
+  const hasAdminVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/admin|governance|privilege/)
+  );
+  const hasMathVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/overflow|underflow|arithmetic/)
+  );
+  const hasGasVuln = vulnerabilities.some((v: any) =>
+    (v.title || v.name || v.description || '').toLowerCase().match(/gas|bytecode|limit/)
+  );
+
+  const calcScore = (hasVuln: boolean, penalty: number = 30) => {
+    if (!report) return 0;
+    return hasVuln ? Math.max(0, 100 - penalty) : 100;
+  };
+
   const invariantVectors = [
     {
       shortName: 'Auth',
-      score: 100,
-      status: 'Guarded',
-      gradientStyle: 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
-      glowColor: '#10b981',
-      scoreColor: 'text-emerald-500 dark:text-emerald-400',
-      statusColor: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700',
+      score: calcScore(hasAuthVuln, 45),
+      status: !report ? 'Standby' : hasAuthVuln ? 'Breached' : 'Guarded',
+      gradientStyle: !report
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasAuthVuln
+        ? 'linear-gradient(to top, #991b1b 0%, #ef4444 50%, #f87171 100%)'
+        : 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
+      glowColor: !report ? '#94a3b8' : hasAuthVuln ? '#ef4444' : '#10b981',
+      scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasAuthVuln ? 'text-red-500' : 'text-emerald-500 dark:text-emerald-400',
+      statusColor: !report
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasAuthVuln
+        ? 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/70 border-red-300 dark:border-red-700'
+        : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700',
     },
     {
       shortName: 'Storage',
-      score: 97,
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
-      glowColor: '#06b6d4',
-      scoreColor: 'text-cyan-500 dark:text-cyan-400',
-      statusColor: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/70 border-cyan-300 dark:border-cyan-700',
+      score: calcScore(hasStorageVuln, 35),
+      status: !report ? 'Standby' : hasStorageVuln ? 'Eviction Risk' : 'Protected',
+      gradientStyle: !report
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasStorageVuln
+        ? 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fbbf24 100%)'
+        : 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
+      glowColor: !report ? '#94a3b8' : hasStorageVuln ? '#f59e0b' : '#06b6d4',
+      scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasStorageVuln ? 'text-amber-500' : 'text-cyan-500 dark:text-cyan-400',
+      statusColor: !report
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasStorageVuln
+        ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700'
+        : 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/70 border-cyan-300 dark:border-cyan-700',
     },
     {
       shortName: 'Safety',
-      score: 94,
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
-      glowColor: '#a855f7',
-      scoreColor: 'text-purple-500 dark:text-purple-400',
-      statusColor: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/70 border-purple-300 dark:border-purple-700',
+      score: calcScore(hasPanicVuln, 40),
+      status: !report ? 'Standby' : hasPanicVuln ? 'Host Panic' : 'Safe',
+      gradientStyle: !report
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasPanicVuln
+        ? 'linear-gradient(to top, #991b1b 0%, #ef4444 50%, #f87171 100%)'
+        : 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
+      glowColor: !report ? '#94a3b8' : hasPanicVuln ? '#ef4444' : '#a855f7',
+      scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasPanicVuln ? 'text-red-500' : 'text-purple-500 dark:text-purple-400',
+      statusColor: !report
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasPanicVuln
+        ? 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/70 border-red-300 dark:border-red-700'
+        : 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/70 border-purple-300 dark:border-purple-700',
     },
     {
       shortName: 'Admin',
-      score: 100,
-      status: 'Guarded',
-      gradientStyle: 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
-      glowColor: '#C80552',
-      scoreColor: 'text-accent',
-      statusColor: 'text-accent bg-accent-subtle border-accent/40',
+      score: calcScore(hasAdminVuln, 40),
+      status: !report ? 'Standby' : hasAdminVuln ? 'Escalation' : 'Guarded',
+      gradientStyle: !report
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : hasAdminVuln
+        ? 'linear-gradient(to top, #881337 0%, #f43f5e 50%, #fda4af 100%)'
+        : 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
+      glowColor: !report ? '#94a3b8' : hasAdminVuln ? '#f43f5e' : '#C80552',
+      scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasAdminVuln ? 'text-rose-500' : 'text-accent',
+      statusColor: !report
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : hasAdminVuln
+        ? 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/70 border-rose-300 dark:border-rose-700'
+        : 'text-accent bg-accent-subtle border-accent/40',
     },
     {
       shortName: 'Math',
-      score: 98,
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
-      glowColor: '#f59e0b',
-      scoreColor: 'text-amber-500 dark:text-amber-400',
-      statusColor: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700',
+      score: calcScore(hasMathVuln, 30),
+      status: !report ? 'Standby' : hasMathVuln ? 'Overflow' : 'Safe',
+      gradientStyle: !report
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
+      glowColor: !report ? '#94a3b8' : '#f59e0b',
+      scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : 'text-amber-500 dark:text-amber-400',
+      statusColor: !report
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700',
     },
     {
       shortName: 'Code',
-      score: 96,
-      status: 'Safe',
-      gradientStyle: 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
-      glowColor: '#6366f1',
-      scoreColor: 'text-indigo-500 dark:text-indigo-400',
-      statusColor: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 border-indigo-300 dark:border-indigo-700',
+      score: calcScore(hasGasVuln, 25),
+      status: !report ? 'Standby' : hasGasVuln ? 'Gas Spike' : 'Safe',
+      gradientStyle: !report
+        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        : 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
+      glowColor: !report ? '#94a3b8' : '#6366f1',
+      scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : 'text-indigo-500 dark:text-indigo-400',
+      statusColor: !report
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+        : 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 border-indigo-300 dark:border-indigo-700',
     },
   ];
 
@@ -300,54 +402,68 @@ export default function AuditStudioPage() {
     }
   };
 
-  const syncActiveContract = (
+  const syncActiveContract = async (
     code: string,
     reportData?: AuditReport | null,
-    hashOverride?: string
+    hashOverride?: string,
+    providedFileName?: string
   ) => {
     try {
-      const isSolaceCore = code.includes('SolaceContract');
-      const isVault = code.includes('VaultContract');
-      const contractName = isSolaceCore
-        ? 'Solace Core Security Contract'
-        : isVault
-        ? 'Vault Lending Pool Protocol'
+      if (!code.trim()) {
+        localStorage.removeItem('solace-active-contract-audit');
+        window.dispatchEvent(new Event('solace-audit-updated'));
+        return;
+      }
+
+      const structMatch =
+        code.match(/pub\s+struct\s+([A-Za-z0-9_]+)/) ||
+        code.match(/struct\s+([A-Za-z0-9_]+)/) ||
+        code.match(/pub\s+enum\s+([A-Za-z0-9_]+)/);
+
+      const contractName = providedFileName
+        ? providedFileName.replace(/\.rs$/, '').replace(/[_-]/g, ' ')
+        : structMatch
+        ? structMatch[1]
         : 'Custom Soroban Contract';
-      const subtitle = isSolaceCore
-        ? 'contract/src/lib.rs'
-        : isVault
-        ? 'soroban_vault.rs'
-        : 'soroban_contract.rs';
+
+      const subtitle = providedFileName
+        ? providedFileName
+        : (structMatch ? structMatch[1].toLowerCase() : 'soroban_contract') + '.rs';
 
       const lines = code.trim().split('\n').filter(Boolean).length || 1;
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-      const hash =
-        hashOverride ||
-        (isSolaceCore
-          ? '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a'
-          : isVault
-          ? '8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4'
-          : '3f7a18b2c90e45d120a4b7c89f01e23a456789b0c1d2e3f4a5b6c7d8e9f0a1b2');
+      let hash = hashOverride;
+      if (!hash) {
+        try {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(code);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          hash = Array.from(new Uint8Array(hashBuffer))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+        } catch {
+          hash = '';
+        }
+      }
 
       const payload = {
         contractName,
         subtitle,
-        contractHash: hash,
-        riskScore: reportData?.riskScore ?? (isVault ? 92 : 85),
+        contractHash: hash || '',
+        riskScore: reportData?.riskScore ?? (reportData?.isSecure ? 95 : 60),
         isSecure: reportData?.isSecure ?? true,
         summary:
           reportData?.summary ||
-          (isVault
-            ? 'Soroban multi-sig liquidity pool with authorized withdrawals and rent protection.'
-            : 'Autonomous Solace Dual Flash AST Engine verified require_auth() invariants and persistent rent protection.'),
+          'Smart contract AST inspection verified invariants on Stellar Soroban.',
         vulnerabilitiesCount: reportData?.vulnerabilities?.length ?? 0,
         auditType: isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT',
         timestamp: timeStr,
         date: dateStr,
         linesCount: lines,
+        vulnerabilities: reportData?.vulnerabilities || [],
       };
 
       localStorage.setItem('solace-active-contract-audit', JSON.stringify(payload));
@@ -355,28 +471,14 @@ export default function AuditStudioPage() {
     } catch (_) {}
   };
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('solace-active-contract-audit');
-      if (!stored) {
-        syncActiveContract(SAMPLE_SOROBAN_CONTRACT, null);
-      }
-    } catch (_) {}
-  }, []);
-
-  const handleLoadVault = () => {
+  const handleLoadVault = async () => {
     setCodeSnippet(SAMPLE_SOROBAN_CONTRACT);
     setReport(null);
     setAnchorResult(null);
-    syncActiveContract(SAMPLE_SOROBAN_CONTRACT, {
-      riskScore: 92,
-      isSecure: true,
-      summary: 'Soroban multi-sig liquidity pool with authorized withdrawals and rent protection.',
-      vulnerabilities: [],
-    }, '8e5c8e34be62125fce61ec221b659cbe3a7f766e4a2bf1cb6358db33cf3741d4');
+    await syncActiveContract(SAMPLE_SOROBAN_CONTRACT, null, undefined, 'soroban_vault.rs');
   };
 
-  const handleLoadSolaceCore = () => {
+  const handleLoadSolaceCore = async () => {
     const solaceCode = `// Solace Core Contract (contract/src/lib.rs)
 // Implements immutable audit inscription and retrieval on Stellar Soroban
 #![no_std]
@@ -422,12 +524,7 @@ impl SolaceContract {
     setCodeSnippet(solaceCode);
     setReport(null);
     setAnchorResult(null);
-    syncActiveContract(solaceCode, {
-      riskScore: 85,
-      isSecure: true,
-      summary: 'Autonomous Solace Dual Flash AST Engine verified require_auth() invariants and persistent rent protection.',
-      vulnerabilities: [],
-    }, '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a');
+    await syncActiveContract(solaceCode, null, undefined, 'solace_core.rs');
   };
 
   const handleClear = () => {
@@ -435,18 +532,28 @@ impl SolaceContract {
     setReport(null);
     setContractHash('');
     setAnchorResult(null);
+    setFeeReceipt(null);
     setError('');
+    try {
+      localStorage.removeItem('solace-active-contract-audit');
+      window.dispatchEvent(new Event('solace-audit-updated'));
+    } catch (_) {}
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileName = file.name;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const text = event.target?.result as string;
       if (text) {
         setCodeSnippet(text);
-        syncActiveContract(text, null);
+        setReport(null);
+        setContractHash('');
+        setAnchorResult(null);
+        setFeeReceipt(null);
+        await syncActiveContract(text, null, undefined, fileName);
       }
     };
     reader.readAsText(file);
@@ -461,47 +568,67 @@ impl SolaceContract {
 
   const handleAudit = async () => {
     if (!codeSnippet.trim()) return;
+
+    if (!walletKey) {
+      setError(
+        `Auditor wallet connection required. The Solace Soroban contract charges an audit fee of ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency} per AI AST security scan.`
+      );
+      return;
+    }
+
     setLoading(true);
     setError('');
     setReport(null);
     setContractHash('');
     setAnchorResult(null);
+    setFeeReceipt(null);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codeSnippet, isPostDeployment }),
+        body: JSON.stringify({
+          codeSnippet,
+          isPostDeployment,
+          userWallet: walletKey,
+        }),
       });
 
       const data = await response.json();
       if (data.success) {
         const auditReport = data.data || data.report;
         setReport(auditReport);
-        const resolvedHash = data.contractHash || '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a';
-        if (data.contractHash) {
-          setContractHash(data.contractHash);
+        if (data.feeReceipt) {
+          setFeeReceipt(data.feeReceipt);
         }
-        syncActiveContract(codeSnippet, auditReport, resolvedHash);
+        const resolvedHash = data.contractHash || '';
+        if (resolvedHash) {
+          setContractHash(resolvedHash);
+        }
+        await syncActiveContract(codeSnippet, auditReport, resolvedHash);
 
         // Check if this contract is already permanently anchored on-chain
-        try {
-          const verifyRes = await fetch(`${API_BASE_URL}/api/contract/audit/${encodeURIComponent(resolvedHash)}`);
-          const verifyData = await verifyRes.json();
-          if (verifyData.found && verifyData.data) {
-            setAnchorResult({
-              transactionHash: 'a07e6e156cb663b1baf132fd98a92c50b1e5c0a131fe6c378734c212ee5cff05',
-              contractId: LIVE_CONTRACT_ID,
-              explorerUrl: 'https://stellar.expert/explorer/testnet/tx/a07e6e156cb663b1baf132fd98a92c50b1e5c0a131fe6c378734c212ee5cff05',
-            });
-          }
-        } catch (_) {}
+        if (resolvedHash) {
+          try {
+            const verifyRes = await fetch(`${API_BASE_URL}/api/contract/audit/${encodeURIComponent(resolvedHash)}`);
+            const verifyData = await verifyRes.json();
+            if (verifyData.found && verifyData.data) {
+              setAnchorResult({
+                transactionHash: 'a07e6e156cb663b1baf132fd98a92c50b1e5c0a131fe6c378734c212ee5cff05',
+                contractId: LIVE_CONTRACT_ID,
+                explorerUrl: 'https://stellar.expert/explorer/testnet/tx/a07e6e156cb663b1baf132fd98a92c50b1e5c0a131fe6c378734c212ee5cff05',
+              });
+            }
+          } catch (_) {}
+        }
 
         // Persist to local audit history for full recall in Reports & History
         try {
-          const isSolaceCore = codeSnippet.includes('SolaceContract');
-          const isVault = codeSnippet.includes('VaultContract');
-          const name = isSolaceCore ? 'Solace Core Security Contract' : isVault ? 'Solace Vault Protocol' : 'Custom Soroban Contract';
+          const structMatch =
+            codeSnippet.match(/pub\s+struct\s+([A-Za-z0-9_]+)/) ||
+            codeSnippet.match(/struct\s+([A-Za-z0-9_]+)/) ||
+            codeSnippet.match(/pub\s+enum\s+([A-Za-z0-9_]+)/);
+          const name = structMatch ? structMatch[1] : 'Soroban Smart Contract';
           const existing = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
           const newEntry = {
             hash: resolvedHash,
@@ -509,8 +636,12 @@ impl SolaceContract {
             auditType: isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT',
             riskScore: auditReport.riskScore,
             isSecure: auditReport.isSecure,
-            auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
+            auditor: walletKey || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
+            feePaid: `${data.feeReceipt?.feeXLM || auditFeeConfig.feeXLM} ${auditFeeConfig.currency}`,
+            feeTxHash: data.feeReceipt?.transactionHash || '',
             timestamp: 'Anchored on Testnet Ledger',
+            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             summary: auditReport.summary,
             vulnerabilities: auditReport.vulnerabilities || [],
             codeSnippet: codeSnippet,
@@ -845,7 +976,7 @@ impl SolaceContract {
                           value={codeSnippet}
                           onChange={(e) => setCodeSnippet(e.target.value)}
                           onScroll={handleEditorScroll}
-                          placeholder="// Paste Soroban Rust smart contract (lib.rs) or click 'Vault Protocol' above..."
+                          placeholder="// Paste Soroban Rust smart contract (lib.rs) or click 'Load Vault Template'..."
                           style={{
                             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
                             fontSize: '12px',
@@ -859,6 +990,39 @@ impl SolaceContract {
                           className="absolute inset-0 p-3 m-0 overflow-auto modern-code-scrollbar bg-transparent resize-none focus:outline-none whitespace-pre border-0 selection:bg-accent/40"
                           spellCheck={false}
                         />
+
+                        {/* Welcoming Interactive Overlay when empty */}
+                        {!codeSnippet && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none text-center bg-slate-950/40">
+                            <div className="pointer-events-auto flex flex-col items-center max-w-sm">
+                              <div className="w-10 h-10 rounded-2xl bg-accent-subtle border border-accent/20 flex items-center justify-center text-accent mb-2.5 shadow-xs">
+                                <Code2 className="w-5 h-5 text-accent" />
+                              </div>
+                              <p className="text-xs text-slate-200 font-bold mb-1">
+                                Ready for Soroban Contract Audit
+                              </p>
+                              <p className="text-[11px] text-slate-400 mb-3.5 leading-relaxed">
+                                Paste your contract code here, upload a .rs file, or load an example template to run live AST analysis.
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={handleLoadVault}
+                                  className="px-3.5 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-md shadow-accent/25 transition hover:scale-105 active:scale-95"
+                                >
+                                  Load Vault Template
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition"
+                                >
+                                  Upload File
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -889,11 +1053,15 @@ impl SolaceContract {
 
                 {/* Bottom Action Footer */}
                 <div className="pt-3.5 sm:pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    {isPostDeployment
-                      ? 'Validates live persistent storage rent TTL and archival eviction risks.'
-                      : 'Analyzes AST authorization rules & panic vulnerabilities.'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-subtle text-accent border border-accent/25 text-xs font-bold">
+                      <Coins className="w-3.5 h-3.5 text-accent" />
+                      <span>Audit Fee: {auditFeeConfig.feeXLM} {auditFeeConfig.currency}</span>
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden md:inline">
+                      Charged from wallet on AI analysis
+                    </span>
+                  </div>
 
                   <button
                     type="button"
@@ -902,7 +1070,11 @@ impl SolaceContract {
                     className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-bold transition shadow-md shadow-accent/25 whitespace-nowrap flex items-center justify-center gap-2"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>{loading ? 'Solace AI Analyzing Code...' : 'Audit Smart Contract'}</span>
+                    <span>
+                      {loading
+                        ? `Authorizing & Deducting ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency}...`
+                        : `Audit Smart Contract (${auditFeeConfig.feeXLM} ${auditFeeConfig.currency})`}
+                    </span>
                   </button>
                 </div>
 
@@ -1057,6 +1229,43 @@ impl SolaceContract {
                       </div>
                     )}
 
+                    {/* On-Chain Audit Fee Settlement Card */}
+                    {feeReceipt && (
+                      <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 text-xs shadow-xs">
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
+                          <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
+                            <div className="w-5 h-5 rounded-md bg-accent-subtle text-accent flex items-center justify-center">
+                              <Coins className="w-3 h-3 text-accent" />
+                            </div>
+                            <span>Soroban Audit Fee Charged</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
+                            - {feeReceipt.feeXLM || 1.0} {feeReceipt.currency || 'XLM'} DEDUCTED
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/80 text-[11px] font-mono">
+                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                            <span>Payer Wallet:</span>
+                            <span className="text-slate-800 dark:text-slate-200 font-bold truncate max-w-[190px]">
+                              {feeReceipt.payer}
+                            </span>
+                          </div>
+                          {feeReceipt.transactionHash && (
+                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                              <span>Fee Settlement Tx:</span>
+                              <span className="text-accent font-bold truncate max-w-[190px]">
+                                {feeReceipt.transactionHash.slice(0, 10)}...{feeReceipt.transactionHash.slice(-6)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                            <span>Contract Enforcement:</span>
+                            <span className="text-slate-700 dark:text-slate-300">SolaceContract::pay_audit_fee</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* On-Chain Anchored Certificate / Call to Action */}
                     {anchorResult ? (
                       <div className="p-4 sm:p-4.5 rounded-2xl bg-white dark:bg-slate-900 border border-accent/30 shadow-md text-xs relative overflow-hidden transition-all">
@@ -1203,8 +1412,12 @@ impl SolaceContract {
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Automated Soroban AST invariant analysis across categories</p>
               </div>
 
-              <div className="bg-accent text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                +98.2% Pass Rate
+              <div className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm transition-all ${
+                report
+                  ? 'bg-accent text-white shadow-accent/20'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+              }`}>
+                {report ? `+${report.riskScore}% Pass Rate` : 'Standby'}
               </div>
             </div>
 
@@ -1222,7 +1435,7 @@ impl SolaceContract {
                 {invariantVectors.map((item, idx) => (
                   <div key={idx} className="flex flex-col items-center gap-1.5 shrink-0 group">
                     <span className={`text-xs font-black transition-transform group-hover:scale-110 ${item.scoreColor}`}>
-                      {item.score}%
+                      {report ? `${item.score}%` : '0%'}
                     </span>
 
                     <div
@@ -1232,12 +1445,14 @@ impl SolaceContract {
                       <div
                         className="w-full rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
                         style={{
-                          height: `${item.score}%`,
+                          height: report ? `${Math.max(item.score, 4)}%` : '0%',
                           background: item.gradientStyle,
-                          boxShadow: `0 2px 10px ${item.glowColor}40`,
+                          boxShadow: report ? `0 2px 10px ${item.glowColor}40` : 'none',
                         }}
                       >
-                        <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                        {report && (
+                          <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                        )}
                       </div>
                     </div>
 
