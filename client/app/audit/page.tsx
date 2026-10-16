@@ -36,10 +36,80 @@ interface AuditReport {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const LIVE_CONTRACT_ID = 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
 
+function highlightRustCode(code: string): string {
+  if (!code) return '';
+  const lines = code.split('\n');
+  return lines
+    .map((line) => {
+      let escaped = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Comments
+      if (escaped.trim().startsWith('//')) {
+        return `<span style="color: #4ade80; font-style: italic;">${escaped}</span>`;
+      }
+
+      const commentIdx = escaped.indexOf('//');
+      let commentPart = '';
+      if (commentIdx !== -1) {
+        commentPart = `<span style="color: #4ade80; font-style: italic;">${escaped.slice(commentIdx)}</span>`;
+        escaped = escaped.slice(0, commentIdx);
+      }
+
+      // Strings
+      escaped = escaped.replace(
+        /(&quot;.*?&quot;|".*?")/g,
+        '<span style="color: #f472b6;">$1</span>'
+      );
+
+      // Attributes & Macros: #[contract], #![no_std], #[contractimpl], #[contracttype]
+      escaped = escaped.replace(
+        /(#!?\[.*?\])/g,
+        '<span style="color: #fbbf24; font-weight: 600;">$1</span>'
+      );
+
+      // Rust Keywords
+      escaped = escaped.replace(
+        /\b(pub|fn|let|mut|impl|struct|enum|if|else|match|return|use|for|in|while|as|true|false|self|Self)\b/g,
+        '<span style="color: #38bdf8; font-weight: 700;">$1</span>'
+      );
+
+      // Soroban Types
+      escaped = escaped.replace(
+        /\b(Address|Env|String|Symbol|BytesN|u32|u64|u128|i32|i64|i128|bool|DataKey|AuditRecord|SolaceContract|VaultContract)\b/g,
+        '<span style="color: #2dd4bf; font-weight: 600;">$1</span>'
+      );
+
+      // Methods and Storage calls
+      escaped = escaped.replace(
+        /\b(require_auth|storage|instance|persistent|get|set|record_audit|deposit|withdraw|init|unwrap_or|unwrap|clone)\b/g,
+        '<span style="color: #fef08a; font-weight: 500;">$1</span>'
+      );
+
+      // Panics and Macros
+      escaped = escaped.replace(
+        /\b(panic!|symbol_short!|vec!)\b/g,
+        '<span style="color: #e879f9; font-weight: 700;">$1</span>'
+      );
+
+      // Numbers
+      escaped = escaped.replace(
+        /\b(\d+)\b/g,
+        '<span style="color: #c084fc;">$1</span>'
+      );
+
+      return escaped + commentPart;
+    })
+    .join('\n');
+}
+
 export default function AuditStudioPage() {
   const [activeTab, setActiveTab] = useState<'STUDIO' | 'INVARIANTS'>('STUDIO');
   const [codeSnippet, setCodeSnippet] = useState<string>(SAMPLE_SOROBAN_CONTRACT);
   const [isPostDeployment, setIsPostDeployment] = useState<boolean>(false);
+  const [editorMode, setEditorMode] = useState<'COLORED' | 'EDIT'>('COLORED');
   const [loading, setLoading] = useState<boolean>(false);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [contractHash, setContractHash] = useState<string>('');
@@ -52,6 +122,80 @@ export default function AuditStudioPage() {
   } | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const highlightRef = useRef<HTMLPreElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
+
+  const invariantVectors = [
+    {
+      shortName: 'Auth',
+      score: 100,
+      status: 'Guarded',
+      gradientStyle: 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
+      glowColor: '#10b981',
+      scoreColor: 'text-emerald-500 dark:text-emerald-400',
+      statusColor: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700',
+    },
+    {
+      shortName: 'Storage',
+      score: 97,
+      status: 'Safe',
+      gradientStyle: 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
+      glowColor: '#06b6d4',
+      scoreColor: 'text-cyan-500 dark:text-cyan-400',
+      statusColor: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/70 border-cyan-300 dark:border-cyan-700',
+    },
+    {
+      shortName: 'Safety',
+      score: 94,
+      status: 'Safe',
+      gradientStyle: 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
+      glowColor: '#a855f7',
+      scoreColor: 'text-purple-500 dark:text-purple-400',
+      statusColor: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/70 border-purple-300 dark:border-purple-700',
+    },
+    {
+      shortName: 'Admin',
+      score: 100,
+      status: 'Guarded',
+      gradientStyle: 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
+      glowColor: '#C80552',
+      scoreColor: 'text-accent',
+      statusColor: 'text-accent bg-accent-subtle border-accent/40',
+    },
+    {
+      shortName: 'Math',
+      score: 98,
+      status: 'Safe',
+      gradientStyle: 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
+      glowColor: '#f59e0b',
+      scoreColor: 'text-amber-500 dark:text-amber-400',
+      statusColor: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700',
+    },
+    {
+      shortName: 'Code',
+      score: 96,
+      status: 'Safe',
+      gradientStyle: 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
+      glowColor: '#6366f1',
+      scoreColor: 'text-indigo-500 dark:text-indigo-400',
+      statusColor: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 border-indigo-300 dark:border-indigo-700',
+    },
+  ];
+
+  const handleEditorScroll = () => {
+    if (textareaRef.current) {
+      const top = textareaRef.current.scrollTop;
+      const left = textareaRef.current.scrollLeft;
+      if (highlightRef.current) {
+        highlightRef.current.scrollTop = top;
+        highlightRef.current.scrollLeft = left;
+      }
+      if (gutterRef.current) {
+        gutterRef.current.scrollTop = top;
+      }
+    }
+  };
 
   const syncActiveContract = (
     code: string,
@@ -432,23 +576,98 @@ impl SolaceContract {
                     </div>
                   </div>
 
-                  {/* Code Editor Box */}
-                  <div className="rounded-2xl bg-slate-950 border border-slate-800 p-2.5 sm:p-3 shadow-inner">
-                    <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-slate-400 pb-2 mb-2 border-b border-slate-800/80 font-mono">
-                      <span className="flex items-center gap-1.5">
-                        <FileCode className="w-3.5 h-3.5 text-accent" />
-                        <span>soroban_contract.rs</span>
-                      </span>
-                      <span>{lineCount} lines</span>
+                  {/* Code Editor Box with Increased Height & Syntax Highlighting */}
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col">
+                    {/* Header Bar */}
+                    <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-slate-400 p-3 border-b border-slate-800 font-mono bg-slate-900/60">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1.5 text-slate-200 font-bold">
+                          <FileCode className="w-3.5 h-3.5 text-accent" />
+                          <span>soroban_contract.rs</span>
+                        </span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-slate-400">{lineCount} lines</span>
+                      </div>
+
+                      {/* Mode Toggle: Colored Syntax vs Plain Edit */}
+                      <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setEditorMode('COLORED')}
+                          className={`px-2 py-0.5 rounded-md font-semibold transition ${
+                            editorMode === 'COLORED'
+                              ? 'bg-accent text-white shadow-xs'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          Colored Code
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditorMode('EDIT')}
+                          className={`px-2 py-0.5 rounded-md font-semibold transition ${
+                            editorMode === 'EDIT'
+                              ? 'bg-accent text-white shadow-xs'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          Plain Edit
+                        </button>
+                      </div>
                     </div>
-                    <textarea
-                      value={codeSnippet}
-                      onChange={(e) => setCodeSnippet(e.target.value)}
-                      placeholder="// Paste Soroban Rust smart contract (lib.rs) or click 'Vault Protocol' above..."
-                      rows={14}
-                      className="w-full bg-transparent text-slate-200 font-mono text-[11px] sm:text-xs focus:outline-none resize-none leading-relaxed placeholder:text-slate-600"
-                      spellCheck={false}
-                    />
+
+                    {/* Code Container with Increased Height and Line Numbers */}
+                    <div className="relative font-mono text-[11px] sm:text-xs leading-6 h-[580px] sm:h-[640px] lg:h-[680px] flex overflow-hidden bg-slate-950">
+                      {/* Line Numbers Gutter */}
+                      <div
+                        ref={gutterRef}
+                        className="select-none py-3 px-2.5 bg-slate-900/50 border-r border-slate-800 text-slate-500 text-right font-mono text-[11px] leading-6 w-12 shrink-0 overflow-hidden"
+                      >
+                        {Array.from({ length: Math.max(lineCount, 1) }).map((_, i) => (
+                          <div key={i}>{i + 1}</div>
+                        ))}
+                      </div>
+
+                      {/* Main Code Editing Canvas */}
+                      <div className="relative flex-1 h-full overflow-hidden">
+                        {/* Syntax Highlighted HTML Layer */}
+                        <pre
+                          ref={highlightRef}
+                          style={{
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                            fontSize: '12px',
+                            lineHeight: '24px',
+                            letterSpacing: 'normal',
+                            tabSize: 4,
+                          }}
+                          className={`absolute inset-0 p-3 m-0 overflow-auto text-slate-200 pointer-events-none whitespace-pre select-none ${
+                            editorMode === 'COLORED' ? 'opacity-100' : 'opacity-0'
+                          }`}
+                          dangerouslySetInnerHTML={{ __html: highlightRustCode(codeSnippet) }}
+                        />
+
+                        {/* Interactive Textarea Layer */}
+                        <textarea
+                          ref={textareaRef}
+                          value={codeSnippet}
+                          onChange={(e) => setCodeSnippet(e.target.value)}
+                          onScroll={handleEditorScroll}
+                          placeholder="// Paste Soroban Rust smart contract (lib.rs) or click 'Vault Protocol' above..."
+                          style={{
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                            fontSize: '12px',
+                            lineHeight: '24px',
+                            letterSpacing: 'normal',
+                            tabSize: 4,
+                            color: editorMode === 'COLORED' ? 'transparent' : '#e2e8f0',
+                            WebkitTextFillColor: editorMode === 'COLORED' ? 'transparent' : '#e2e8f0',
+                            caretColor: editorMode === 'COLORED' ? '#ffffff' : '#C80552',
+                          }}
+                          className="absolute inset-0 p-3 m-0 overflow-auto bg-transparent resize-none focus:outline-none whitespace-pre border-0 selection:bg-accent/40"
+                          spellCheck={false}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -641,47 +860,45 @@ impl SolaceContract {
 
             {/* Bar Chart Visualization with Mobile Horizontal Scrolling & No Overflow */}
             <div className="overflow-x-auto pb-2 scrollbar-none">
-              <div className="min-w-[500px] flex items-end justify-between h-64 sm:h-72 px-2 sm:px-10 pt-6 border-b border-dashed border-slate-200 dark:border-slate-800">
+              <div className="min-w-[550px] flex items-end justify-between h-64 sm:h-72 px-2 sm:px-10 pt-6 border-b border-dashed border-slate-200 dark:border-slate-800">
                 <div className="flex flex-col justify-between h-full text-xs text-slate-400 dark:text-slate-500 py-1 pr-3 shrink-0">
-                  <span>5k</span>
-                  <span>4k</span>
-                  <span>3k</span>
-                  <span>2k</span>
-                  <span>1k</span>
-                  <span>0</span>
+                  <span className="text-accent font-bold">100% Safe</span>
+                  <span>75%</span>
+                  <span>50%</span>
+                  <span>25%</span>
+                  <span className="text-red-500 font-bold">0% Threat</span>
                 </div>
 
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="w-10 sm:w-12 h-36 sm:h-44 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Auth</span>
-                </div>
+                {invariantVectors.map((item, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-1.5 shrink-0 group">
+                    <span className={`text-xs font-black transition-transform group-hover:scale-110 ${item.scoreColor}`}>
+                      {item.score}%
+                    </span>
 
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="w-10 sm:w-12 h-44 sm:h-52 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Storage</span>
-                </div>
+                    <div
+                      className="w-10 sm:w-12 h-44 sm:h-52 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
+                      style={{ borderColor: `${item.glowColor}40` }}
+                    >
+                      <div
+                        className="w-full rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
+                        style={{
+                          height: `${item.score}%`,
+                          background: item.gradientStyle,
+                          boxShadow: `0 2px 10px ${item.glowColor}40`,
+                        }}
+                      >
+                        <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                      </div>
+                    </div>
 
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="w-10 sm:w-12 h-40 sm:h-48 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Safety</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="w-10 sm:w-12 h-56 sm:h-64 rounded-2xl bg-accent shadow-md relative overflow-hidden">
-                    <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {item.shortName}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.statusColor}`}>
+                      {item.status}
+                    </span>
                   </div>
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-900 dark:text-white">Admin</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="w-10 sm:w-12 h-38 sm:h-46 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Math</span>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="w-10 sm:w-12 h-42 sm:h-50 rounded-2xl bg-accent-subtle border border-accent/20 relative overflow-hidden" />
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">Code</span>
-                </div>
+                ))}
               </div>
             </div>
 

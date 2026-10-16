@@ -85,7 +85,12 @@ export default function DashboardPage() {
       score: selectedAuditMode === 'PRE' ? 100 : 100,
       threat: '0% Threat',
       status: 'Guarded',
-      statusColor: 'text-accent bg-accent-subtle border-accent/20',
+      gradientStyle: 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
+      glowColor: '#10b981',
+      barGradient: 'bg-gradient-to-t from-emerald-600 via-teal-500 to-emerald-400',
+      statusColor: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800',
+      borderColor: 'border-emerald-500/40',
+      scoreColor: 'text-emerald-600 dark:text-emerald-400',
       detail: 'require_auth() signature enforcement on state mutators',
     },
     {
@@ -94,7 +99,12 @@ export default function DashboardPage() {
       score: selectedAuditMode === 'PRE' ? 97 : 99,
       threat: selectedAuditMode === 'PRE' ? '3% Threat' : '1% Threat',
       status: 'Safe',
-      statusColor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+      gradientStyle: 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
+      glowColor: '#06b6d4',
+      barGradient: 'bg-gradient-to-t from-blue-600 via-cyan-500 to-sky-400',
+      statusColor: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border-cyan-300 dark:border-cyan-800',
+      borderColor: 'border-cyan-500/40',
+      scoreColor: 'text-cyan-600 dark:text-cyan-400',
       detail: 'Persistent vs Instance storage isolation & TTL bump automation',
     },
     {
@@ -103,7 +113,12 @@ export default function DashboardPage() {
       score: selectedAuditMode === 'PRE' ? 94 : 96,
       threat: selectedAuditMode === 'PRE' ? '6% Threat' : '4% Threat',
       status: 'Safe',
-      statusColor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+      gradientStyle: 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
+      glowColor: '#a855f7',
+      barGradient: 'bg-gradient-to-t from-violet-600 via-purple-500 to-fuchsia-400',
+      statusColor: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800',
+      borderColor: 'border-purple-500/40',
+      scoreColor: 'text-purple-600 dark:text-purple-400',
       detail: 'Elimination of unhandled .unwrap() panics and array indexing crash vectors',
     },
     {
@@ -112,7 +127,12 @@ export default function DashboardPage() {
       score: selectedAuditMode === 'PRE' ? 100 : 98,
       threat: selectedAuditMode === 'PRE' ? '0% Threat' : '2% Threat',
       status: 'Guarded',
-      statusColor: 'text-accent bg-accent-subtle border-accent/20',
+      gradientStyle: 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
+      glowColor: '#C80552',
+      barGradient: 'bg-gradient-to-t from-rose-600 via-[#E0105E] to-[#FF4D88]',
+      statusColor: 'text-accent bg-accent-subtle border-accent/30',
+      borderColor: 'border-accent/40',
+      scoreColor: 'text-accent',
       detail: 'Multi-sig admin governance and caller address authentication',
     },
     {
@@ -121,7 +141,12 @@ export default function DashboardPage() {
       score: selectedAuditMode === 'PRE' ? 98 : 100,
       threat: selectedAuditMode === 'PRE' ? '2% Threat' : '0% Threat',
       status: 'Safe',
-      statusColor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+      gradientStyle: 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
+      glowColor: '#f59e0b',
+      barGradient: 'bg-gradient-to-t from-amber-600 via-orange-500 to-amber-400',
+      statusColor: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800',
+      borderColor: 'border-amber-500/40',
+      scoreColor: 'text-amber-600 dark:text-amber-400',
       detail: 'Checked integer operations preventing wrap-around arithmetic exploits',
     },
     {
@@ -130,7 +155,12 @@ export default function DashboardPage() {
       score: selectedAuditMode === 'PRE' ? 96 : 97,
       threat: selectedAuditMode === 'PRE' ? '4% Threat' : '3% Threat',
       status: 'Safe',
-      statusColor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+      gradientStyle: 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
+      glowColor: '#6366f1',
+      barGradient: 'bg-gradient-to-t from-indigo-600 via-blue-500 to-indigo-400',
+      statusColor: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-800',
+      borderColor: 'border-indigo-500/40',
+      scoreColor: 'text-indigo-600 dark:text-indigo-400',
       detail: 'Optimized Soroban release binary complying with 64KB limits',
     },
   ];
@@ -449,30 +479,35 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Smart Contract Risk Header & Filter Toggle */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 p-1">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-snug">
+                {/* Smart Contract Risk Header & Filter Toggle (Clean Horizontal Layout) */}
+                <div className="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80 flex flex-col gap-2.5">
+                  {/* Row 1: Title and Score */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block animate-pulse shrink-0" />
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
                         Smart Contract Security Risk Index
                       </h3>
-                      <span className="w-2 h-2 rounded-full bg-accent inline-block animate-pulse shrink-0" />
                     </div>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-1 leading-normal">
-                      Static AST Threat Detection &amp; On-Chain Rent Exposure
-                    </p>
+                    <div className="bg-accent text-white text-[11px] font-extrabold px-3 py-1 rounded-full shadow-md shadow-accent/20 whitespace-nowrap shrink-0">
+                      +98.2% Security Score
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end w-full sm:w-auto">
-                    {/* Toggle Buttons (Brand Accent when selected, never black) */}
-                    <div className="bg-slate-100/90 dark:bg-slate-900 p-1 rounded-full flex items-center border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                  {/* Row 2: Subtitle and Pre/Post Deploy Toggles */}
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
+                      Static AST Threat Detection &amp; On-Chain Rent Exposure
+                    </p>
+
+                    <div className="bg-slate-100/90 dark:bg-slate-900 p-0.5 rounded-full flex items-center border border-slate-200/80 dark:border-slate-800 shadow-xs shrink-0">
                       <button
                         type="button"
                         onClick={() => setSelectedAuditMode('PRE')}
-                        className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
+                        className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 whitespace-nowrap select-none ${
                           selectedAuditMode === 'PRE'
-                            ? 'bg-accent text-white shadow-md shadow-accent/25'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                            ? 'bg-accent text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Pre-Deploy
@@ -480,24 +515,19 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedAuditMode('POST')}
-                        className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
+                        className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 whitespace-nowrap select-none ${
                           selectedAuditMode === 'POST'
-                            ? 'bg-accent text-white shadow-md shadow-accent/25'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                            ? 'bg-accent text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Post-Deploy
                       </button>
                     </div>
-
-                    {/* Overall Risk Rating Badge */}
-                    <div className="bg-accent text-white text-xs font-extrabold px-3 py-1 sm:py-1.5 rounded-full shadow-md shadow-accent/20 whitespace-nowrap">
-                      +98.2% Security Score
-                    </div>
                   </div>
                 </div>
 
-                {/* Modern Smart Contract Risk Bar Graph (Item 4: Modern Graph with Risk Levels) */}
+                {/* Modern Smart Contract Risk Bar Graph with Distinct Colors */}
                 <div className="flex items-end justify-between h-56 sm:h-60 px-1 sm:px-3 pt-3 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800 gap-1 sm:gap-2">
                   {/* Y Axis Risk Level Reference */}
                   <div className="flex flex-col justify-between h-full text-[9px] font-bold text-slate-400 dark:text-slate-500 py-1 pr-1 shrink-0">
@@ -508,31 +538,34 @@ export default function DashboardPage() {
                     <span className="text-red-500">0% Threat</span>
                   </div>
 
-                  {/* 6 Modern Risk Bars */}
+                  {/* 6 Modern Risk Bars (Color-Coded) */}
                   {riskVectors.map((item, idx) => (
                     <div
                       key={idx}
                       className="flex flex-col items-center gap-1.5 group cursor-pointer flex-1 min-w-0"
                       title={`${item.category}: ${item.score}% Security (${item.threat}) — ${item.detail}`}
                     >
-                      {/* Security Score percentage pill above bar */}
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-slate-800 dark:text-slate-200 transition-transform group-hover:scale-110">
+                      {/* Security Score percentage pill above bar with bar color */}
+                      <span className={`text-[10px] sm:text-[11px] font-extrabold transition-transform group-hover:scale-110 ${item.scoreColor}`}>
                         {item.score}%
                       </span>
 
                       {/* Modern Capsule Track */}
-                      <div className="w-7 sm:w-10 md:w-11 h-40 sm:h-44 rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner group-hover:border-accent/40 transition">
+                      <div
+                        className="w-7 sm:w-10 md:w-11 h-40 sm:h-44 rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
+                        style={{ borderColor: `${item.glowColor}40` }}
+                      >
                         {/* Subtle grid pattern background in track */}
                         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(200,5,82,0.05)_50%,transparent_75%)] bg-[length:6px_6px]" />
 
-                        {/* Dynamic Gradient Bar with Glass Reflection */}
+                        {/* Distinct Dynamic Gradient Bar with Glass Reflection */}
                         <div
-                          className={`w-full rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm ${
-                            item.score === 100
-                              ? 'bg-gradient-to-t from-accent via-[#E0105E] to-[#FF4D88]'
-                              : 'bg-gradient-to-t from-accent/90 to-[#E63975]'
-                          }`}
-                          style={{ height: `${item.score}%` }}
+                          className="w-full rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
+                          style={{
+                            height: `${item.score}%`,
+                            background: item.gradientStyle,
+                            boxShadow: `0 2px 10px ${item.glowColor}40`,
+                          }}
                         >
                           {/* Glass top reflection */}
                           <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
@@ -557,12 +590,16 @@ export default function DashboardPage() {
               <div className="pt-3.5 mt-2 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 gap-2">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-accent inline-block" />
-                    <span className="text-[11px] font-medium">Guarded (0% Risk)</span>
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#10b981' }} />
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Auth Guarded</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                    <span className="text-[11px] font-medium">Safe (&lt;5% Threat)</span>
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#06b6d4' }} />
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Storage Safe</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#C80552' }} />
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Admin Guarded</span>
                   </div>
                 </div>
                 <Link
@@ -713,99 +750,116 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Card 5: Permanent Security Records (No technical words) */}
+            {/* Card 5: Live Threat Shield & AST Defense */}
             <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between transition-colors">
               <div>
                 {/* Header */}
-                <div className="flex items-center gap-2.5 mb-3.5">
-                  <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent shrink-0 border border-accent/20 shadow-xs">
-                    <ShieldCheck className="w-4 h-4" />
+                <div className="flex items-center justify-between mb-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent shrink-0 border border-accent/20 shadow-xs">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                        Live Threat Shield
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        Real-time AST invariant enforcement
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                      Permanent Security Records
-                    </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      Verified audit records stored on Stellar
-                    </p>
-                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                    4 Active Guards
+                  </span>
                 </div>
 
-                {/* Primary Metric Row */}
-                <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100/70 dark:from-slate-900/80 dark:to-slate-900/40 border border-slate-200/70 dark:border-slate-800 mb-3">
-                  <div>
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">
-                      Saved Security Audits
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none mt-1 block">
-                      3,945 Records
+                {/* 4 Invariant Security Guards */}
+                <div className="space-y-2 mb-3">
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                          Authorization Guard
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          require_auth() signature enforcement
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                      Guarded
                     </span>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent-subtle text-accent border border-accent/20 inline-flex items-center gap-1.5 shadow-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                      Tamper-Proof
-                    </span>
-                  </div>
-                </div>
 
-                {/* Security Seal Banner */}
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-start gap-2.5 mb-4">
-                  <div className="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-accent shrink-0 shadow-xs mt-0.5">
-                    <Lock className="w-3 h-3" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
-                      Permanent Security Seal
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                          Storage Rent Guardian
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          TTL auto-bump & state isolation
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800 shrink-0">
+                      Protected
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-                      Saved directly into the Solace smart contract
+                  </div>
+
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                          Panic Crash Shield
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          Zero unhandled .unwrap() host panics
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 shrink-0">
+                      Safe
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-accent shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                          Admin Access Control
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          Multi-sig role & caller authentication
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
+                      Enforced
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Security Approvals Section */}
-              <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between mb-2.5">
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
-                      Security Approvals
-                    </h3>
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      Verified Signer Accounts
-                    </p>
-                  </div>
-                  <a
-                    href="https://stellar.expert/explorer/testnet/account/GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-7 h-7 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition shadow-xs"
-                    title="View Signer Account on Stellar Expert"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+              {/* Engine Status Footer */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
+                  <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
+                    Continuous AST Verification
+                  </span>
                 </div>
-
-                {/* Signer Box & Rule */}
-                <div className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
-                      <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title="GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI">
-                        GBWSB2...7FDYPI
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
-                      Active Signer
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">Required Approvals</span>
-                    <span className="font-bold text-slate-900 dark:text-white">3 of 4 Signers Required</span>
-                  </div>
-                </div>
+                <Link
+                  href="/monitor"
+                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-[11px]"
+                >
+                  <span>Open Monitor</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>
