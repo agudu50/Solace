@@ -242,14 +242,14 @@ export default function DashboardPage() {
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
                 Welcome Back, Security Auditor
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-2xl leading-relaxed">
                 Autonomous AST rule verification, persistent storage rent monitoring, and cryptographic on-chain audit proof inscriptions on the Stellar ledger.
               </p>
             </div>
 
             <div className="flex items-center gap-3 self-stretch sm:self-auto flex-wrap shrink-0">
               {/* Date / Testnet Epoch Pill */}
-              <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-sm flex items-center gap-2">
+              <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-accent" />
                 <span>15 Oct, 2026 · Testnet Epoch 542</span>
               </div>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
               <div className="flex justify-between items-center mb-3">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white">Contract Security</h2>
-                  <p className="text-[11px] text-slate-400">Target Score & Ledger State</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Target Score &amp; Ledger State</p>
                 </div>
                 <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" title="Active on Stellar Testnet" />
               </div>
@@ -291,19 +291,19 @@ export default function DashboardPage() {
                     <Shield className="w-4 h-4 text-rose-200" />
                     <span>SOLACE CORE</span>
                   </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">
                     Testnet Active
                   </span>
                 </div>
 
-                <div className="text-[10px] text-rose-200 uppercase tracking-wide">
+                <div className="text-[11px] font-semibold text-rose-200 uppercase tracking-wide">
                   Deployed Instance ID
                 </div>
                 <div className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1">
                   CBXV73...NKDQ
                 </div>
 
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-rose-300/20 text-[10px] sm:text-[11px] font-mono text-rose-100">
+                <div className="flex justify-between items-center mt-4 pt-3 border-t border-rose-300/20 text-xs font-mono font-medium text-rose-100">
                   <span>ID: CBXV73FFYM...</span>
                   <span>EXP: 51,840 LEDGERS</span>
                 </div>
@@ -312,10 +312,10 @@ export default function DashboardPage() {
               {/* Sub-Stat: Verified Inscriptions */}
               <div className="flex justify-between items-center pt-1">
                 <div>
-                  <span className="text-[11px] text-slate-400 block">Verified Inscriptions</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold block">Verified Inscriptions</span>
                   <span className="text-base font-bold text-slate-900 dark:text-white">+3,945 Ledger Txs</span>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-accent-subtle text-accent border border-accent-subtle">
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent-subtle text-accent border border-accent/20">
                   +12.8%
                 </span>
               </div>
@@ -326,11 +326,11 @@ export default function DashboardPage() {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white">Recent Security Audits</h2>
-                    <p className="text-[11px] text-slate-400">Live on-chain inscriptions</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Live on-chain inscriptions</p>
                   </div>
                   <Link
                     href="/reports"
-                    className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition"
+                    className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition"
                     title="View all verified reports"
                   >
                     <ArrowUpRight className="w-4 h-4" />
@@ -353,7 +353,7 @@ export default function DashboardPage() {
                           <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={item.name}>
                             {item.name}
                           </div>
-                          <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1">
                             <Clock className="w-2.5 h-2.5 shrink-0" />
                             <span className="truncate">{item.date} • {item.time}</span>
                           </div>
@@ -363,12 +363,12 @@ export default function DashboardPage() {
                       <div className="text-right shrink-0">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
                           item.isSecure
-                            ? 'bg-accent-subtle text-accent border border-accent-subtle'
+                            ? 'bg-accent-subtle text-accent border border-accent/20'
                             : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
                         }`}>
                           • {item.status}
                         </span>
-                        <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5">
+                        <div className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-0.5">
                           Score: {item.score}
                         </div>
                       </div>
@@ -379,10 +379,10 @@ export default function DashboardPage() {
 
               {/* View all reports footer link to ensure balanced height */}
               <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-400 text-[11px]">4 of 3,945 records</span>
+                <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">4 of 3,945 records</span>
                 <Link
                   href="/reports"
-                  className="font-bold text-slate-800 dark:text-slate-200 hover:text-accent dark:hover:text-accent flex items-center gap-1 text-[11px]"
+                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-xs"
                 >
                   <span>Explore all records</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -405,8 +405,8 @@ export default function DashboardPage() {
                       <span className="text-sm font-bold text-slate-900 dark:text-white block leading-tight">
                         Security Threat & Invariant Engine
                       </span>
-                      <span className="text-[10px] text-slate-400">
-                        Real-time Soroban AST flaw inspection & verification
+                      <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        Real-time Soroban AST flaw inspection &amp; verification
                       </span>
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export default function DashboardPage() {
                 {/* Contracts Submitted & Core Metrics Row (Equalized Heights & Baseline Alignment) */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5 items-stretch">
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
                       Contracts Submitted
                     </span>
                     <div className="my-1">
@@ -431,13 +431,13 @@ export default function DashboardPage() {
                         1,428
                       </div>
                     </div>
-                    <span className="text-[10px] text-accent font-semibold block leading-tight truncate">
+                    <span className="text-xs text-accent font-bold block leading-tight truncate">
                       +24.6% this epoch
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
                       Verified Secure
                     </span>
                     <div className="my-1">
@@ -445,13 +445,13 @@ export default function DashboardPage() {
                         1,392
                       </div>
                     </div>
-                    <span className="text-[10px] text-accent font-semibold block leading-tight truncate">
+                    <span className="text-xs text-accent font-bold block leading-tight truncate">
                       97.5% pass rate
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
                       Flaws Quarantined
                     </span>
                     <div className="my-1">
@@ -459,13 +459,13 @@ export default function DashboardPage() {
                         36
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block leading-tight truncate">
+                    <span className="text-xs text-slate-600 dark:text-slate-300 font-bold block leading-tight truncate">
                       0 exploit leaks
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block h-7 flex items-start leading-tight">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
                       Avg AI Latency
                     </span>
                     <div className="my-1">
@@ -473,41 +473,37 @@ export default function DashboardPage() {
                         840ms
                       </div>
                     </div>
-                    <span className="text-[10px] text-accent font-semibold block leading-tight truncate">
+                    <span className="text-xs text-accent font-bold block leading-tight truncate">
                       Dual Flash Engine
                     </span>
                   </div>
                 </div>
 
-                {/* Smart Contract Risk Header & Filter Toggle (Clean Horizontal Layout) */}
-                <div className="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80 flex flex-col gap-2.5">
-                  {/* Row 1: Title and Score */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                {/* Smart Contract Risk Header & Filter Toggle (Spacious, Fully Contained Layout) */}
+                <div className="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                  {/* Row 1: Title and Subtitle with 100% width */}
+                  <div>
+                    <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block animate-pulse shrink-0" />
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                         Smart Contract Security Risk Index
                       </h3>
                     </div>
-                    <div className="bg-accent text-white text-[11px] font-extrabold px-3 py-1 rounded-full shadow-md shadow-accent/20 whitespace-nowrap shrink-0">
-                      +98.2% Security Score
-                    </div>
-                  </div>
-
-                  {/* Row 2: Subtitle and Pre/Post Deploy Toggles */}
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-0.5 ml-4.5">
                       Static AST Threat Detection &amp; On-Chain Rent Exposure
                     </p>
+                  </div>
 
+                  {/* Row 2: Controls Toolbar (Pre/Post Deploy Toggle & Security Score) */}
+                  <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
                     <div className="bg-slate-100/90 dark:bg-slate-900 p-0.5 rounded-full flex items-center border border-slate-200/80 dark:border-slate-800 shadow-xs shrink-0">
                       <button
                         type="button"
                         onClick={() => setSelectedAuditMode('PRE')}
-                        className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 whitespace-nowrap select-none ${
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
                           selectedAuditMode === 'PRE'
                             ? 'bg-accent text-white shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Pre-Deploy
@@ -515,14 +511,18 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedAuditMode('POST')}
-                        className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 whitespace-nowrap select-none ${
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-150 whitespace-nowrap select-none ${
                           selectedAuditMode === 'POST'
                             ? 'bg-accent text-white shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Post-Deploy
                       </button>
+                    </div>
+
+                    <div className="bg-accent text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-md shadow-accent/20 whitespace-nowrap shrink-0">
+                      +98.2% Security Score
                     </div>
                   </div>
                 </div>
@@ -530,7 +530,7 @@ export default function DashboardPage() {
                 {/* Modern Smart Contract Risk Bar Graph with Distinct Colors */}
                 <div className="flex items-end justify-between h-56 sm:h-60 px-1 sm:px-3 pt-3 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800 gap-1 sm:gap-2">
                   {/* Y Axis Risk Level Reference */}
-                  <div className="flex flex-col justify-between h-full text-[9px] font-bold text-slate-400 dark:text-slate-500 py-1 pr-1 shrink-0">
+                  <div className="flex flex-col justify-between h-full text-[10px] font-extrabold text-slate-600 dark:text-slate-300 py-1 pr-1 shrink-0">
                     <span className="text-accent">100% Safe</span>
                     <span>75%</span>
                     <span>50%</span>
@@ -546,7 +546,7 @@ export default function DashboardPage() {
                       title={`${item.category}: ${item.score}% Security (${item.threat}) — ${item.detail}`}
                     >
                       {/* Security Score percentage pill above bar with bar color */}
-                      <span className={`text-[10px] sm:text-[11px] font-extrabold transition-transform group-hover:scale-110 ${item.scoreColor}`}>
+                      <span className={`text-xs font-black transition-transform group-hover:scale-110 ${item.scoreColor}`}>
                         {item.score}%
                       </span>
 
@@ -574,10 +574,10 @@ export default function DashboardPage() {
 
                       {/* Bar Name and Risk Status Tag */}
                       <div className="text-center w-full">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-800 dark:text-slate-200 block truncate leading-tight">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block truncate leading-tight">
                           {item.shortName}
                         </span>
-                        <span className={`text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full border inline-block mt-0.5 ${item.statusColor}`}>
+                        <span className={`text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border inline-block mt-0.5 ${item.statusColor}`}>
                           {item.status}
                         </span>
                       </div>
@@ -587,24 +587,24 @@ export default function DashboardPage() {
               </div>
 
               {/* Legend & Risk Verification Action */}
-              <div className="pt-3.5 mt-2 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 gap-2">
+              <div className="pt-3.5 mt-2 flex flex-wrap items-center justify-between text-xs text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800 gap-2">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#10b981' }} />
-                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Auth Guarded</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Auth Guarded</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#06b6d4' }} />
-                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Storage Safe</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Storage Safe</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#C80552' }} />
-                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Admin Guarded</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Admin Guarded</span>
                   </div>
                 </div>
                 <Link
                   href="/audit"
-                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent underline underline-offset-2 flex items-center gap-1 text-[11px]"
+                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent underline underline-offset-2 flex items-center gap-1 text-xs"
                 >
                   <span>Verify Contract in Studio</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -628,12 +628,12 @@ export default function DashboardPage() {
                       <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                         AI Analyzed Contract
                       </h2>
-                      <p className="text-[11px] text-slate-400">Gemini Dual Flash AST Engine</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Gemini Dual Flash AST Engine</p>
                     </div>
                   </div>
                   <Link
                     href="/audit"
-                    className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition"
+                    className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition"
                     title="Open in Audit Studio"
                   >
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -657,9 +657,9 @@ export default function DashboardPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                  <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium mb-2">
                     <span className="truncate">{activeAudit.subtitle}</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 shrink-0">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">
                       {activeAudit.linesCount} lines
                     </span>
                   </div>
@@ -667,17 +667,17 @@ export default function DashboardPage() {
                   {/* Score & Verdict Bar */}
                   <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                      <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
                         Security Score
                       </span>
                       <span className="text-xl font-black text-slate-900 dark:text-white">
                         {activeAudit.riskScore}
-                        <span className="text-xs font-normal text-slate-400">/100</span>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">/100</span>
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                      <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
                         Quarantined Flaws
                       </span>
                       <span className="text-sm font-bold text-accent">
@@ -707,27 +707,27 @@ export default function DashboardPage() {
                       strokeWidth="2.5"
                     />
                   </svg>
-                  <div className="absolute top-1.5 right-2 flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-accent/20 text-[9px] font-bold text-accent shadow-xs">
+                  <div className="absolute top-1.5 right-2 flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-accent/20 text-[10px] font-bold text-accent shadow-xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
                     <span>{activeAudit.riskScore}% Security Curve</span>
                   </div>
                 </div>
 
                 {/* Contract Hash Proof Pill */}
-                <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-[11px] flex items-center justify-between gap-2 mb-2">
+                <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">SHA256:</span>
-                    <span className="font-mono text-slate-700 dark:text-slate-300 truncate text-[10px]">
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase shrink-0">SHA256:</span>
+                    <span className="font-mono text-slate-800 dark:text-slate-200 font-medium truncate text-xs">
                       {activeAudit.contractHash.slice(0, 10)}...{activeAudit.contractHash.slice(-8)}
                     </span>
                   </div>
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
                     Live AST
                   </span>
                 </div>
 
                 {/* AI Summary snippet */}
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium line-clamp-2 leading-relaxed">
                   {activeAudit.summary}
                 </p>
               </div>
@@ -743,7 +743,7 @@ export default function DashboardPage() {
                 </Link>
                 <Link
                   href={`/reports?hash=${activeAudit.contractHash}`}
-                  className="py-2.5 px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center"
+                  className="py-2.5 px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center"
                 >
                   View Report
                 </Link>
@@ -763,7 +763,7 @@ export default function DashboardPage() {
                       <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                         Live Threat Shield
                       </h2>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold">
                         Real-time AST invariant enforcement
                       </p>
                     </div>
@@ -782,7 +782,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Authorization Guard
                         </span>
-                        <span className="text-[10px] text-slate-400 block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
                           require_auth() signature enforcement
                         </span>
                       </div>
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Storage Rent Guardian
                         </span>
-                        <span className="text-[10px] text-slate-400 block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
                           TTL auto-bump & state isolation
                         </span>
                       </div>
@@ -816,7 +816,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Panic Crash Shield
                         </span>
-                        <span className="text-[10px] text-slate-400 block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
                           Zero unhandled .unwrap() host panics
                         </span>
                       </div>
@@ -833,7 +833,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
                           Admin Access Control
                         </span>
-                        <span className="text-[10px] text-slate-400 block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
                           Multi-sig role & caller authentication
                         </span>
                       </div>
@@ -849,13 +849,13 @@ export default function DashboardPage() {
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
-                  <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
+                  <span className="text-slate-700 dark:text-slate-200 font-semibold text-xs">
                     Continuous AST Verification
                   </span>
                 </div>
                 <Link
                   href="/monitor"
-                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-[11px]"
+                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-xs"
                 >
                   <span>Open Monitor</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />

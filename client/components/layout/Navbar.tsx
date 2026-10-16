@@ -103,7 +103,7 @@ export default function Navbar() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition ${
                   isActive
                     ? 'bg-accent text-white shadow-md shadow-accent/25'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
+                    : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
                 }`}
               >
                 <IconComponent className="w-3.5 h-3.5" />
@@ -232,40 +232,40 @@ export default function Navbar() {
 
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
                   Stellar Network
                 </span>
                 <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">Testnet (Protocol 22)</span>
-                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 block truncate">
+                <span className="text-xs font-mono text-slate-600 dark:text-slate-300 font-semibold block truncate">
                   https://soroban-testnet.stellar.org
                 </span>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
                   Gemini AI Model Engine
                 </span>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-accent inline-block" />
                   <span className="font-semibold text-slate-900 dark:text-white">Adaptive Multi-Model Resiliency</span>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                <span className="text-xs text-slate-600 dark:text-slate-300 block mt-0.5 font-medium">
                   Primary: gemini-3.5-flash · Fallback: gemini-3.8-flash
                 </span>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
                   On-Chain Solace Contract
                 </span>
-                <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 block truncate mt-0.5">
+                <span className="font-mono text-xs font-bold text-slate-900 dark:text-white block truncate mt-0.5">
                   CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ
                 </span>
                 <a
                   href="https://stellar.expert/explorer/testnet/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent hover:underline flex items-center gap-1 mt-1 text-[11px] font-medium"
+                  className="text-accent hover:underline flex items-center gap-1 mt-1 text-xs font-bold"
                 >
                   <span>Inspect on Stellar Expert</span>
                   <ExternalLink className="w-3 h-3" />

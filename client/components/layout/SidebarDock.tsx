@@ -38,12 +38,12 @@ export default function SidebarDock({ onOpenAudit }: SidebarDockProps) {
             className={`flex flex-col items-center justify-center p-2 rounded-xl transition ${
               isActive
                 ? 'bg-accent text-white shadow-md'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
             }`}
             title={item.label}
           >
             <Icon className="w-5 h-5" />
-            <span className="text-[9px] font-semibold mt-0.5 tracking-tight">
+            <span className="text-[10px] sm:text-[11px] font-bold mt-0.5 tracking-tight">
               {item.label}
             </span>
           </Link>

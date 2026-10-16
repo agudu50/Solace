@@ -94,7 +94,7 @@ export default function MonitorPage() {
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
                 Live Contract Monitor
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-xl leading-relaxed">
                 Real-time health monitoring, storage TTL tracking, and post-deployment security checks for live Soroban contracts.
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function MonitorPage() {
             <div className="flex items-center gap-3 flex-wrap shrink-0">
               <Link
                 href="/reports"
-                className="text-xs px-4 py-2 rounded-full bg-slate-100/90 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap font-bold"
+                className="text-xs px-4 py-2 rounded-full bg-slate-100/90 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap font-bold"
               >
                 <span>Ledger Reports</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -120,11 +120,11 @@ export default function MonitorPage() {
 
         {/* Quick Sample Contract ID Pill */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Deployed instance:</span>
+          <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Deployed instance:</span>
           <button
             type="button"
             onClick={() => setContractId('CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ')}
-            className="text-xs font-mono px-3 py-1 rounded-full bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border border-slate-200/80 dark:border-slate-800 shadow-sm transition font-medium"
+            className="text-xs font-mono px-3 py-1 rounded-full bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border border-slate-200/80 dark:border-slate-800 shadow-sm transition font-bold"
           >
             # Solace Core (CBXV73...NKDQ)
           </button>
@@ -140,7 +140,7 @@ export default function MonitorPage() {
                 value={contractId}
                 onChange={(e) => setContractId(e.target.value)}
                 placeholder="Enter Deployed Soroban Contract ID (e.g. CBXV73FFYM...)..."
-                className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-accent shadow-sm transition"
+                className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
               />
             </div>
             <button
@@ -159,32 +159,32 @@ export default function MonitorPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
                   Network Status
                 </span>
                 <p className="text-2xl font-black text-accent mt-1">{metrics.status}</p>
-                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">Contract responsive on Testnet</span>
+                <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold mt-1 block">Contract responsive on Testnet</span>
               </div>
 
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
                   Storage Rent TTL
                 </span>
                 <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
                   {metrics.ttlRemainingLedgers.toLocaleString()}{' '}
-                  <span className="text-xs font-normal text-slate-400">ledgers remaining</span>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">ledgers remaining</span>
                 </p>
-                <span className="text-xs text-accent mt-1 block">No immediate archival risk</span>
+                <span className="text-xs text-accent font-bold mt-1 block">No immediate archival risk</span>
               </div>
 
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
                   Security Invariants
                 </span>
                 <p className="text-2xl font-black text-accent mt-1">
                   {metrics.invariantsPassed} / {metrics.invariantsPassed + metrics.invariantsFailed}
                 </p>
-                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">All automated health checks passing</span>
+                <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold mt-1 block">All automated health checks passing</span>
               </div>
             </div>
 
@@ -192,13 +192,13 @@ export default function MonitorPage() {
               <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Post-Deployment Monitoring Telemetry</h3>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">Live ledger storage and access parameters</p>
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Live ledger storage and access parameters</p>
                 </div>
                 <a
                   href={`https://stellar.expert/explorer/testnet/contract/${metrics.contractId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-accent font-semibold hover:underline flex items-center gap-1"
+                  className="text-xs text-accent font-bold hover:underline flex items-center gap-1"
                 >
                   <span>View on Stellar Expert</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -206,22 +206,22 @@ export default function MonitorPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400">Contract ID</span>
-                  <span className="font-mono text-slate-900 dark:text-white text-xs truncate max-w-[220px]" title={metrics.contractId}>
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Contract ID</span>
+                  <span className="font-mono text-slate-900 dark:text-white font-bold text-xs truncate max-w-[220px]" title={metrics.contractId}>
                     {metrics.contractId}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400">Storage Class</span>
-                  <span className="font-medium text-slate-900 dark:text-white">{metrics.storageType}</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Storage Class</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-xs">{metrics.storageType}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400">Authorized Signers</span>
-                  <span className="font-medium text-slate-900 dark:text-white">{metrics.authorizedSigners} Address</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Authorized Signers</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-xs">{metrics.authorizedSigners} Address</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-500 dark:text-slate-400">Last Ledger Activity</span>
-                  <span className="font-medium text-slate-900 dark:text-white">{metrics.lastInvoked}</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Last Ledger Activity</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-xs">{metrics.lastInvoked}</span>
                 </div>
               </div>
             </div>
@@ -233,8 +233,8 @@ export default function MonitorPage() {
             <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 mx-auto mb-3">
               <Activity className="w-6 h-6 text-accent" />
             </div>
-            <p className="font-bold text-slate-800 dark:text-slate-200">No live contract monitored yet.</p>
-            <p className="text-xs mt-1 text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            <p className="font-bold text-slate-900 dark:text-white text-base">No live contract monitored yet.</p>
+            <p className="text-xs mt-1 text-slate-600 dark:text-slate-300 font-medium max-w-md mx-auto">
               Provide a deployed Stellar Soroban contract ID or click the sample instance above to inspect TTL rent, access controls, and invariants.
             </p>
           </div>
