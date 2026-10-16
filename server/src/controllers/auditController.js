@@ -24,7 +24,7 @@ export async function auditContract(req, res, next) {
     const report = await analyzeContractWithAI(code, Boolean(isPostDeployment));
 
     console.log(
-      `[✓] [Audit] Analysis completed via ${report.modelUsed || 'Gemini'} | Risk: ${report.riskScore}/100 | Vulnerabilities: ${report.vulnerabilities?.length || 0}`
+      `[✓] [Audit] Analysis completed via ${report.modelUsed || 'Solace AI Engine'} | Risk: ${report.riskScore}/100 | Vulnerabilities: ${report.vulnerabilities?.length || 0}`
     );
 
     const contractInfo = sorobanService.getContractInfo();
@@ -63,7 +63,7 @@ export function healthCheck(req, res) {
     success: true,
     service: 'Solace AI Security Audit Server',
     status: 'healthy',
-    engine: 'Gemini AI Adaptive Multi-Model Engine',
+    engine: 'Solace Dual Flash AST Multi-Model Engine',
     candidateModels: CANDIDATE_MODELS,
     contract: sorobanService.getContractInfo(),
     timestamp: new Date().toISOString(),

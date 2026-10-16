@@ -44,7 +44,7 @@ export default function DashboardPage() {
     contractHash: '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a',
     riskScore: 85,
     isSecure: true,
-    summary: 'Autonomous Gemini AI AST inspection verified require_auth() invariants and persistent rent protection.',
+    summary: 'Autonomous Solace Dual Flash AST inspection verified require_auth() invariants and persistent rent protection.',
     vulnerabilitiesCount: 0,
     auditType: 'PRE_DEPLOYMENT',
     timestamp: '12:20 PM',
@@ -628,7 +628,7 @@ export default function DashboardPage() {
                       <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                         AI Analyzed Contract
                       </h2>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Gemini Dual Flash AST Engine</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Dual Flash AST Engine</p>
                     </div>
                   </div>
                   <Link

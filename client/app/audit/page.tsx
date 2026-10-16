@@ -245,7 +245,7 @@ export default function AuditStudioPage() {
           reportData?.summary ||
           (isVault
             ? 'Soroban multi-sig liquidity pool with authorized withdrawals and rent protection.'
-            : 'Autonomous Gemini AI AST inspection verified require_auth() invariants and persistent rent protection.'),
+            : 'Autonomous Solace Dual Flash AST Engine verified require_auth() invariants and persistent rent protection.'),
         vulnerabilitiesCount: reportData?.vulnerabilities?.length ?? 0,
         auditType: isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT',
         timestamp: timeStr,
@@ -328,7 +328,7 @@ impl SolaceContract {
     syncActiveContract(solaceCode, {
       riskScore: 85,
       isSecure: true,
-      summary: 'Autonomous Gemini AI AST inspection verified require_auth() invariants and persistent rent protection.',
+      summary: 'Autonomous Solace Dual Flash AST Engine verified require_auth() invariants and persistent rent protection.',
       vulnerabilities: [],
     }, '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a');
   };
@@ -487,7 +487,7 @@ impl SolaceContract {
                 Interactive Code Audit Studio
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-xl leading-relaxed">
-                Autonomous Gemini AI AST inspection &amp; verification on Stellar Soroban
+                Autonomous Solace Dual Flash AST inspection &amp; verification on Stellar Soroban
               </p>
             </div>
 
@@ -767,7 +767,7 @@ impl SolaceContract {
                     className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-bold transition shadow-md shadow-accent/25 whitespace-nowrap flex items-center justify-center gap-2"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>{loading ? 'Gemini AI Analyzing Code...' : 'Audit Smart Contract'}</span>
+                    <span>{loading ? 'Solace AI Analyzing Code...' : 'Audit Smart Contract'}</span>
                   </button>
                 </div>
 
@@ -815,7 +815,7 @@ impl SolaceContract {
                   <div className="flex-grow flex flex-col items-center justify-center text-center p-6 sm:p-8">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent mb-3" />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      Gemini AI Analyzing AST Invariants...
+                      Solace Dual Flash AST Engine Analyzing...
                     </span>
                     <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium">
                       Evaluating require_auth(), persistent storage bounds, and arithmetic safety.

@@ -243,14 +243,14 @@ export default function Navbar() {
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
                 <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
-                  Gemini AI Model Engine
+                  Solace AI Model Engine
                 </span>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-accent inline-block" />
                   <span className="font-semibold text-slate-900 dark:text-white">Adaptive Multi-Model Resiliency</span>
                 </div>
                 <span className="text-xs text-slate-600 dark:text-slate-300 block mt-0.5 font-medium">
-                  Primary: gemini-3.5-flash · Fallback: gemini-3.8-flash
+                  Dual Flash AST Engine · High Resilience
                 </span>
               </div>
 
