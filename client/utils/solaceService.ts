@@ -1,4 +1,4 @@
-import { isConnected, requestAccess } from '@stellar/freighter-api';
+import { isConnected, requestAccess, getNetwork, getNetworkDetails } from '@stellar/freighter-api';
 
 const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -7,7 +7,47 @@ export const CONTRACT_ID: string =
   process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
 
 /**
+ * Detect network automatically from connected Freighter wallet or production environment
+ */
+export async function detectWalletNetwork(): Promise<'testnet' | 'mainnet'> {
+  if (typeof window === 'undefined') return 'testnet';
+
+  const isProdEnv = process.env.NODE_ENV === 'production';
+
+  try {
+    const detailsPromise = getNetworkDetails();
+    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2000));
+    const details: any = await Promise.race([detailsPromise, timeoutPromise]);
+
+    if (details) {
+      const net = String(details.network || details.networkPassphrase || '').toUpperCase();
+      if (net.includes('PUBLIC') || net.includes('MAINNET')) {
+        return 'mainnet';
+      }
+      if (net.includes('TEST')) {
+        return 'testnet';
+      }
+    }
+
+    const netPromise = getNetwork();
+    const netName: any = await Promise.race([netPromise, timeoutPromise]);
+    if (netName) {
+      const str = String(typeof netName === 'string' ? netName : netName?.network || '').toUpperCase();
+      if (str.includes('PUBLIC') || str.includes('MAINNET')) {
+        return 'mainnet';
+      }
+      if (str.includes('TEST')) {
+        return 'testnet';
+      }
+    }
+  } catch (_) {}
+
+  return isProdEnv ? 'mainnet' : 'testnet';
+}
+
+/**
  * Connect to Freighter browser extension wallet with timeout guards
+ * and automatically detect the active wallet network (Testnet vs Mainnet)
  */
 export async function connectWallet(): Promise<string> {
   if (typeof window === 'undefined') {
@@ -59,6 +99,13 @@ export async function connectWallet(): Promise<string> {
   if (!publicKey) {
     throw new Error('No public key returned by Freighter wallet.');
   }
+
+  // 3. Automatically determine network from the wallet
+  try {
+    const detectedNet = await detectWalletNetwork();
+    localStorage.setItem('solace-network', detectedNet);
+    window.dispatchEvent(new CustomEvent('solace-network-updated', { detail: { network: detectedNet } }));
+  } catch (_) {}
 
   return publicKey;
 }

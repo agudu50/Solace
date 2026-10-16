@@ -72,7 +72,8 @@ export function healthCheck(req, res) {
 
 export function getContractMetadata(req, res) {
   try {
-    const info = sorobanService.getContractInfo();
+    const network = req.query.network || 'testnet';
+    const info = sorobanService.getContractInfo(network);
     res.status(200).json({
       success: true,
       data: info,
@@ -127,11 +128,12 @@ export async function recordAuditOnChain(req, res) {
 export async function getContractTelemetryHandler(req, res) {
   try {
     const { contractId } = req.params;
+    const network = req.query.network || 'testnet';
     if (!contractId) {
       return res.status(400).json({ success: false, error: 'Contract ID is required in URL.' });
     }
 
-    const telemetry = await sorobanService.getContractTelemetry(contractId.trim());
+    const telemetry = await sorobanService.getContractTelemetry(contractId.trim(), network);
     res.status(200).json(telemetry);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

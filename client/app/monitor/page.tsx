@@ -19,6 +19,7 @@ import {
   Wifi,
   Zap,
 } from 'lucide-react';
+import WalletGate from '../../components/auth/WalletGate';
 
 interface LiveTelemetry {
   contractId: string;
@@ -49,16 +50,17 @@ export default function MonitorPage() {
   const [isAutoPolling, setIsAutoPolling] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<boolean>(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string>('');
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchLiveTelemetry = async (targetId: string, isSilent = false) => {
+  const fetchLiveTelemetry = async (targetId: string, isSilent = false, activeNet = network) => {
     if (!targetId.trim()) return;
     if (!isSilent) setMonitoring(true);
     setError('');
 
     const startTime = Date.now();
     try {
-      const res = await fetch(`${API_BASE_URL}/api/contract/telemetry/${encodeURIComponent(targetId.trim())}`);
+      const res = await fetch(`${API_BASE_URL}/api/contract/telemetry/${encodeURIComponent(targetId.trim())}?network=${activeNet}`);
       const data = await res.json();
       const latency = Date.now() - startTime;
 
@@ -69,7 +71,7 @@ export default function MonitorPage() {
         });
         setLastRefreshedAt(new Date().toLocaleTimeString());
       } else {
-        setError(data.error || 'Contract telemetry offline or unreachable on Stellar Testnet.');
+        setError(data.error || `Contract telemetry offline or unreachable on Stellar ${activeNet === 'mainnet' ? 'Mainnet' : 'Testnet'}.`);
         if (!isSilent) setMetrics(null);
       }
     } catch (err: any) {
@@ -80,9 +82,29 @@ export default function MonitorPage() {
     }
   };
 
-  // Initial fetch on mount
+  // Initial fetch and network listener
   useEffect(() => {
-    fetchLiveTelemetry(DEFAULT_CONTRACT_ID);
+    let currentNet: 'testnet' | 'mainnet' = 'testnet';
+    try {
+      const storedNet = localStorage.getItem('solace-network');
+      if (storedNet === 'mainnet' || storedNet === 'testnet') {
+        currentNet = storedNet;
+        setNetwork(storedNet);
+      }
+    } catch (_) {}
+
+    fetchLiveTelemetry(DEFAULT_CONTRACT_ID, false, currentNet);
+
+    const handleNetworkEvent = (e: any) => {
+      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
+      if (net === 'mainnet' || net === 'testnet') {
+        setNetwork(net);
+        fetchLiveTelemetry(contractId, false, net);
+      }
+    };
+
+    window.addEventListener('solace-network-updated', handleNetworkEvent);
+    return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
   }, []);
 
   // Live Auto-Polling Interval (real-time stream every 5s)
@@ -93,13 +115,13 @@ export default function MonitorPage() {
     }
 
     pollingRef.current = setInterval(() => {
-      fetchLiveTelemetry(contractId.trim(), true);
+      fetchLiveTelemetry(contractId.trim(), true, network);
     }, 5000);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [isAutoPolling, contractId]);
+  }, [isAutoPolling, contractId, network]);
 
   const handleStartMonitor = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +137,11 @@ export default function MonitorPage() {
 
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
-      <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <WalletGate
+        pageTitle="Live Contract Monitor"
+        description="Connect your authorized Stellar / Soroban auditor wallet to stream real-time TTL rent telemetry and invariant checks for live Soroban contracts."
+      >
+        <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Top Header Card */}
         <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
@@ -269,7 +295,7 @@ export default function MonitorPage() {
                 </div>
 
                 <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold mt-1.5 block">
-                  {metrics.exists ? 'Contract footprint verified on Stellar Testnet' : 'No active storage entry on network'}
+                  {metrics.exists ? `Contract footprint verified on Stellar ${network === 'mainnet' ? 'Mainnet' : 'Testnet'}` : 'No active storage entry on network'}
                 </span>
               </div>
 
@@ -311,7 +337,7 @@ export default function MonitorPage() {
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                    Current Testnet Ledger
+                    Current {network === 'mainnet' ? 'Mainnet' : 'Testnet'} Ledger
                   </span>
                   <span className="text-[10px] font-mono text-slate-500">
                     Protocol v{metrics.protocolVersion}
@@ -347,12 +373,12 @@ export default function MonitorPage() {
                     Last update: {lastRefreshedAt || 'Live'}
                   </span>
                   <a
-                    href={`https://stellar.expert/explorer/testnet/contract/${metrics.contractId}`}
+                    href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${metrics.contractId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs px-3 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white font-bold transition flex items-center gap-1 shadow-xs"
                   >
-                    <span>Stellar Expert Explorer</span>
+                    <span>Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -426,6 +452,7 @@ export default function MonitorPage() {
           </div>
         )}
       </main>
+      </WalletGate>
     </div>
   );
 }

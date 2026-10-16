@@ -24,6 +24,7 @@ import {
   Check,
 } from 'lucide-react';
 import { connectWallet } from '../utils/solaceService';
+import WalletGate from '../components/auth/WalletGate';
 
 interface ActiveAuditInfo {
   contractName: string;
@@ -60,6 +61,7 @@ export default function DashboardPage() {
   const [connectedWallet, setConnectedWallet] = useState<string>('');
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
 
   useEffect(() => {
     const loadActiveAudit = () => {
@@ -79,26 +81,43 @@ export default function DashboardPage() {
       } catch (_) {}
     };
 
+    const loadNetwork = () => {
+      try {
+        const stored = localStorage.getItem('solace-network');
+        if (stored === 'mainnet' || stored === 'testnet') setNetwork(stored);
+      } catch (_) {}
+    };
+
     loadActiveAudit();
     loadWallet();
+    loadNetwork();
 
     const handleWalletUpdate = (e: any) => {
       const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
       setConnectedWallet(key);
     };
 
+    const handleNetworkUpdate = (e: any) => {
+      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
+      if (net === 'mainnet' || net === 'testnet') setNetwork(net);
+    };
+
     window.addEventListener('storage', loadActiveAudit);
     window.addEventListener('solace-audit-updated', loadActiveAudit);
     window.addEventListener('solace-wallet-updated', handleWalletUpdate);
+    window.addEventListener('solace-network-updated', handleNetworkUpdate);
     window.addEventListener('focus', loadActiveAudit);
     window.addEventListener('focus', loadWallet);
+    window.addEventListener('focus', loadNetwork);
 
     return () => {
       window.removeEventListener('storage', loadActiveAudit);
       window.removeEventListener('solace-audit-updated', loadActiveAudit);
       window.removeEventListener('solace-wallet-updated', handleWalletUpdate);
+      window.removeEventListener('solace-network-updated', handleNetworkUpdate);
       window.removeEventListener('focus', loadActiveAudit);
       window.removeEventListener('focus', loadWallet);
+      window.removeEventListener('focus', loadNetwork);
     };
   }, []);
 
@@ -264,134 +283,130 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 pb-24 md:pb-8 transition-colors">
-      {/* Main Dashboard Canvas */}
-      <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Top Greeting & Operations Banner (Item 5: Enhanced) */}
-        <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 shadow-sm mb-6 transition-colors">
-          {/* Subtle decorative glow */}
-          <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-accent/5 rounded-full blur-2xl pointer-events-none" />
+      <WalletGate
+        pageTitle="Security Dashboard"
+        description="Connect your authorized Stellar / Soroban auditor wallet to view real-time security scores, AST invariant checks, and ledger state."
+      >
+        {/* Main Dashboard Canvas */}
+        <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Top Greeting & Operations Banner (Item 5: Enhanced) */}
+          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 shadow-sm mb-6 transition-colors">
+            {/* Subtle decorative glow */}
+            <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-accent/5 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="max-w-3xl">
-              {/* Status pill & Network tags */}
-              <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                  SHIELD ENGINE ACTIVE
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                  Stellar Soroban v22 Protocol
-                </span>
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div className="max-w-3xl">
+                {/* Status pill & Network tags */}
+                <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
+                    SHIELD ENGINE ACTIVE
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                    Stellar Soroban v22 Protocol
+                  </span>
+                </div>
+
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                  Welcome Back, Security Auditor
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-2xl leading-relaxed">
+                  Autonomous AST rule verification, persistent storage rent monitoring, and cryptographic on-chain audit proof inscriptions on the Stellar ledger.
+                </p>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                Welcome Back, Security Auditor
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-2xl leading-relaxed">
-                Autonomous AST rule verification, persistent storage rent monitoring, and cryptographic on-chain audit proof inscriptions on the Stellar ledger.
-              </p>
-            </div>
+              <div className="flex items-center gap-3 self-stretch sm:self-auto flex-wrap shrink-0">
+                {/* Date / Network Epoch Pill */}
+                <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-accent" />
+                  <span>15 Oct, 2026 · {network === 'mainnet' ? 'Mainnet Production' : 'Testnet Epoch 542'}</span>
+                </div>
 
-            <div className="flex items-center gap-3 self-stretch sm:self-auto flex-wrap shrink-0">
-              {/* Date / Testnet Epoch Pill */}
-              <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-2">
-                <Calendar className="w-3.5 h-3.5 text-accent" />
-                <span>15 Oct, 2026 · Testnet Epoch 542</span>
+                {/* Run Security Audit Action Button (Brand accent, never black) */}
+                <Link
+                  href="/audit"
+                  className="bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md shadow-accent/25 transition flex items-center gap-2 whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Run Security Audit</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
-
-              {/* Run Security Audit Action Button (Brand accent, never black) */}
-              <Link
-                href="/audit"
-                className="bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md shadow-accent/25 transition flex items-center gap-2 whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Run Security Audit</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
           </div>
-        </div>
 
-        {/* 3-Column Dashboard Layout (matching the exact UI idea from the reference image) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* ================= COLUMN 1 (Left): Card 1 & Card 4 ================= */}
-          <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* Card 1: Connected Wallet & Target Score / Ledger State */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
-              <div className="flex justify-between items-center mb-3">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {connectedWallet ? 'Connected Auditor Wallet' : 'Auditor Wallet & State'}
-                  </h2>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Target Score &amp; Ledger State</p>
-                </div>
-                <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" title="Active on Stellar Testnet" />
-              </div>
-
-              {/* Card Widget */}
-              <div
-                className="text-white rounded-2xl p-5 shadow-md relative overflow-hidden mb-3"
-                style={{ background: 'linear-gradient(135deg, #B50449 0%, #600226 100%)' }}
-              >
+          {/* 3-Column Dashboard Layout (matching the exact UI idea from the reference image) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* ================= COLUMN 1 (Left): Card 1 & Card 4 ================= */}
+            <div className="lg:col-span-4 flex flex-col gap-5">
+              {/* Card 1: Connected Wallet & Target Score / Ledger State */}
+              <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="font-bold tracking-wider text-xs uppercase text-rose-100 flex items-center gap-1.5">
-                    <Wallet className="w-4 h-4 text-rose-200" />
-                    <span>{connectedWallet ? 'CONNECTED WALLET' : 'SYSTEM AUDITOR WALLET'}</span>
-                  </span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Testnet Active</span>
-                  </span>
-                </div>
-
-                <div className="text-[11px] font-semibold text-rose-200 uppercase tracking-wide">
-                  {connectedWallet ? 'Active Connected Keypair' : 'Deployed Instance Signer'}
-                </div>
-                <div className="flex items-center justify-between gap-2 mt-1">
-                  <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono truncate" title={connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI'}>
-                    {(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI').slice(0, 6)}...{(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI').slice(-6)}
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {connectedWallet ? 'Connected Auditor Wallet' : 'Auditor Wallet & State'}
+                    </h2>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Target Score &amp; Ledger State</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyWallet(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI')}
-                    className="px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
-                    title="Copy Wallet Key"
-                  >
-                    {copiedWallet ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
-                    <span className="text-[10px]">{copiedWallet ? 'Copied' : 'Copy'}</span>
-                  </button>
+                  <span className={`w-2.5 h-2.5 rounded-full ${network === 'mainnet' ? 'bg-emerald-500' : 'bg-accent'} animate-pulse`} title={`Active on Stellar ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet'}`} />
                 </div>
 
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-rose-300/20 text-xs font-mono font-medium text-rose-100">
-                  <span className="truncate max-w-[170px]">ID: {(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI').slice(0, 10)}...</span>
-                  <span>ROLE: SIGNER ACTIVE</span>
-                </div>
+                {connectedWallet ? (
+                  <>
+                    {/* Card Widget */}
+                    <div
+                      className="text-white rounded-2xl p-5 shadow-md relative overflow-hidden mb-3"
+                      style={{ background: 'linear-gradient(135deg, #B50449 0%, #600226 100%)' }}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-bold tracking-wider text-xs uppercase text-rose-100 flex items-center gap-1.5">
+                          <Wallet className="w-4 h-4 text-rose-200" />
+                          <span>CONNECTED WALLET</span>
+                        </span>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>{network === 'mainnet' ? 'Mainnet Active' : 'Testnet Active'}</span>
+                        </span>
+                      </div>
+
+                      <div className="text-[11px] font-semibold text-rose-200 uppercase tracking-wide">
+                        Active Connected Signer
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono truncate" title={connectedWallet}>
+                          {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-6)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyWallet(connectedWallet)}
+                          className="px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
+                          title="Copy Wallet Key"
+                        >
+                          {copiedWallet ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
+                          <span className="text-[10px]">{copiedWallet ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-4 pt-3 border-t border-rose-300/20 text-xs font-mono font-medium text-rose-100">
+                        <span className="truncate max-w-[170px]">ID: {connectedWallet.slice(0, 10)}...</span>
+                        <span>ROLE: SIGNER ACTIVE</span>
+                      </div>
+                    </div>
+
+                    {/* Sub-Stat: Verified Inscriptions */}
+                    <div className="flex justify-between items-center pt-1">
+                      <div>
+                        <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold block">Verified Inscriptions</span>
+                        <span className="text-base font-bold text-slate-900 dark:text-white">Active Session Ledger</span>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent-subtle text-accent border border-accent/20">
+                        Ready
+                      </span>
+                    </div>
+                  </>
+                ) : null}
               </div>
-
-              {/* Sub-Stat: Verified Inscriptions */}
-              <div className="flex justify-between items-center pt-1">
-                <div>
-                  <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold block">Verified Inscriptions</span>
-                  <span className="text-base font-bold text-slate-900 dark:text-white">+3,945 Ledger Txs</span>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-accent-subtle text-accent border border-accent/20">
-                  +12.8%
-                </span>
-              </div>
-
-              {!connectedWallet && (
-                <button
-                  type="button"
-                  onClick={handleConnectDashboardWallet}
-                  disabled={connectingWallet}
-                  className="w-full mt-3 py-2 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Wallet className="w-3.5 h-3.5" />
-                  <span>{connectingWallet ? 'Connecting Freighter...' : 'Connect Freighter Wallet'}</span>
-                </button>
-              )}
-            </div>
             {/* Card 4: Recent Security Audits */}
             <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between overflow-hidden transition-colors">
               <div>
@@ -937,6 +952,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+      </WalletGate>
     </div>
   );
 }

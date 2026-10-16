@@ -16,8 +16,9 @@ import {
   ExternalLink,
   Sun,
   Moon,
+  Globe,
 } from 'lucide-react';
-import { connectWallet } from '../../utils/solaceService';
+import { connectWallet, detectWalletNetwork } from '../../utils/solaceService';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -26,23 +27,51 @@ export default function Navbar() {
   const [notice, setNotice] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
     setTheme(isDark ? 'dark' : 'light');
 
-    try {
-      const stored = localStorage.getItem('solace_connected_wallet');
-      if (stored) setWalletKey(stored);
-    } catch (_) {}
+    const syncSystemNetwork = async () => {
+      try {
+        const stored = localStorage.getItem('solace_connected_wallet');
+        if (stored) setWalletKey(stored);
+        const storedNet = localStorage.getItem('solace-network');
+        if (storedNet === 'mainnet' || storedNet === 'testnet') {
+          setNetwork(storedNet);
+        }
+        const detected = await detectWalletNetwork();
+        if (detected) {
+          setNetwork(detected);
+          localStorage.setItem('solace-network', detected);
+        }
+      } catch (_) {}
+    };
+
+    syncSystemNetwork();
 
     const handleWalletEvent = (e: any) => {
       const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
       setWalletKey(key);
+      syncSystemNetwork();
+    };
+
+    const handleNetworkEvent = (e: any) => {
+      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
+      if (net === 'mainnet' || net === 'testnet') {
+        setNetwork(net);
+      }
     };
 
     window.addEventListener('solace-wallet-updated', handleWalletEvent);
-    return () => window.removeEventListener('solace-wallet-updated', handleWalletEvent);
+    window.addEventListener('solace-network-updated', handleNetworkEvent);
+    window.addEventListener('focus', syncSystemNetwork);
+    return () => {
+      window.removeEventListener('solace-wallet-updated', handleWalletEvent);
+      window.removeEventListener('solace-network-updated', handleNetworkEvent);
+      window.removeEventListener('focus', syncSystemNetwork);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -138,8 +167,30 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Right Tools (Theme Toggle, Search, Bell, Settings, Wallet) */}
+        {/* Right Tools (Network Switcher, Theme Toggle, Search, Bell, Settings, Wallet) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* System-Determined Network Status Indicator (Auto-detected from Connected Wallet) */}
+          <div
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-xs text-xs font-semibold shrink-0 transition-colors ${
+              network === 'mainnet'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                : 'bg-accent/10 border-accent/25 text-accent'
+            }`}
+            title={`Active Network: Stellar ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Staging)'} - automatically resolved by system from wallet.`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full inline-block ${
+                network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
+              }`}
+            />
+            <span className="font-bold text-xs uppercase tracking-wide">
+              {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+            </span>
+            <span className="text-[10px] opacity-75 hidden sm:inline">
+              ({network === 'mainnet' ? 'Production' : 'Staging'})
+            </span>
+          </div>
+
           {/* Theme Toggle Button (Light & Dark Mode) */}
           <button
             type="button"
@@ -172,7 +223,7 @@ export default function Navbar() {
           <div className="relative hidden sm:block">
             <button
               type="button"
-              onClick={() => alert('All Soroban security invariants passing on Stellar Testnet.')}
+              onClick={() => alert(`All Soroban security invariants passing on Stellar ${network === 'mainnet' ? 'Mainnet' : 'Testnet'}.`)}
               className="w-9 h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm flex items-center justify-center transition"
               title="System Alerts"
             >
@@ -186,7 +237,7 @@ export default function Navbar() {
             type="button"
             onClick={() => setShowSettings(!showSettings)}
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 shadow-sm flex items-center justify-center transition shrink-0"
-            title="Security Settings & Engine Config"
+            title="Security Settings & Network Config"
           >
             <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
@@ -226,7 +277,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Settings Modal with Dark Mode support */}
+      {/* Settings Modal with Dark Mode & Network Switcher support */}
       {showSettings && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
@@ -243,7 +294,7 @@ export default function Navbar() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Platform Settings</h3>
-                  <p className="text-[11px] text-slate-400">Solace Security Engine Configuration</p>
+                  <p className="text-[11px] text-slate-400">Solace Security Engine &amp; Network Configuration</p>
                 </div>
               </div>
               <button
@@ -256,13 +307,31 @@ export default function Navbar() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
-                  Stellar Network
-                </span>
-                <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">Testnet (Protocol 22)</span>
-                <span className="text-xs font-mono text-slate-600 dark:text-slate-300 font-semibold block truncate">
-                  https://soroban-testnet.stellar.org
+              {/* System-Resolved Network in Settings */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
+                    Stellar Network
+                  </span>
+                  <span className="text-[10px] font-bold text-accent bg-accent-subtle px-2 py-0.5 rounded-full border border-accent/20">
+                    System Determined
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
+                    }`}
+                  />
+                  <span className="font-bold text-sm text-slate-900 dark:text-white">
+                    Stellar {network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Network environment is determined automatically by the system from your connected Freighter wallet and production configuration.
+                </p>
+                <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300 font-semibold block truncate mt-2 bg-slate-100 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                  RPC: {network === 'mainnet' ? 'https://soroban-rpc.mainnet.stellar.org' : 'https://soroban-testnet.stellar.org'}
                 </span>
               </div>
 
@@ -287,12 +356,12 @@ export default function Navbar() {
                   CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ
                 </span>
                 <a
-                  href="https://stellar.expert/explorer/testnet/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ"
+                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-accent hover:underline flex items-center gap-1 mt-1 text-xs font-bold"
                 >
-                  <span>Inspect on Stellar Expert</span>
+                  <span>Inspect on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>

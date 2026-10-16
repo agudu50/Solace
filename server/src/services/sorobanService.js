@@ -13,24 +13,51 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const RPC_URL = process.env.STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
+const MAINNET_RPC_URL = 'https://soroban-rpc.mainnet.stellar.org';
 const NETWORK_PASSPHRASE = process.env.STELLAR_NETWORK_PASSPHRASE || Networks.TESTNET;
 const CONTRACT_ID = process.env.SOLACE_CONTRACT_ID || 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
 const AUDITOR_SECRET_KEY = process.env.AUDITOR_SECRET_KEY;
 const AUDITOR_ADDRESS = process.env.AUDITOR_ADDRESS;
 
-const server = new rpc.Server(RPC_URL);
+const testnetServer = new rpc.Server(RPC_URL);
+const mainnetServer = new rpc.Server(MAINNET_RPC_URL);
+const server = testnetServer;
+
+export function getServerForNetwork(network = 'testnet') {
+  const isMainnet = network === 'mainnet' || network === 'public';
+  if (isMainnet) {
+    return {
+      server: mainnetServer,
+      networkPassphrase: Networks.PUBLIC,
+      rpcUrl: MAINNET_RPC_URL,
+      network: 'mainnet',
+      networkName: 'Stellar Soroban Mainnet (Production)',
+      explorerBase: 'https://stellar.expert/explorer/public',
+    };
+  }
+  return {
+    server: testnetServer,
+    networkPassphrase: NETWORK_PASSPHRASE,
+    rpcUrl: RPC_URL,
+    network: 'testnet',
+    networkName: 'Stellar Soroban Testnet',
+    explorerBase: 'https://stellar.expert/explorer/testnet',
+  };
+}
 
 /**
  * Returns contract metadata and ledger connectivity
  */
-export function getContractInfo() {
+export function getContractInfo(network = 'testnet') {
+  const net = getServerForNetwork(network);
   return {
     contractId: CONTRACT_ID,
-    rpcUrl: RPC_URL,
-    network: process.env.STELLAR_NETWORK || 'testnet',
-    networkPassphrase: NETWORK_PASSPHRASE,
+    rpcUrl: net.rpcUrl,
+    network: net.network,
+    networkName: net.networkName,
+    networkPassphrase: net.networkPassphrase,
     auditorAddress: AUDITOR_ADDRESS || null,
-    explorerUrl: `https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`,
+    explorerUrl: `${net.explorerBase}/contract/${CONTRACT_ID}`,
   };
 }
 
@@ -161,17 +188,19 @@ export async function recordOnChainAudit({
 }
 
 /**
- * Fetches real-time contract telemetry directly from the live Stellar Soroban testnet
+ * Fetches real-time contract telemetry directly from the live Stellar Soroban network (Testnet or Mainnet)
  * @param {string} contractId - Deployed Soroban contract address
+ * @param {string} [network='testnet'] - 'testnet' or 'mainnet'
  */
-export async function getContractTelemetry(contractId) {
+export async function getContractTelemetry(contractId, network = 'testnet') {
   try {
+    const net = getServerForNetwork(network);
     const contract = new Contract(contractId);
     const key = contract.getFootprint();
     const [entryRes, latestLedgerRes, healthRes] = await Promise.all([
-      server.getLedgerEntries(key).catch(() => null),
-      server.getLatestLedger().catch(() => null),
-      server.getHealth().catch(() => null),
+      net.server.getLedgerEntries(key).catch(() => null),
+      net.server.getLatestLedger().catch(() => null),
+      net.server.getHealth().catch(() => null),
     ]);
 
     const entry = entryRes?.entries?.[0];
@@ -201,7 +230,8 @@ export async function getContractTelemetry(contractId) {
         ? 'WARNING (Rent Extension Recommended)'
         : 'CRITICAL (Imminent State Eviction Risk)',
       storageType: exists ? 'Persistent Contract Instance Footprint' : 'None',
-      network: 'Stellar Soroban Testnet',
+      network: net.networkName,
+      explorerUrl: `${net.explorerBase}/contract/${contractId}`,
       timestamp: new Date().toISOString(),
     };
   } catch (err) {

@@ -21,7 +21,10 @@ import {
   FileCode,
   X,
   Code2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import WalletGate from '../../components/auth/WalletGate';
 
 interface VulnerabilityDetail {
   title: string;
@@ -126,8 +129,53 @@ function ReportsContent() {
   const [copiedFixIndex, setCopiedFixIndex] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'score-high' | 'score-low'>('newest');
   const [reportsList, setReportsList] = useState<VerifiedReport[]>([]);
+  const [expandedHash, setExpandedHash] = useState<string | null>(null);
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
+  const [copiedCardHash, setCopiedCardHash] = useState<string | null>(null);
+  const [copiedCardFixKey, setCopiedCardFixKey] = useState<string | null>(null);
 
   const mockReports: VerifiedReport[] = [
+    {
+      hash: '2878352a683b097a99f0acb00acb96b43d5b46a9c6298e75a9537298f26daf9d',
+      contract: 'Solace Vault Protocol',
+      auditType: 'PRE_DEPLOYMENT',
+      riskScore: 95,
+      isSecure: false,
+      auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
+      timestamp: 'Anchored on Testnet Ledger',
+      date: '16 Oct 2026',
+      time: '02:30 PM',
+      createdAt: 1792070000000,
+      summary:
+        'The contract contains severe access control flaws allowing unauthorized withdrawals and admin hijacking, alongside incorrect state storage management using instance storage for user-specific balances.',
+      vulnerabilities: [
+        {
+          title: 'Missing Authorization on Withdrawal',
+          severity: 'CRITICAL',
+          description:
+            "The withdraw function does not call to.require_auth(), allowing any arbitrary user to drain funds from any other user's balance in the vault.",
+          recommendation:
+            'pub fn withdraw(env: Env, to: Address, amount: i128) {\n    to.require_auth(); // Enforce caller identity & signature\n    let current: i128 = env.storage().instance().get(&DataKey::Balance(to.clone())).unwrap_or(0);\n    if current < amount {\n        panic!("insufficient funds");\n    }\n    env.storage().instance().set(&DataKey::Balance(to), &(current - amount));\n}',
+        },
+        {
+          title: 'Unprotected Administrative Re-initialization',
+          severity: 'CRITICAL',
+          description:
+            'The init function allows re-initialization of the contract administrator at any time, allowing malicious actors to hijack contract ownership.',
+          recommendation:
+            'pub fn init(env: Env, admin: Address) {\n    if env.storage().instance().has(&DataKey::Admin) {\n        panic!("contract already initialized");\n    }\n    env.storage().instance().set(&DataKey::Admin, &admin);\n}',
+        },
+        {
+          title: 'Incorrect State Storage Management for Balances',
+          severity: 'MEDIUM',
+          description:
+            'Using instance storage for user-specific balances causes state bloat on the contract instance and exposes balances to instance rent expiration.',
+          recommendation:
+            'pub fn deposit(env: Env, from: Address, amount: i128) {\n    from.require_auth();\n    let current: i128 = env.storage().persistent().get(&DataKey::Balance(from.clone())).unwrap_or(0);\n    env.storage().persistent().set(&DataKey::Balance(from.clone()), &(current + amount));\n    env.storage().persistent().extend_ttl(&DataKey::Balance(from), 50000, 100000);\n}',
+        },
+      ],
+      codeSnippet: `// Solace Sample Soroban Smart Contract\n#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, symbol_short};\n\n#[contracttype]\npub enum DataKey {\n    Admin,\n    Balance(Address),\n}\n\n#[contract]\npub struct VaultContract;\n\n#[contractimpl]\nimpl VaultContract {\n    pub fn init(env: Env, admin: Address) {\n        env.storage().instance().set(&DataKey::Admin, &admin);\n    }\n\n    pub fn deposit(env: Env, from: Address, amount: i128) {\n        from.require_auth();\n        let current: i128 = env.storage().instance().get(&DataKey::Balance(from.clone())).unwrap_or(0);\n        env.storage().instance().set(&DataKey::Balance(from), &(current + amount));\n    }\n\n    pub fn withdraw(env: Env, to: Address, amount: i128) {\n        let current: i128 = env.storage().instance().get(&DataKey::Balance(to.clone())).unwrap_or(0);\n        if current < amount { panic!("insufficient funds"); }\n        env.storage().instance().set(&DataKey::Balance(to), &(current - amount));\n    }\n}`,
+    },
     {
       hash: '07c390518ca81e3aeb5c2025e135804470b13ba97ae5aa66782dbf06ea55330a',
       contract: 'Solace Vault Protocol (Missing require_auth)',
@@ -217,8 +265,24 @@ function ReportsContent() {
     },
   ];
 
-  // Load audit history from localStorage + mock data
+  // Load audit history and network setting
   useEffect(() => {
+    try {
+      const storedNet = localStorage.getItem('solace-network');
+      if (storedNet === 'mainnet' || storedNet === 'testnet') {
+        setNetwork(storedNet);
+      }
+    } catch (_) {}
+
+    const handleNetworkEvent = (e: any) => {
+      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
+      if (net === 'mainnet' || net === 'testnet') {
+        setNetwork(net);
+      }
+    };
+
+    window.addEventListener('solace-network-updated', handleNetworkEvent);
+
     try {
       const stored = localStorage.getItem('solace_audit_history');
       if (stored) {
@@ -231,12 +295,19 @@ function ReportsContent() {
             }
           });
           setReportsList(merged);
-          return;
+          return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
         }
       }
     } catch (_) {}
     setReportsList(mockReports);
+
+    return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
   }, []);
+
+  const handleToggleRecommendation = (hash: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedHash((prev) => (prev === hash ? null : hash));
+  };
 
   const executeLookup = async (query: string) => {
     if (!query) return;
@@ -358,7 +429,11 @@ function ReportsContent() {
 
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
-      <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <WalletGate
+        pageTitle="Verified Reports"
+        description="Connect your authorized Stellar / Soroban auditor wallet to inspect verified smart contract audit proofs and cryptographic ledger seals."
+      >
+        <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Top Header Card */}
         <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
@@ -372,7 +447,7 @@ function ReportsContent() {
                   <span>Ledger Provenance &amp; AI History</span>
                 </span>
                 <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                  Stellar Soroban v22 Protocol
+                  {network === 'mainnet' ? 'Stellar Soroban Mainnet (Production)' : 'Stellar Soroban v22 Protocol'}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
@@ -385,12 +460,12 @@ function ReportsContent() {
 
             <div className="flex items-center gap-3 flex-wrap shrink-0">
               <a
-                href={`https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`}
+                href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${LIVE_CONTRACT_ID}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs px-4 py-2 rounded-full bg-slate-100/90 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap font-bold"
               >
-                <span>Stellar Expert</span>
+                <span>Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <Link
@@ -778,22 +853,29 @@ function ReportsContent() {
         {/* Contract History List */}
         <div className="space-y-3.5">
           {displayList.map((item, idx) => {
-            const isSelected = searchResult && searchResult.hash.toLowerCase() === item.hash.toLowerCase();
+            const isExpanded = expandedHash === item.hash;
+            const matchMock = mockReports.find((m) => m.hash.toLowerCase() === item.hash.toLowerCase());
+            const resolvedVulns =
+              item.vulnerabilities && item.vulnerabilities.length > 0
+                ? item.vulnerabilities
+                : matchMock?.vulnerabilities || [];
+            const resolvedSummary = item.summary || matchMock?.summary || '';
+
             return (
               <div
                 key={idx}
-                onClick={() => {
-                  // Select contract and load recommendation without jumping or forcing page scroll to top
-                  executeLookup(item.hash);
-                }}
-                className={`bg-white dark:bg-[#111726] border p-5 rounded-3xl shadow-sm cursor-pointer transition-all duration-150 group ${
-                  isSelected
-                    ? 'border-accent ring-2 ring-accent/20'
+                className={`bg-white dark:bg-[#111726] border p-5 rounded-3xl shadow-sm transition-all duration-200 group ${
+                  isExpanded
+                    ? 'border-accent ring-2 ring-accent/20 shadow-md'
                     : 'border-slate-200/80 dark:border-slate-800 hover:border-accent/40 dark:hover:border-accent/40 hover:shadow-md'
                 }`}
               >
-                {/* Title & Status */}
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2.5">
+                {/* Title & Status Bar (Clickable to toggle) */}
+                <div
+                  className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2.5 cursor-pointer select-none"
+                  onClick={() => handleToggleRecommendation(item.hash)}
+                  title="Click to toggle recommendation dropdown"
+                >
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
                     <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-accent transition">
                       {item.contract}
@@ -823,13 +905,13 @@ function ReportsContent() {
                 </p>
 
                 {/* Summary: Fully Visible, No Clamp Cuts */}
-                {item.summary && (
+                {resolvedSummary && (
                   <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mb-3.5 leading-relaxed break-words">
-                    {item.summary}
+                    {resolvedSummary}
                   </p>
                 )}
 
-                {/* Footer Bar: Auditor, Checked Date/Time, Enhanced View Recommendation Button */}
+                {/* Footer Bar: Auditor, Checked Date/Time, Dropdown Toggle Button */}
                 <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium pt-3.5 border-t border-slate-100 dark:border-slate-800 flex-wrap gap-2.5">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span>
@@ -841,25 +923,195 @@ function ReportsContent() {
                     <span className="text-slate-300 dark:text-slate-700">•</span>
                     <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
                       <Clock className="w-3.5 h-3.5 text-accent" />
-                      <span>Checked: {item.date ? `${item.date} • ${item.time}` : item.timestamp}</span>
+                      <span>
+                        Checked:{' '}
+                        {item.date
+                          ? `${item.date} • ${item.time}`
+                          : item.timestamp?.includes('Testnet') && network === 'mainnet'
+                          ? 'Anchored on Mainnet Ledger'
+                          : item.timestamp}
+                      </span>
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className="px-3.5 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 group-hover:scale-105 active:scale-95 whitespace-nowrap"
+                      onClick={(e) => handleToggleRecommendation(item.hash, e)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
+                        isExpanded
+                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 ring-2 ring-accent/30'
+                          : 'bg-accent hover:bg-accent-hover text-white shadow-accent/25 hover:scale-105'
+                      }`}
                     >
-                      <span>View Recommendation</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
+                      <span>{isExpanded ? 'Hide Recommendation' : 'View Recommendation'}</span>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
+
+                {/* Inline Expandable Dropdown Menu: Shows everything directly on this card without scrolling to the top */}
+                {isExpanded && (
+                  <div
+                    className="mt-4 pt-5 border-t border-slate-200/90 dark:border-slate-800 animate-in fade-in slide-in-from-top-2 duration-200 space-y-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Dropdown Header & AST Badge */}
+                    <div className="flex items-center justify-between flex-wrap gap-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-accent-subtle text-accent border border-accent/25 flex items-center justify-center shrink-0 shadow-xs">
+                          <BrainCircuit className="w-3.5 h-3.5 text-accent" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            AI Security Recommendation &amp; AST Analysis
+                          </h4>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                            Dual Flash AST Invariant Verification Engine
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href="/audit"
+                          className="px-3 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white text-[11px] font-bold transition shadow-xs flex items-center gap-1.5 hover:scale-105 active:scale-95"
+                        >
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>Test in Audit Studio</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Executive Summary in Dropdown */}
+                    {resolvedSummary && (
+                      <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 text-xs">
+                        <span className="font-bold text-slate-900 dark:text-white block mb-1 text-xs">
+                          Executive Summary
+                        </span>
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium text-xs sm:text-[13px]">
+                          {resolvedSummary}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Detected Invariant Flaws with Syntax-Highlighted Rust Fixes */}
+                    {resolvedVulns.length > 0 ? (
+                      <div className="space-y-3">
+                        <span className="text-[11px] font-bold text-slate-900 dark:text-white block uppercase tracking-wider">
+                          Detected Invariant Flaws &amp; Actionable Recommendations ({resolvedVulns.length})
+                        </span>
+                        {resolvedVulns.map((vuln, vIdx) => {
+                          const fixKey = `${item.hash}-${vIdx}`;
+                          const isCopied = copiedCardFixKey === fixKey;
+                          return (
+                            <div
+                              key={vIdx}
+                              className="p-3.5 sm:p-4 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/60 text-xs"
+                            >
+                              <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
+                                <span className="font-bold text-red-950 dark:text-red-200 text-xs sm:text-sm">
+                                  {vuln.title}
+                                </span>
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white shrink-0 shadow-xs">
+                                  {vuln.severity}
+                                </span>
+                              </div>
+                              <p className="text-red-950 dark:text-red-200 text-xs sm:text-[13px] leading-relaxed mb-3 font-medium">
+                                {vuln.description}
+                              </p>
+
+                              {/* Recommended AI Fix with syntax highlighting */}
+                              <div className="rounded-xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col">
+                                <div className="flex justify-between items-center text-[11px] text-slate-300 px-3 py-2 border-b border-slate-800 font-mono bg-slate-900/80 flex-wrap gap-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <Code2 className="w-3 h-3 text-accent" />
+                                    <span className="font-bold text-slate-100">Recommended AI Fix</span>
+                                    <span className="text-slate-500">•</span>
+                                    <span className="text-slate-400 text-[10px]">Soroban Rust (no_std)</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(vuln.recommendation);
+                                      setCopiedCardFixKey(fixKey);
+                                      setTimeout(() => setCopiedCardFixKey(null), 2000);
+                                    }}
+                                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold border border-slate-700 transition flex items-center gap-1"
+                                  >
+                                    {isCopied ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
+                                    <span>{isCopied ? 'Copied' : 'Copy Fix'}</span>
+                                  </button>
+                                </div>
+
+                                <pre
+                                  className="p-3 m-0 overflow-x-auto text-slate-200 font-mono text-xs leading-5 selection:bg-accent/40"
+                                  dangerouslySetInnerHTML={{
+                                    __html: highlightRustSnippet(vuln.recommendation),
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 flex items-center gap-3 text-xs">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <div>
+                          <span className="font-bold text-emerald-950 dark:text-emerald-200 text-xs sm:text-sm block">
+                            Zero Invariant Vulnerabilities Detected
+                          </span>
+                          <p className="text-emerald-900 dark:text-emerald-300 font-medium mt-0.5 leading-relaxed text-xs">
+                            All authorization guards, persistent rent bounds, and panic safety assertions are fully satisfied on Stellar Soroban.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dropdown Quick Actions Bar */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 flex-wrap gap-2 text-xs">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(item.hash);
+                            setCopiedCardHash(item.hash);
+                            setTimeout(() => setCopiedCardHash(null), 2000);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1"
+                        >
+                          {copiedCardHash === item.hash ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCardHash === item.hash ? 'Hash Copied' : 'Copy Hash'}</span>
+                        </button>
+
+                        <a
+                          href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${LIVE_CONTRACT_ID}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1"
+                        >
+                          <span>Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedHash(null)}
+                        className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                      >
+                        Close Recommendation
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </main>
+      </WalletGate>
     </div>
   );
 }

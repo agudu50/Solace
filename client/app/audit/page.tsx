@@ -20,6 +20,7 @@ import {
   Code2,
 } from 'lucide-react';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
+import WalletGate from '../../components/auth/WalletGate';
 
 interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -203,10 +204,30 @@ export default function AuditStudioPage() {
   } | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const [copiedTxHash, setCopiedTxHash] = useState<boolean>(false);
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const storedNet = localStorage.getItem('solace-network');
+      if (storedNet === 'mainnet' || storedNet === 'testnet') {
+        setNetwork(storedNet);
+      }
+    } catch (_) {}
+
+    const handleNetworkEvent = (e: any) => {
+      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
+      if (net === 'mainnet' || net === 'testnet') {
+        setNetwork(net);
+      }
+    };
+
+    window.addEventListener('solace-network-updated', handleNetworkEvent);
+    return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
+  }, []);
 
   const invariantVectors = [
     {
@@ -575,8 +596,12 @@ impl SolaceContract {
 
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
-      {/* Main Studio Canvas */}
-      <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+      <WalletGate
+        pageTitle="Audit Studio"
+        description="Connect your authorized Stellar / Soroban auditor wallet to run pre-deploy AST static analysis, compile contracts, and anchor audit seals to the ledger."
+      >
+        {/* Main Studio Canvas */}
+        <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         {/* Top Header Card (Enhanced Hero) */}
         <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
@@ -1042,7 +1067,7 @@ impl SolaceContract {
                         <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
                           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-[11px] font-bold">
                             <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                            <span>Permanently Anchored on Stellar Testnet</span>
+                            <span>Permanently Anchored on Stellar {network === 'mainnet' ? 'Mainnet' : 'Testnet'}</span>
                           </div>
                           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
                             CONFIRMED ON LEDGER
@@ -1053,7 +1078,7 @@ impl SolaceContract {
                         <p className="text-slate-700 dark:text-slate-200 text-xs leading-relaxed mb-3 font-medium">
                           Audit findings cryptographically anchored in contract{' '}
                           <a
-                            href={`https://stellar.expert/explorer/testnet/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
+                            href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-mono text-accent font-bold hover:underline"
@@ -1100,7 +1125,7 @@ impl SolaceContract {
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                           <a
-                            href={`https://stellar.expert/explorer/testnet/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
+                            href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200/80 dark:border-slate-700 transition flex items-center justify-center gap-1.5"
@@ -1120,7 +1145,7 @@ impl SolaceContract {
                           <span className="text-[10px] font-semibold text-slate-500">Unanchored Session</span>
                         </div>
                         <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mb-3 font-medium">
-                          Anchor this audit verdict directly onto the Stellar Soroban testnet ledger. Produces a verifiable, tamper-proof security proof.
+                          Anchor this audit verdict directly onto the Stellar Soroban {network === 'mainnet' ? 'mainnet' : 'testnet'} ledger. Produces a verifiable, tamper-proof security proof.
                         </p>
                         <button
                           type="button"
@@ -1243,7 +1268,8 @@ impl SolaceContract {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </WalletGate>
     </div>
   );
 }
