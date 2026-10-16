@@ -30,6 +30,19 @@ export default function Navbar() {
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
     setTheme(isDark ? 'dark' : 'light');
+
+    try {
+      const stored = localStorage.getItem('solace_connected_wallet');
+      if (stored) setWalletKey(stored);
+    } catch (_) {}
+
+    const handleWalletEvent = (e: any) => {
+      const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
+      setWalletKey(key);
+    };
+
+    window.addEventListener('solace-wallet-updated', handleWalletEvent);
+    return () => window.removeEventListener('solace-wallet-updated', handleWalletEvent);
   }, []);
 
   const toggleTheme = () => {
@@ -50,6 +63,10 @@ export default function Navbar() {
     try {
       const key = await connectWallet();
       setWalletKey(key);
+      try {
+        localStorage.setItem('solace_connected_wallet', key);
+        window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
+      } catch (_) {}
     } catch (err: any) {
       const msg = err?.message || 'Connection failed.';
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
@@ -64,6 +81,14 @@ export default function Navbar() {
     } finally {
       setConnecting(false);
     }
+  };
+
+  const handleDisconnect = () => {
+    setWalletKey('');
+    try {
+      localStorage.removeItem('solace_connected_wallet');
+      window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: '' } }));
+    } catch (_) {}
   };
 
   const navItems = [
@@ -173,7 +198,7 @@ export default function Navbar() {
               <span>{walletKey.slice(0, 3)}...{walletKey.slice(-3)}</span>
               <button
                 type="button"
-                onClick={() => setWalletKey('')}
+                onClick={handleDisconnect}
                 className="text-[10px] ml-0.5 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
                 title="Disconnect"
               >

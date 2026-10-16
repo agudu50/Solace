@@ -39,3 +39,35 @@
 .border-accent-subtle {
   border-color: var(--e-global-color-accent-border);
 }
+
+/* Modern Smart Contract IDE Scrollbar */
+.modern-code-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.modern-code-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 6px;
+}
+
+.modern-code-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(200, 5, 82, 0.45);
+  border-radius: 6px;
+  border: 1.5px solid rgba(15, 23, 42, 0.7);
+  transition: background-color 0.2s ease;
+}
+
+.modern-code-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #C80552;
+}
+
+.modern-code-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox standard scrollbar support */
+.modern-code-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 5, 82, 0.45) rgba(15, 23, 42, 0.7);
+}

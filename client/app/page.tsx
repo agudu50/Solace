@@ -19,7 +19,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Zap,
+  Wallet,
+  Copy,
+  Check,
 } from 'lucide-react';
+import { connectWallet } from '../utils/solaceService';
 
 interface ActiveAuditInfo {
   contractName: string;
@@ -53,6 +57,9 @@ export default function DashboardPage() {
   };
 
   const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo>(defaultActiveAudit);
+  const [connectedWallet, setConnectedWallet] = useState<string>('');
+  const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
+  const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
 
   useEffect(() => {
     const loadActiveAudit = () => {
@@ -65,18 +72,57 @@ export default function DashboardPage() {
       } catch (_) {}
     };
 
+    const loadWallet = () => {
+      try {
+        const stored = localStorage.getItem('solace_connected_wallet');
+        if (stored) setConnectedWallet(stored);
+      } catch (_) {}
+    };
+
     loadActiveAudit();
+    loadWallet();
+
+    const handleWalletUpdate = (e: any) => {
+      const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
+      setConnectedWallet(key);
+    };
 
     window.addEventListener('storage', loadActiveAudit);
     window.addEventListener('solace-audit-updated', loadActiveAudit);
+    window.addEventListener('solace-wallet-updated', handleWalletUpdate);
     window.addEventListener('focus', loadActiveAudit);
+    window.addEventListener('focus', loadWallet);
 
     return () => {
       window.removeEventListener('storage', loadActiveAudit);
       window.removeEventListener('solace-audit-updated', loadActiveAudit);
+      window.removeEventListener('solace-wallet-updated', handleWalletUpdate);
       window.removeEventListener('focus', loadActiveAudit);
+      window.removeEventListener('focus', loadWallet);
     };
   }, []);
+
+  const handleCopyWallet = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopiedWallet(true);
+    setTimeout(() => setCopiedWallet(false), 2000);
+  };
+
+  const handleConnectDashboardWallet = async () => {
+    setConnectingWallet(true);
+    try {
+      const key = await connectWallet();
+      setConnectedWallet(key);
+      localStorage.setItem('solace_connected_wallet', key);
+      window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
+    } catch (err: any) {
+      if (err?.message === 'FREIGHTER_NOT_INSTALLED') {
+        window.open('https://www.freighter.app/', '_blank');
+      }
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
 
   const riskVectors = [
     {
@@ -271,11 +317,13 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* ================= COLUMN 1 (Left): Card 1 & Card 4 ================= */}
           <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* Card 1: Contract Security / Target Score & Ledger State */}
+            {/* Card 1: Connected Wallet & Target Score / Ledger State */}
             <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
               <div className="flex justify-between items-center mb-3">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Contract Security</h2>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {connectedWallet ? 'Connected Auditor Wallet' : 'Auditor Wallet & State'}
+                  </h2>
                   <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Target Score &amp; Ledger State</p>
                 </div>
                 <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" title="Active on Stellar Testnet" />
@@ -288,24 +336,36 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-center mb-3">
                   <span className="font-bold tracking-wider text-xs uppercase text-rose-100 flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-rose-200" />
-                    <span>SOLACE CORE</span>
+                    <Wallet className="w-4 h-4 text-rose-200" />
+                    <span>{connectedWallet ? 'CONNECTED WALLET' : 'SYSTEM AUDITOR WALLET'}</span>
                   </span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">
-                    Testnet Active
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Testnet Active</span>
                   </span>
                 </div>
 
                 <div className="text-[11px] font-semibold text-rose-200 uppercase tracking-wide">
-                  Deployed Instance ID
+                  {connectedWallet ? 'Active Connected Keypair' : 'Deployed Instance Signer'}
                 </div>
-                <div className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1">
-                  CBXV73...NKDQ
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono truncate" title={connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI'}>
+                    {(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI').slice(0, 6)}...{(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI').slice(-6)}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyWallet(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI')}
+                    className="px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
+                    title="Copy Wallet Key"
+                  >
+                    {copiedWallet ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
+                    <span className="text-[10px]">{copiedWallet ? 'Copied' : 'Copy'}</span>
+                  </button>
                 </div>
 
                 <div className="flex justify-between items-center mt-4 pt-3 border-t border-rose-300/20 text-xs font-mono font-medium text-rose-100">
-                  <span>ID: CBXV73FFYM...</span>
-                  <span>EXP: 51,840 LEDGERS</span>
+                  <span className="truncate max-w-[170px]">ID: {(connectedWallet || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI').slice(0, 10)}...</span>
+                  <span>ROLE: SIGNER ACTIVE</span>
                 </div>
               </div>
 
@@ -319,6 +379,18 @@ export default function DashboardPage() {
                   +12.8%
                 </span>
               </div>
+
+              {!connectedWallet && (
+                <button
+                  type="button"
+                  onClick={handleConnectDashboardWallet}
+                  disabled={connectingWallet}
+                  className="w-full mt-3 py-2 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>{connectingWallet ? 'Connecting Freighter...' : 'Connect Freighter Wallet'}</span>
+                </button>
+              )}
             </div>
             {/* Card 4: Recent Security Audits */}
             <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between overflow-hidden transition-colors">
