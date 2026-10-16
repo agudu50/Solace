@@ -420,10 +420,10 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                {/* Contracts Submitted & Core Metrics Row (Equalized Heights & Baseline Alignment) */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5 items-stretch">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
+                {/* Contracts Submitted & Core Metrics Row (Spacious 2-column layout, full visibility, no truncation) */}
+                <div className="grid grid-cols-2 gap-2.5 mb-5 items-stretch">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[110px]">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block leading-tight">
                       Contracts Submitted
                     </span>
                     <div className="my-1">
@@ -431,13 +431,13 @@ export default function DashboardPage() {
                         1,428
                       </div>
                     </div>
-                    <span className="text-xs text-accent font-bold block leading-tight truncate">
+                    <span className="text-xs text-accent font-bold block leading-tight">
                       +24.6% this epoch
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[110px]">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block leading-tight">
                       Verified Secure
                     </span>
                     <div className="my-1">
@@ -445,13 +445,13 @@ export default function DashboardPage() {
                         1,392
                       </div>
                     </div>
-                    <span className="text-xs text-accent font-bold block leading-tight truncate">
+                    <span className="text-xs text-accent font-bold block leading-tight">
                       97.5% pass rate
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[110px]">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block leading-tight">
                       Flaws Quarantined
                     </span>
                     <div className="my-1">
@@ -459,13 +459,13 @@ export default function DashboardPage() {
                         36
                       </div>
                     </div>
-                    <span className="text-xs text-slate-600 dark:text-slate-300 font-bold block leading-tight truncate">
+                    <span className="text-xs text-slate-700 dark:text-slate-200 font-bold block leading-tight">
                       0 exploit leaks
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[116px]">
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block h-7 flex items-start leading-tight">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between h-full min-h-[110px]">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold block leading-tight">
                       Avg AI Latency
                     </span>
                     <div className="my-1">
@@ -473,7 +473,7 @@ export default function DashboardPage() {
                         840ms
                       </div>
                     </div>
-                    <span className="text-xs text-accent font-bold block leading-tight truncate">
+                    <span className="text-xs text-accent font-bold block leading-tight">
                       Dual Flash Engine
                     </span>
                   </div>

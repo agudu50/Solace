@@ -33,9 +33,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 min-h-screen antialiased flex flex-col justify-between selection:bg-accent selection:text-white transition-colors duration-200">
+      <body className="bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 min-h-screen antialiased flex flex-col justify-between selection:bg-accent selection:text-white transition-colors duration-200 overflow-x-hidden w-full max-w-full">
         <Navbar />
-        <div className="flex-grow">
+        <div className="flex-grow w-full max-w-full overflow-x-hidden">
           {children}
         </div>
         <SidebarDock />

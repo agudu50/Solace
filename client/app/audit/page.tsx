@@ -10,10 +10,13 @@ import {
   Upload,
   ArrowLeft,
   Copy,
+  Check,
+  RotateCcw,
   ExternalLink,
   Layers,
   Clock,
   Sparkles,
+  Terminal,
 } from 'lucide-react';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 
@@ -36,71 +39,73 @@ interface AuditReport {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const LIVE_CONTRACT_ID = 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function highlightRustCode(code: string): string {
   if (!code) return '';
-  const lines = code.split('\n');
-  return lines
+
+  return code
+    .split('\n')
     .map((line) => {
-      let escaped = line
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-      // Comments
-      if (escaped.trim().startsWith('//')) {
-        return `<span style="color: #4ade80; font-style: italic;">${escaped}</span>`;
+      // 1. If entire line is a comment
+      if (line.trim().startsWith('//')) {
+        return `<span style="color: #4ade80; font-style: italic;">${escapeHtml(line)}</span>`;
       }
 
-      const commentIdx = escaped.indexOf('//');
-      let commentPart = '';
-      if (commentIdx !== -1) {
-        commentPart = `<span style="color: #4ade80; font-style: italic;">${escaped.slice(commentIdx)}</span>`;
-        escaped = escaped.slice(0, commentIdx);
+      // 2. Separate trailing comment if any
+      const commentIdx = line.indexOf('//');
+      const codePart = commentIdx !== -1 ? line.slice(0, commentIdx) : line;
+      const commentPart =
+        commentIdx !== -1
+          ? `<span style="color: #4ade80; font-style: italic;">${escapeHtml(line.slice(commentIdx))}</span>`
+          : '';
+
+      // 3. Single-pass regex tokenization so replacements NEVER corrupt tags or match numbers inside styling
+      const TOKEN_REGEX =
+        /(".*?"|'.*?')|(#!?\[.*?\])|(\b(?:pub|fn|let|mut|impl|struct|enum|if|else|match|return|use|for|in|while|as|true|false|self|Self)\b)|(\b(?:Address|Env|String|Symbol|BytesN|u32|u64|u128|i32|i64|i128|bool|DataKey|AuditRecord|SolaceContract|VaultContract)\b)|(\b(?:require_auth|storage|instance|persistent|get|set|record_audit|deposit|withdraw|init|unwrap_or|unwrap|clone)\b)|(\b(?:panic!|symbol_short!|vec!)\b)|(\b\d+\b)/g;
+
+      let lastIndex = 0;
+      let highlighted = '';
+      let match: RegExpExecArray | null;
+
+      while ((match = TOKEN_REGEX.exec(codePart)) !== null) {
+        if (match.index > lastIndex) {
+          highlighted += escapeHtml(codePart.slice(lastIndex, match.index));
+        }
+
+        const [, str, attr, kw, type, method, macro, num] = match;
+
+        if (str) {
+          highlighted += `<span style="color: #f472b6;">${escapeHtml(str)}</span>`;
+        } else if (attr) {
+          highlighted += `<span style="color: #fbbf24; font-weight: 600;">${escapeHtml(attr)}</span>`;
+        } else if (kw) {
+          highlighted += `<span style="color: #38bdf8; font-weight: 700;">${escapeHtml(kw)}</span>`;
+        } else if (type) {
+          highlighted += `<span style="color: #2dd4bf; font-weight: 600;">${escapeHtml(type)}</span>`;
+        } else if (method) {
+          highlighted += `<span style="color: #fef08a; font-weight: 600;">${escapeHtml(method)}</span>`;
+        } else if (macro) {
+          highlighted += `<span style="color: #e879f9; font-weight: 700;">${escapeHtml(macro)}</span>`;
+        } else if (num) {
+          highlighted += `<span style="color: #c084fc; font-weight: 600;">${escapeHtml(num)}</span>`;
+        }
+
+        lastIndex = TOKEN_REGEX.lastIndex;
       }
 
-      // Strings
-      escaped = escaped.replace(
-        /(&quot;.*?&quot;|".*?")/g,
-        '<span style="color: #f472b6;">$1</span>'
-      );
+      if (lastIndex < codePart.length) {
+        highlighted += escapeHtml(codePart.slice(lastIndex));
+      }
 
-      // Attributes & Macros: #[contract], #![no_std], #[contractimpl], #[contracttype]
-      escaped = escaped.replace(
-        /(#!?\[.*?\])/g,
-        '<span style="color: #fbbf24; font-weight: 600;">$1</span>'
-      );
-
-      // Rust Keywords
-      escaped = escaped.replace(
-        /\b(pub|fn|let|mut|impl|struct|enum|if|else|match|return|use|for|in|while|as|true|false|self|Self)\b/g,
-        '<span style="color: #38bdf8; font-weight: 700;">$1</span>'
-      );
-
-      // Soroban Types
-      escaped = escaped.replace(
-        /\b(Address|Env|String|Symbol|BytesN|u32|u64|u128|i32|i64|i128|bool|DataKey|AuditRecord|SolaceContract|VaultContract)\b/g,
-        '<span style="color: #2dd4bf; font-weight: 600;">$1</span>'
-      );
-
-      // Methods and Storage calls
-      escaped = escaped.replace(
-        /\b(require_auth|storage|instance|persistent|get|set|record_audit|deposit|withdraw|init|unwrap_or|unwrap|clone)\b/g,
-        '<span style="color: #fef08a; font-weight: 500;">$1</span>'
-      );
-
-      // Panics and Macros
-      escaped = escaped.replace(
-        /\b(panic!|symbol_short!|vec!)\b/g,
-        '<span style="color: #e879f9; font-weight: 700;">$1</span>'
-      );
-
-      // Numbers
-      escaped = escaped.replace(
-        /\b(\d+)\b/g,
-        '<span style="color: #c084fc;">$1</span>'
-      );
-
-      return escaped + commentPart;
+      return highlighted + commentPart;
     })
     .join('\n');
 }
@@ -108,6 +113,7 @@ function highlightRustCode(code: string): string {
 export default function AuditStudioPage() {
   const [activeTab, setActiveTab] = useState<'STUDIO' | 'INVARIANTS'>('STUDIO');
   const [codeSnippet, setCodeSnippet] = useState<string>(SAMPLE_SOROBAN_CONTRACT);
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [isPostDeployment, setIsPostDeployment] = useState<boolean>(false);
   const [editorMode, setEditorMode] = useState<'COLORED' | 'EDIT'>('COLORED');
   const [loading, setLoading] = useState<boolean>(false);
@@ -349,6 +355,13 @@ impl SolaceContract {
     reader.readAsText(file);
   };
 
+  const handleCopyCode = () => {
+    if (!codeSnippet) return;
+    navigator.clipboard.writeText(codeSnippet);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
   const handleAudit = async () => {
     if (!codeSnippet.trim()) return;
     setLoading(true);
@@ -373,6 +386,28 @@ impl SolaceContract {
           setContractHash(data.contractHash);
         }
         syncActiveContract(codeSnippet, auditReport, resolvedHash);
+
+        // Persist to local audit history for full recall in Reports & History
+        try {
+          const isSolaceCore = codeSnippet.includes('SolaceContract');
+          const isVault = codeSnippet.includes('VaultContract');
+          const name = isSolaceCore ? 'Solace Core Security Contract' : isVault ? 'Solace Vault Protocol' : 'Custom Soroban Contract';
+          const existing = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
+          const newEntry = {
+            hash: resolvedHash,
+            contract: name,
+            auditType: isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT',
+            riskScore: auditReport.riskScore,
+            isSecure: auditReport.isSecure,
+            auditor: 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
+            timestamp: 'Anchored on Testnet Ledger',
+            summary: auditReport.summary,
+            vulnerabilities: auditReport.vulnerabilities || [],
+            codeSnippet: codeSnippet,
+          };
+          const updated = [newEntry, ...existing.filter((item: any) => item.hash !== resolvedHash)];
+          localStorage.setItem('solace_audit_history', JSON.stringify(updated));
+        } catch (_) {}
       } else {
         setError(data.error || 'Failed to generate audit report.');
       }
@@ -576,17 +611,17 @@ impl SolaceContract {
                     </div>
                   </div>
 
-                  {/* Code Editor Box with Increased Height & Syntax Highlighting */}
-                  <div className="rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col">
+                  {/* Code Editor Box with Modern Left Toolbar, Syntax Highlighting, and Bottom Status Bar */}
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col w-full max-w-full">
                     {/* Header Bar */}
-                    <div className="flex justify-between items-center text-xs text-slate-300 p-3 border-b border-slate-800 font-mono bg-slate-900/60">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5 text-slate-100 font-bold">
-                          <FileCode className="w-3.5 h-3.5 text-accent" />
-                          <span>soroban_contract.rs</span>
+                    <div className="flex justify-between items-center text-xs text-slate-300 px-3 py-2.5 border-b border-slate-800 font-mono bg-slate-900/70 flex-wrap gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex items-center gap-1.5 text-slate-100 font-bold truncate">
+                          <FileCode className="w-3.5 h-3.5 text-accent shrink-0" />
+                          <span className="truncate">soroban_contract.rs</span>
                         </span>
-                        <span className="text-slate-500">•</span>
-                        <span className="text-slate-300 font-semibold">{lineCount} lines</span>
+                        <span className="text-slate-600 hidden xs:inline">•</span>
+                        <span className="text-slate-400 font-semibold text-[11px] hidden xs:inline">{lineCount} lines</span>
                       </div>
 
                       {/* Mode Toggle: Colored Syntax vs Plain Edit */}
@@ -616,12 +651,35 @@ impl SolaceContract {
                       </div>
                     </div>
 
-                    {/* Code Container with Increased Height and Line Numbers */}
-                    <div className="relative font-mono text-[11px] sm:text-xs leading-6 h-[580px] sm:h-[640px] lg:h-[680px] flex overflow-hidden bg-slate-950">
+                    {/* Editor Workspace with Left Side Bar, Gutter, and Code Canvas */}
+                    <div className="relative font-mono text-[11px] sm:text-xs leading-6 h-[360px] sm:h-[460px] lg:h-[520px] flex overflow-hidden bg-slate-950">
+                      {/* Modern Left Side Action Strip */}
+                      <div className="w-8 sm:w-10 bg-slate-950/90 border-r border-slate-900 flex flex-col items-center py-2.5 gap-2 select-none shrink-0 z-10">
+                        <span className="w-5 h-5 rounded-md bg-accent/15 text-accent text-[9px] font-black flex items-center justify-center border border-accent/25" title="Rust Contract">
+                          RS
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyCode}
+                          className="w-6 h-6 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
+                          title={copiedCode ? 'Copied code!' : 'Copy Code'}
+                        >
+                          {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleLoadVault}
+                          className="w-6 h-6 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
+                          title="Reset to Template"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
                       {/* Line Numbers Gutter */}
                       <div
                         ref={gutterRef}
-                        className="select-none py-3 px-2.5 bg-slate-900/50 border-r border-slate-800 text-slate-500 text-right font-mono text-[11px] leading-6 w-12 shrink-0 overflow-hidden"
+                        className="select-none py-3 px-1.5 sm:px-2 bg-slate-900/40 border-r border-slate-800 text-slate-600 text-right font-mono text-[10px] sm:text-[11px] leading-6 w-8 sm:w-11 shrink-0 overflow-hidden"
                       >
                         {Array.from({ length: Math.max(lineCount, 1) }).map((_, i) => (
                           <div key={i}>{i + 1}</div>
@@ -666,6 +724,29 @@ impl SolaceContract {
                           className="absolute inset-0 p-3 m-0 overflow-auto bg-transparent resize-none focus:outline-none whitespace-pre border-0 selection:bg-accent/40"
                           spellCheck={false}
                         />
+                      </div>
+                    </div>
+
+                    {/* Modern Below Status Bar */}
+                    <div className="bg-slate-900 border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-slate-400 select-none flex-wrap gap-1">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span className="flex items-center gap-1 text-slate-300 font-semibold">
+                          <Terminal className="w-3 h-3 text-accent" />
+                          <span>soroban-sdk v22</span>
+                        </span>
+                        <span className="text-slate-600 hidden xs:inline">•</span>
+                        <span className="text-slate-400 hidden xs:inline">Rust 2021 (no_std)</span>
+                        <span className="text-slate-600 hidden sm:inline">•</span>
+                        <span className="text-slate-400 hidden sm:inline">UTF-8</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:gap-3 text-right">
+                        <span>Ln {lineCount}, Col 1</span>
+                        <span className="text-slate-600 hidden xs:inline">•</span>
+                        <span className="hidden xs:inline">{codeSnippet.length} chars</span>
+                        <span className="px-1.5 py-0.5 rounded bg-accent/20 text-accent font-bold uppercase text-[9px]">
+                          {isPostDeployment ? 'POST-DEPLOY' : 'PRE-DEPLOY'}
+                        </span>
                       </div>
                     </div>
                   </div>
