@@ -1,4 +1,4 @@
-import { isConnected, requestAccess, getNetwork, getNetworkDetails } from '@stellar/freighter-api';
+import { isConnected, requestAccess, getNetwork, getNetworkDetails, signTransaction } from '@stellar/freighter-api';
 
 const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -171,3 +171,100 @@ export async function getAuditFromChain(contractHash: string) {
   const data = await response.json();
   return data;
 }
+
+export interface AuditFeeReceipt {
+  success: boolean;
+  status: string;
+  transactionHash: string;
+  feeXLM: number;
+  feeStroops: string;
+  currency: string;
+  payer: string;
+  recipient: string;
+  contractHash: string;
+  timestamp: string;
+  explorerUrl: string;
+}
+
+/**
+ * Prompts user's Freighter browser wallet to authorize and sign the 1.0 XLM audit fee transaction.
+ * Broadcasts the signed transaction to the Stellar Testnet ledger and returns verified on-chain confirmation.
+ */
+export async function signAndPayAuditFee(
+  userAddress: string,
+  contractHash: string,
+  network: 'testnet' | 'mainnet' = 'testnet'
+): Promise<AuditFeeReceipt> {
+  if (!userAddress) {
+    throw new Error('User wallet address is required to process audit fee payment.');
+  }
+
+  // 1. Build fee payment transaction on backend
+  const buildRes = await fetch(`${API_BASE_URL}/api/contract/build-fee-tx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userAddress,
+      contractHash,
+      network,
+    }),
+  });
+
+  const buildData = await buildRes.json();
+  if (!buildRes.ok || !buildData.success || !buildData.xdr) {
+    throw new Error(buildData.error || 'Failed to prepare audit fee payment transaction on Stellar.');
+  }
+
+  // 2. Trigger Freighter wallet extension popup to request user confirmation
+  let signResult: any;
+  try {
+    signResult = await signTransaction(buildData.xdr, {
+      networkPassphrase: buildData.networkPassphrase,
+      address: userAddress,
+    });
+  } catch (signErr: any) {
+    const msg = signErr?.message || '';
+    if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('decline') || msg.toLowerCase().includes('cancel')) {
+      throw new Error('Audit fee payment declined by user in Freighter wallet.');
+    }
+    throw new Error(msg || 'Transaction signing rejected in Freighter wallet.');
+  }
+
+  if (signResult?.error) {
+    const rawErr = signResult.error;
+    const msg = typeof rawErr === 'string' ? rawErr : rawErr?.message || 'Transaction rejected in Freighter wallet.';
+    if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('decline') || msg.toLowerCase().includes('cancel')) {
+      throw new Error('Audit fee payment declined by user in Freighter wallet.');
+    }
+    throw new Error(msg);
+  }
+
+  const signedXdr: string =
+    typeof signResult === 'string'
+      ? signResult
+      : signResult?.signedTxXdr || signResult?.signedTransaction;
+
+  if (!signedXdr) {
+    throw new Error('No signed transaction XDR returned by Freighter wallet.');
+  }
+
+  // 3. Broadcast the user-signed transaction to Stellar network via Horizon
+  const submitRes = await fetch(`${API_BASE_URL}/api/contract/submit-fee-tx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      signedXdr,
+      userAddress,
+      contractHash,
+      network,
+    }),
+  });
+
+  const submitData = await submitRes.json();
+  if (!submitRes.ok || !submitData.success) {
+    throw new Error(submitData.error || 'Failed to submit and broadcast signed fee transaction to Stellar network.');
+  }
+
+  return submitData;
+}
+

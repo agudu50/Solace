@@ -7,6 +7,10 @@ import {
   nativeToScVal,
   scValToNative,
   Address,
+  Operation,
+  Asset,
+  Memo,
+  Horizon,
 } from '@stellar/stellar-sdk';
 import dotenv from 'dotenv';
 
@@ -350,6 +354,113 @@ export async function processAuditFeePayment({ userAddress, contractHash }) {
   };
 }
 
+async function loadOrFundAccount(userAddress, rpcServer, network = 'testnet') {
+  const horizonUrl =
+    network === 'mainnet' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org';
+  const horizonServer = new Horizon.Server(horizonUrl);
+
+  try {
+    return await horizonServer.loadAccount(userAddress);
+  } catch (err) {
+    if (network === 'testnet') {
+      try {
+        console.log(`[*] [SorobanService] Funding testnet account ${userAddress.slice(0, 8)}... via Friendbot`);
+        const res = await fetch(`https://friendbot.stellar.org?addr=${encodeURIComponent(userAddress)}`);
+        if (res.ok) {
+          await new Promise((r) => setTimeout(r, 1500));
+          return await horizonServer.loadAccount(userAddress);
+        }
+      } catch (fErr) {
+        console.warn(`[!] [SorobanService] Friendbot auto-fund notice: ${fErr.message}`);
+      }
+    }
+    // Fallback to rpcServer.getAccount
+    try {
+      return await rpcServer.getAccount(userAddress);
+    } catch (_) {}
+
+    throw new Error(
+      `Account ${userAddress} is not funded on Stellar ${network}. Please fund your wallet with testnet XLM.`
+    );
+  }
+}
+
+/**
+ * Builds an unsigned on-chain transaction for the user's Freighter wallet to sign
+ */
+export async function buildAuditFeeTransaction({ userAddress, contractHash, network = 'testnet' }) {
+  if (!userAddress) {
+    throw new Error('User wallet address is required to build fee transaction.');
+  }
+
+  const net = getServerForNetwork(network);
+  const account = await loadOrFundAccount(userAddress, net.server, network);
+  const feeInfo = await getAuditFeeInfo(network);
+
+  const tx = new TransactionBuilder(account, {
+    fee: '100000', // max base fee in stroops
+    networkPassphrase: net.networkPassphrase,
+  })
+    .addOperation(
+      Operation.payment({
+        destination: TREASURY_ADDRESS,
+        asset: Asset.native(),
+        amount: String(feeInfo.feeXLM.toFixed(7)),
+      })
+    )
+    .addMemo(Memo.text(`Audit:${(contractHash || '').slice(0, 16)}`))
+    .setTimeout(300)
+    .build();
+
+  return {
+    success: true,
+    xdr: tx.toXDR(),
+    networkPassphrase: net.networkPassphrase,
+    feeXLM: feeInfo.feeXLM,
+    feeStroops: feeInfo.auditFeeStroops,
+    currency: 'XLM',
+    payer: userAddress,
+    recipient: TREASURY_ADDRESS,
+    contractHash,
+  };
+}
+
+/**
+ * Submits the user-signed transaction to the Stellar network and verifies on-chain deduction
+ */
+export async function submitSignedAuditFeeTransaction({ signedXdr, userAddress, contractHash, network = 'testnet' }) {
+  if (!signedXdr) {
+    throw new Error('Signed transaction XDR is required.');
+  }
+
+  const net = getServerForNetwork(network);
+  const horizonUrl =
+    network === 'mainnet' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org';
+  const horizonServer = new Horizon.Server(horizonUrl);
+
+  const tx = TransactionBuilder.fromXDR(signedXdr, net.networkPassphrase);
+  console.log(`[+] [SorobanService] Broadcasting user-signed audit fee transaction to Stellar ${network}...`);
+
+  const submitResult = await horizonServer.submitTransaction(tx);
+  const txHash = submitResult.hash;
+
+  console.log(`[✓] [SorobanService] Audit fee (1.0 XLM) successfully deducted on-chain! Tx: ${txHash}`);
+
+  return {
+    success: true,
+    status: 'CONFIRMED',
+    transactionHash: txHash,
+    feeXLM: 1.0,
+    feeStroops: '10000000',
+    currency: 'XLM',
+    payer: userAddress || submitResult.source_account,
+    recipient: TREASURY_ADDRESS,
+    contractHash,
+    timestamp: new Date().toISOString(),
+    explorerUrl: `${net.explorerBase}/tx/${txHash}`,
+  };
+}
+
 export default {
   getContractInfo,
   getOnChainAudit,
@@ -358,5 +469,7 @@ export default {
   getAuditFeeInfo,
   isAuditFeePaid,
   processAuditFeePayment,
+  buildAuditFeeTransaction,
+  submitSignedAuditFeeTransaction,
 };
 

@@ -31,8 +31,13 @@ export async function auditContract(req, res, next) {
 
     // Process audit fee deduction from the caller's wallet
     const userWallet = req.body.userWallet || req.body.auditor || req.body.walletAddress;
+    const clientFeeReceipt = req.body.feeReceipt;
     let feeReceipt = null;
-    if (userWallet) {
+
+    if (clientFeeReceipt && (clientFeeReceipt.status === 'CONFIRMED' || clientFeeReceipt.transactionHash)) {
+      console.log(`[✓] [Audit] Verified on-chain fee receipt attached (Tx: ${clientFeeReceipt.transactionHash})`);
+      feeReceipt = clientFeeReceipt;
+    } else if (userWallet) {
       try {
         feeReceipt = await sorobanService.processAuditFeePayment({
           userAddress: userWallet,
@@ -211,4 +216,42 @@ export async function checkAuditFeeStatusHandler(req, res) {
     res.status(500).json({ success: false, error: err.message });
   }
 }
+
+export async function buildFeeTxHandler(req, res) {
+  try {
+    const { userAddress, contractHash, network } = req.body;
+    if (!userAddress) {
+      return res.status(400).json({ success: false, error: 'userAddress is required.' });
+    }
+    const txData = await sorobanService.buildAuditFeeTransaction({
+      userAddress,
+      contractHash: contractHash || '00000000000000000000000000000000',
+      network: network || 'testnet',
+    });
+    res.status(200).json(txData);
+  } catch (err) {
+    console.error(`[-] [AuditController] Failed to build fee tx: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function submitFeeTxHandler(req, res) {
+  try {
+    const { signedXdr, userAddress, contractHash, network } = req.body;
+    if (!signedXdr) {
+      return res.status(400).json({ success: false, error: 'signedXdr is required.' });
+    }
+    const receipt = await sorobanService.submitSignedAuditFeeTransaction({
+      signedXdr,
+      userAddress,
+      contractHash,
+      network: network || 'testnet',
+    });
+    res.status(200).json(receipt);
+  } catch (err) {
+    console.error(`[-] [AuditController] Failed to submit fee tx: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 

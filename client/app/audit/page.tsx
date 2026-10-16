@@ -23,6 +23,7 @@ import {
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import WalletGate from '../../components/auth/WalletGate';
 import { useWallet } from '../../context/WalletContext';
+import { signAndPayAuditFee } from '../../utils/solaceService';
 
 interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -208,14 +209,17 @@ export default function AuditStudioPage() {
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const [copiedTxHash, setCopiedTxHash] = useState<boolean>(false);
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
+  const [auditStep, setAuditStep] = useState<string>('');
   const [feeReceipt, setFeeReceipt] = useState<{
     feeXLM: number;
     feeStroops: string;
     currency: string;
     payer: string;
+    recipient?: string;
     transactionHash?: string;
     status: string;
     timestamp?: string;
+    explorerUrl?: string;
   } | null>(null);
   const [auditFeeConfig, setAuditFeeConfig] = useState<{
     feeXLM: number;
@@ -651,8 +655,42 @@ impl SolaceContract {
     setContractHash('');
     setAnchorResult(null);
     setFeeReceipt(null);
+    setAuditStep('Calculating contract cryptographic hash...');
 
     try {
+      // 1. Calculate deterministic contract SHA-256 hash first
+      let resolvedHash = contractHash;
+      if (!resolvedHash) {
+        try {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(codeSnippet);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          resolvedHash = Array.from(new Uint8Array(hashBuffer))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+        } catch {
+          resolvedHash = '00000000000000000000000000000000';
+        }
+      }
+      setContractHash(resolvedHash);
+
+      // 2. Trigger Freighter browser wallet popup to request user confirmation for the 1.0 XLM fee
+      setAuditStep(`Triggering Freighter Wallet to confirm ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency} fee...`);
+      let confirmedFeeReceipt = null;
+      try {
+        confirmedFeeReceipt = await signAndPayAuditFee(walletKey, resolvedHash, network);
+        setFeeReceipt(confirmedFeeReceipt);
+      } catch (payErr: any) {
+        console.warn('Fee payment aborted or failed:', payErr);
+        const errMsg = payErr?.message || 'Audit fee payment cancelled.';
+        setError(errMsg);
+        setLoading(false);
+        setAuditStep('');
+        return;
+      }
+
+      // 3. User confirmed & signed; fee transaction broadcast and verified on Stellar Testnet!
+      setAuditStep('Fee confirmed on-chain! Running Solace Dual Flash AST AI analysis...');
       const response = await fetch(`${API_BASE_URL}/api/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -660,6 +698,8 @@ impl SolaceContract {
           codeSnippet,
           isPostDeployment,
           userWallet: walletKey,
+          contractHash: resolvedHash,
+          feeReceipt: confirmedFeeReceipt,
         }),
       });
 
@@ -667,13 +707,9 @@ impl SolaceContract {
       if (data.success) {
         const auditReport = data.data || data.report;
         setReport(auditReport);
-        const resolvedFeeReceipt = data.feeReceipt || null;
+        const resolvedFeeReceipt = confirmedFeeReceipt || data.feeReceipt || null;
         if (resolvedFeeReceipt) {
           setFeeReceipt(resolvedFeeReceipt);
-        }
-        const resolvedHash = data.contractHash || '';
-        if (resolvedHash) {
-          setContractHash(resolvedHash);
         }
 
         let verifiedAnchor = null;
@@ -718,8 +754,9 @@ impl SolaceContract {
             riskScore: auditReport.riskScore,
             isSecure: auditReport.isSecure,
             auditor: walletKey || 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI',
-            feePaid: `${data.feeReceipt?.feeXLM || auditFeeConfig.feeXLM} ${auditFeeConfig.currency}`,
-            feeTxHash: data.feeReceipt?.transactionHash || '',
+            feePaid: `${resolvedFeeReceipt?.feeXLM || auditFeeConfig.feeXLM} ${auditFeeConfig.currency}`,
+            feeTxHash: resolvedFeeReceipt?.transactionHash || '',
+            feeExplorerUrl: resolvedFeeReceipt?.explorerUrl || '',
             timestamp: 'Anchored on Testnet Ledger',
             date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -733,11 +770,12 @@ impl SolaceContract {
       } else {
         setError(data.error || 'Failed to generate audit report.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Could not connect to the backend server. Verify the API is running on port 5000.');
+      setError(err?.message || 'Could not connect to the backend server. Verify the API is running on port 5000.');
     } finally {
       setLoading(false);
+      setAuditStep('');
     }
   };
 
@@ -1152,20 +1190,21 @@ impl SolaceContract {
                     type="button"
                     onClick={handleAudit}
                     disabled={loading || !codeSnippet.trim()}
-                    className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-bold transition shadow-md shadow-accent/25 whitespace-nowrap flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-bold transition shadow-md shadow-accent/25 whitespace-nowrap flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>
                       {loading
-                        ? `Authorizing & Deducting ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency}...`
+                        ? (auditStep || `Authorizing & Deducting ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency}...`)
                         : `Audit Smart Contract (${auditFeeConfig.feeXLM} ${auditFeeConfig.currency})`}
                     </span>
                   </button>
                 </div>
 
                 {error && (
-                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl text-xs text-red-700 dark:text-red-300">
-                    {error}
+                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span>{error}</span>
                   </div>
                 )}
               </div>
@@ -1205,12 +1244,17 @@ impl SolaceContract {
 
                 {loading && (
                   <div className="flex-grow flex flex-col items-center justify-center text-center p-6 sm:p-8">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent mb-3" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      Solace Dual Flash AST Engine Analyzing...
+                    <div className="relative mb-3 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-2 border-accent/20 border-t-accent" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Coins className="w-5 h-5 text-accent animate-pulse" />
+                      </div>
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white max-w-sm">
+                      {auditStep || 'Solace Dual Flash AST Engine Analyzing...'}
                     </span>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium">
-                      Evaluating require_auth(), persistent storage bounds, and arithmetic safety.
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs font-medium leading-relaxed">
+                      Please confirm the 1.0 XLM transaction in your Freighter extension popup when prompted.
                     </p>
                   </div>
                 )}
@@ -1330,22 +1374,45 @@ impl SolaceContract {
                         </div>
                         <div className="space-y-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/80 text-[11px] font-mono">
                           <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Payer Wallet:</span>
+                            <span>Payer Signer:</span>
                             <span className="text-slate-800 dark:text-slate-200 font-bold truncate max-w-[190px]">
                               {feeReceipt.payer}
                             </span>
                           </div>
-                          {feeReceipt.transactionHash && (
+                          {feeReceipt.recipient && (
                             <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                              <span>Fee Settlement Tx:</span>
-                              <span className="text-accent font-bold truncate max-w-[190px]">
-                                {feeReceipt.transactionHash.slice(0, 10)}...{feeReceipt.transactionHash.slice(-6)}
+                              <span>Treasury Recipient:</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-bold truncate max-w-[190px]">
+                                {feeReceipt.recipient.slice(0, 8)}...{feeReceipt.recipient.slice(-6)}
                               </span>
                             </div>
                           )}
+                          {feeReceipt.transactionHash && (
+                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                              <span>Settlement Tx:</span>
+                              {feeReceipt.explorerUrl ? (
+                                <a
+                                  href={feeReceipt.explorerUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-accent font-bold truncate max-w-[190px] hover:underline flex items-center gap-1"
+                                  title="View on Stellar Expert"
+                                >
+                                  <span>{feeReceipt.transactionHash.slice(0, 10)}...{feeReceipt.transactionHash.slice(-6)}</span>
+                                  <ExternalLink className="w-3 h-3 shrink-0" />
+                                </a>
+                              ) : (
+                                <span className="text-accent font-bold truncate max-w-[190px]">
+                                  {feeReceipt.transactionHash.slice(0, 10)}...{feeReceipt.transactionHash.slice(-6)}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Contract Enforcement:</span>
-                            <span className="text-slate-700 dark:text-slate-300">SolaceContract::pay_audit_fee</span>
+                            <span>Status:</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                              ✓ CONFIRMED ON TESTNET LEDGER
+                            </span>
                           </div>
                         </div>
                       </div>

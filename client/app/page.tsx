@@ -1181,13 +1181,25 @@ export default function DashboardPage() {
                     Continuous AST Verification
                   </span>
                 </div>
-                <Link
-                  href="/monitor"
-                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-xs"
-                >
-                  <span>Open Monitor</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('solace-open-invariants-modal'))}
+                    className="font-bold text-accent hover:underline flex items-center gap-1 text-xs cursor-pointer"
+                    title="View complete Soroban security invariants status modal"
+                  >
+                    <span>Invariants Matrix</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                  <Link
+                    href="/monitor"
+                    className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-xs"
+                  >
+                    <span>Monitor</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
