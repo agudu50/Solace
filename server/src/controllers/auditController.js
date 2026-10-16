@@ -123,3 +123,18 @@ export async function recordAuditOnChain(req, res) {
     res.status(500).json({ success: false, error: err.message });
   }
 }
+
+export async function getContractTelemetryHandler(req, res) {
+  try {
+    const { contractId } = req.params;
+    if (!contractId) {
+      return res.status(400).json({ success: false, error: 'Contract ID is required in URL.' });
+    }
+
+    const telemetry = await sorobanService.getContractTelemetry(contractId.trim());
+    res.status(200).json(telemetry);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+

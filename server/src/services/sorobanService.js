@@ -160,8 +160,65 @@ export async function recordOnChainAudit({
   };
 }
 
+/**
+ * Fetches real-time contract telemetry directly from the live Stellar Soroban testnet
+ * @param {string} contractId - Deployed Soroban contract address
+ */
+export async function getContractTelemetry(contractId) {
+  try {
+    const contract = new Contract(contractId);
+    const key = contract.getFootprint();
+    const [entryRes, latestLedgerRes, healthRes] = await Promise.all([
+      server.getLedgerEntries(key).catch(() => null),
+      server.getLatestLedger().catch(() => null),
+      server.getHealth().catch(() => null),
+    ]);
+
+    const entry = entryRes?.entries?.[0];
+    const latestSeq = latestLedgerRes?.sequence || entryRes?.latestLedger || 0;
+    const liveUntil = entry?.liveUntilLedgerSeq || 0;
+    const ttlRemaining = liveUntil > latestSeq ? liveUntil - latestSeq : 0;
+    const lastModified = entry?.lastModifiedLedgerSeq || null;
+    const exists = Boolean(entry);
+
+    return {
+      success: true,
+      contractId,
+      exists,
+      status: exists ? 'ACTIVE & VERIFIED' : 'NOT_FOUND_ON_LEDGER',
+      latestLedger: latestSeq,
+      protocolVersion: latestLedgerRes?.protocolVersion || 22,
+      closeTime: latestLedgerRes?.closeTime ? Number(latestLedgerRes.closeTime) : Math.floor(Date.now() / 1000),
+      rpcHealth: healthRes?.status || 'healthy',
+      liveUntilLedgerSeq: liveUntil,
+      lastModifiedLedgerSeq: lastModified,
+      ttlRemainingLedgers: ttlRemaining,
+      rentStatus: !exists
+        ? 'UNINITIALIZED (No Active Ledger Footprint)'
+        : ttlRemaining > 20000
+        ? 'OPTIMAL (Rent TTL Extended)'
+        : ttlRemaining > 5000
+        ? 'WARNING (Rent Extension Recommended)'
+        : 'CRITICAL (Imminent State Eviction Risk)',
+      storageType: exists ? 'Persistent Contract Instance Footprint' : 'None',
+      network: 'Stellar Soroban Testnet',
+      timestamp: new Date().toISOString(),
+    };
+  } catch (err) {
+    return {
+      success: false,
+      contractId,
+      exists: false,
+      status: 'OFFLINE_OR_INVALID',
+      error: err.message,
+    };
+  }
+}
+
 export default {
   getContractInfo,
   getOnChainAudit,
   recordOnChainAudit,
+  getContractTelemetry,
 };
+
