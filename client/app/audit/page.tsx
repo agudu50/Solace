@@ -274,32 +274,55 @@ export default function AuditStudioPage() {
     try {
       const savedActive = localStorage.getItem('solace-active-contract-audit');
       const savedCode = localStorage.getItem('solace_editor_code');
+      const historyStr = localStorage.getItem('solace_audit_history');
+      const history: any[] = historyStr ? JSON.parse(historyStr) : [];
+
+      let codeToSet = savedCode || '';
+      let hashToSet = '';
+      let reportToSet: AuditReport | null = null;
+      let anchorToSet: any = null;
+      let feeReceiptToSet: any = null;
+      let isPost = false;
 
       if (savedActive) {
         const parsed = JSON.parse(savedActive);
-        if (parsed.codeSnippet) {
-          setCodeSnippet(parsed.codeSnippet);
-        } else if (savedCode) {
-          setCodeSnippet(savedCode);
-        }
-        if (parsed.contractHash) {
-          setContractHash(parsed.contractHash);
-        }
-        if (parsed.report) {
-          setReport(parsed.report);
-        }
-        if (parsed.anchorResult) {
-          setAnchorResult(parsed.anchorResult);
-        }
-        if (parsed.feeReceipt) {
-          setFeeReceipt(parsed.feeReceipt);
-        }
-        if (parsed.auditType) {
-          setIsPostDeployment(parsed.auditType === 'POST_DEPLOYMENT');
-        }
-      } else if (savedCode) {
-        setCodeSnippet(savedCode);
+        if (parsed.codeSnippet) codeToSet = parsed.codeSnippet;
+        if (parsed.contractHash) hashToSet = parsed.contractHash;
+        if (parsed.report) reportToSet = parsed.report;
+        if (parsed.anchorResult) anchorToSet = parsed.anchorResult;
+        if (parsed.feeReceipt) feeReceiptToSet = parsed.feeReceipt;
+        if (parsed.auditType) isPost = parsed.auditType === 'POST_DEPLOYMENT';
       }
+
+      // If report was not restored yet from active, look up matching contract in history
+      if (!reportToSet && history.length > 0) {
+        const matched = history.find(
+          (item: any) =>
+            (hashToSet && item.hash === hashToSet) ||
+            (codeToSet && item.codeSnippet === codeToSet)
+        ) || (codeToSet === SAMPLE_SOROBAN_CONTRACT || !codeToSet ? history[0] : null);
+
+        if (matched) {
+          if (!codeToSet && matched.codeSnippet) codeToSet = matched.codeSnippet;
+          if (!hashToSet && matched.hash) hashToSet = matched.hash;
+          reportToSet = matched.report || {
+            riskScore: matched.riskScore,
+            isSecure: matched.isSecure,
+            summary: matched.summary,
+            vulnerabilities: matched.vulnerabilities || [],
+          };
+          if (!anchorToSet && matched.anchorResult) anchorToSet = matched.anchorResult;
+          if (!feeReceiptToSet && matched.feeReceipt) feeReceiptToSet = matched.feeReceipt;
+          if (matched.auditType) isPost = matched.auditType === 'POST_DEPLOYMENT';
+        }
+      }
+
+      if (codeToSet) setCodeSnippet(codeToSet);
+      if (hashToSet) setContractHash(hashToSet);
+      if (reportToSet) setReport(reportToSet);
+      if (anchorToSet) setAnchorResult(anchorToSet);
+      if (feeReceiptToSet) setFeeReceipt(feeReceiptToSet);
+      setIsPostDeployment(isPost);
     } catch (_) {}
   }, []);
 
@@ -452,7 +475,8 @@ export default function AuditStudioPage() {
       if (!code.trim()) {
         localStorage.removeItem('solace-active-contract-audit');
         localStorage.removeItem('solace_editor_code');
-        window.dispatchEvent(new Event('solace-audit-updated'));
+        window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { cleared: true } }));
+        window.dispatchEvent(new Event('storage'));
         return;
       }
 
@@ -463,15 +487,21 @@ export default function AuditStudioPage() {
         code.match(/struct\s+([A-Za-z0-9_]+)/) ||
         code.match(/pub\s+enum\s+([A-Za-z0-9_]+)/);
 
-      const contractName = providedFileName
-        ? providedFileName.replace(/\.rs$/, '').replace(/[_-]/g, ' ')
+      const defaultName = code.includes('VaultContract')
+        ? 'Vault Lending Pool Protocol'
+        : code.includes('SolaceContract')
+        ? 'Solace Core Ledger Protocol'
         : structMatch
         ? structMatch[1]
         : 'Custom Soroban Contract';
 
+      const contractName = providedFileName
+        ? (providedFileName.toLowerCase().includes('vault') ? 'Vault Lending Pool Protocol' : providedFileName.replace(/\.rs$/, '').replace(/[_-]/g, ' '))
+        : defaultName;
+
       const subtitle = providedFileName
         ? providedFileName
-        : (structMatch ? structMatch[1].toLowerCase() : 'soroban_contract') + '.rs';
+        : (code.includes('VaultContract') ? 'soroban_vault.rs' : (structMatch ? structMatch[1].toLowerCase() : 'soroban_contract') + '.rs');
 
       const lines = code.trim().split('\n').filter(Boolean).length || 1;
       const now = new Date();
@@ -492,29 +522,55 @@ export default function AuditStudioPage() {
         }
       }
 
+      // Check if audit report exists in history if not passed directly
+      let effectiveReport = reportData;
+      let effectiveAnchor = anchorData;
+      let effectiveFeeReceipt = feeReceiptData;
+
+      if (!effectiveReport) {
+        try {
+          const histStr = localStorage.getItem('solace_audit_history');
+          if (histStr) {
+            const hist: any[] = JSON.parse(histStr);
+            const matched = hist.find((item) => (hash && item.hash === hash) || item.codeSnippet === code);
+            if (matched) {
+              effectiveReport = matched.report || {
+                riskScore: matched.riskScore,
+                isSecure: matched.isSecure,
+                summary: matched.summary,
+                vulnerabilities: matched.vulnerabilities || [],
+              };
+              if (!effectiveAnchor && matched.anchorResult) effectiveAnchor = matched.anchorResult;
+              if (!effectiveFeeReceipt && matched.feeReceipt) effectiveFeeReceipt = matched.feeReceipt;
+            }
+          }
+        } catch (_) {}
+      }
+
       const payload = {
         contractName,
         subtitle,
         contractHash: hash || '',
-        riskScore: reportData?.riskScore ?? (reportData?.isSecure ? 95 : 60),
-        isSecure: reportData?.isSecure ?? true,
+        riskScore: effectiveReport?.riskScore ?? (effectiveReport?.isSecure ? 95 : 60),
+        isSecure: effectiveReport?.isSecure ?? true,
         summary:
-          reportData?.summary ||
+          effectiveReport?.summary ||
           'Smart contract AST inspection verified invariants on Stellar Soroban.',
-        vulnerabilitiesCount: reportData?.vulnerabilities?.length ?? 0,
+        vulnerabilitiesCount: effectiveReport?.vulnerabilities?.length ?? 0,
         auditType: isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT',
         timestamp: timeStr,
         date: dateStr,
         linesCount: lines,
-        vulnerabilities: reportData?.vulnerabilities || [],
+        vulnerabilities: effectiveReport?.vulnerabilities || [],
         codeSnippet: code,
-        report: reportData || null,
-        anchorResult: anchorData || null,
-        feeReceipt: feeReceiptData || null,
+        report: effectiveReport || null,
+        anchorResult: effectiveAnchor || null,
+        feeReceipt: effectiveFeeReceipt || null,
       };
 
       localStorage.setItem('solace-active-contract-audit', JSON.stringify(payload));
-      window.dispatchEvent(new Event('solace-audit-updated'));
+      window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { hash: hash || '', payload } }));
+      window.dispatchEvent(new Event('storage'));
     } catch (_) {}
   };
 
@@ -527,20 +583,59 @@ export default function AuditStudioPage() {
       } else {
         localStorage.removeItem('solace_editor_code');
         localStorage.removeItem('solace-active-contract-audit');
-        window.dispatchEvent(new Event('solace-audit-updated'));
+        window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { cleared: true } }));
+        window.dispatchEvent(new Event('storage'));
       }
     } catch (_) {}
   };
 
   const handleLoadVault = async () => {
     setCodeSnippet(SAMPLE_SOROBAN_CONTRACT);
-    setReport(null);
-    setAnchorResult(null);
-    setFeeReceipt(null);
     try {
       localStorage.setItem('solace_editor_code', SAMPLE_SOROBAN_CONTRACT);
     } catch (_) {}
-    await syncActiveContract(SAMPLE_SOROBAN_CONTRACT, null, undefined, 'soroban_vault.rs');
+
+    // Check if an existing audit exists in history for Vault
+    let existingAudit: any = null;
+    try {
+      const historyStr = localStorage.getItem('solace_audit_history');
+      if (historyStr) {
+        const history: any[] = JSON.parse(historyStr);
+        existingAudit = history.find(
+          (item: any) =>
+            item.contract?.includes('Vault') ||
+            item.hash === '2878352a6886e86be0db6e300ad8ee6b2a00c6d863f64062f62775f26daf9d' ||
+            item.codeSnippet === SAMPLE_SOROBAN_CONTRACT
+        );
+      }
+    } catch (_) {}
+
+    if (existingAudit) {
+      const existingReport = existingAudit.report || {
+        riskScore: existingAudit.riskScore,
+        isSecure: existingAudit.isSecure,
+        summary: existingAudit.summary,
+        vulnerabilities: existingAudit.vulnerabilities || [],
+      };
+      setReport(existingReport);
+      setContractHash(existingAudit.hash);
+      setAnchorResult(existingAudit.anchorResult || null);
+      setFeeReceipt(existingAudit.feeReceipt || null);
+      await syncActiveContract(
+        SAMPLE_SOROBAN_CONTRACT,
+        existingReport,
+        existingAudit.hash,
+        'soroban_vault.rs',
+        existingAudit.anchorResult || null,
+        existingAudit.feeReceipt || null
+      );
+    } else {
+      setReport(null);
+      setContractHash('');
+      setAnchorResult(null);
+      setFeeReceipt(null);
+      await syncActiveContract(SAMPLE_SOROBAN_CONTRACT, null, undefined, 'soroban_vault.rs');
+    }
   };
 
   const handleLoadSolaceCore = async () => {
@@ -587,13 +682,49 @@ impl SolaceContract {
 }
 `;
     setCodeSnippet(solaceCode);
-    setReport(null);
-    setAnchorResult(null);
-    setFeeReceipt(null);
     try {
       localStorage.setItem('solace_editor_code', solaceCode);
     } catch (_) {}
-    await syncActiveContract(solaceCode, null, undefined, 'solace_core.rs');
+
+    let existingAudit: any = null;
+    try {
+      const historyStr = localStorage.getItem('solace_audit_history');
+      if (historyStr) {
+        const history: any[] = JSON.parse(historyStr);
+        existingAudit = history.find(
+          (item: any) =>
+            item.contract?.includes('Solace') ||
+            item.codeSnippet === solaceCode
+        );
+      }
+    } catch (_) {}
+
+    if (existingAudit) {
+      const existingReport = existingAudit.report || {
+        riskScore: existingAudit.riskScore,
+        isSecure: existingAudit.isSecure,
+        summary: existingAudit.summary,
+        vulnerabilities: existingAudit.vulnerabilities || [],
+      };
+      setReport(existingReport);
+      setContractHash(existingAudit.hash);
+      setAnchorResult(existingAudit.anchorResult || null);
+      setFeeReceipt(existingAudit.feeReceipt || null);
+      await syncActiveContract(
+        solaceCode,
+        existingReport,
+        existingAudit.hash,
+        'solace_core.rs',
+        existingAudit.anchorResult || null,
+        existingAudit.feeReceipt || null
+      );
+    } else {
+      setReport(null);
+      setContractHash('');
+      setAnchorResult(null);
+      setFeeReceipt(null);
+      await syncActiveContract(solaceCode, null, undefined, 'solace_core.rs');
+    }
   };
 
   const handleClear = () => {
@@ -606,7 +737,8 @@ impl SolaceContract {
     try {
       localStorage.removeItem('solace-active-contract-audit');
       localStorage.removeItem('solace_editor_code');
-      window.dispatchEvent(new Event('solace-audit-updated'));
+      window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { cleared: true } }));
+      window.dispatchEvent(new Event('storage'));
     } catch (_) {}
   };
 
@@ -619,14 +751,46 @@ impl SolaceContract {
       const text = event.target?.result as string;
       if (text) {
         setCodeSnippet(text);
-        setReport(null);
-        setContractHash('');
-        setAnchorResult(null);
-        setFeeReceipt(null);
         try {
           localStorage.setItem('solace_editor_code', text);
         } catch (_) {}
-        await syncActiveContract(text, null, undefined, fileName);
+
+        // Check if matching audit in history
+        let matchedAudit: any = null;
+        try {
+          const histStr = localStorage.getItem('solace_audit_history');
+          if (histStr) {
+            const hist: any[] = JSON.parse(histStr);
+            matchedAudit = hist.find((item: any) => item.codeSnippet === text);
+          }
+        } catch (_) {}
+
+        if (matchedAudit) {
+          const existingReport = matchedAudit.report || {
+            riskScore: matchedAudit.riskScore,
+            isSecure: matchedAudit.isSecure,
+            summary: matchedAudit.summary,
+            vulnerabilities: matchedAudit.vulnerabilities || [],
+          };
+          setReport(existingReport);
+          setContractHash(matchedAudit.hash);
+          setAnchorResult(matchedAudit.anchorResult || null);
+          setFeeReceipt(matchedAudit.feeReceipt || null);
+          await syncActiveContract(
+            text,
+            existingReport,
+            matchedAudit.hash,
+            fileName,
+            matchedAudit.anchorResult || null,
+            matchedAudit.feeReceipt || null
+          );
+        } else {
+          setReport(null);
+          setContractHash('');
+          setAnchorResult(null);
+          setFeeReceipt(null);
+          await syncActiveContract(text, null, undefined, fileName);
+        }
       }
     };
     reader.readAsText(file);
@@ -729,23 +893,21 @@ impl SolaceContract {
           } catch (_) {}
         }
 
-        // Persist complete active contract, code, report, anchor, and fee receipt
-        await syncActiveContract(
-          codeSnippet,
-          auditReport,
-          resolvedHash,
-          undefined,
-          verifiedAnchor,
-          resolvedFeeReceipt
-        );
-
         // Persist to local audit history for full recall in Reports & History
+        const structMatch =
+          codeSnippet.match(/pub\s+struct\s+([A-Za-z0-9_]+)/) ||
+          codeSnippet.match(/struct\s+([A-Za-z0-9_]+)/) ||
+          codeSnippet.match(/pub\s+enum\s+([A-Za-z0-9_]+)/);
+        const name =
+          codeSnippet.includes('VaultContract')
+            ? 'Vault Lending Pool Protocol'
+            : codeSnippet.includes('SolaceContract')
+            ? 'Solace Core Ledger Protocol'
+            : structMatch
+            ? structMatch[1]
+            : 'Soroban Smart Contract';
+
         try {
-          const structMatch =
-            codeSnippet.match(/pub\s+struct\s+([A-Za-z0-9_]+)/) ||
-            codeSnippet.match(/struct\s+([A-Za-z0-9_]+)/) ||
-            codeSnippet.match(/pub\s+enum\s+([A-Za-z0-9_]+)/);
-          const name = structMatch ? structMatch[1] : 'Soroban Smart Contract';
           const existing = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
           const newEntry = {
             hash: resolvedHash,
@@ -763,10 +925,27 @@ impl SolaceContract {
             summary: auditReport.summary,
             vulnerabilities: auditReport.vulnerabilities || [],
             codeSnippet: codeSnippet,
+            report: auditReport,
+            anchorResult: verifiedAnchor,
+            feeReceipt: resolvedFeeReceipt,
           };
           const updated = [newEntry, ...existing.filter((item: any) => item.hash !== resolvedHash)];
           localStorage.setItem('solace_audit_history', JSON.stringify(updated));
         } catch (_) {}
+
+        // Persist complete active contract, code, report, anchor, and fee receipt
+        await syncActiveContract(
+          codeSnippet,
+          auditReport,
+          resolvedHash,
+          name,
+          verifiedAnchor,
+          resolvedFeeReceipt
+        );
+
+        // Broadcast to all pages and tabs immediately
+        window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { hash: resolvedHash } }));
+        window.dispatchEvent(new Event('storage'));
       } else {
         setError(data.error || 'Failed to generate audit report.');
       }
@@ -812,10 +991,20 @@ impl SolaceContract {
         try {
           const existing = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
           const updated = existing.map((item: any) =>
-            item.hash === contractHash ? { ...item, timestamp: 'Anchored on Testnet Ledger' } : item
+            item.hash === contractHash
+              ? {
+                  ...item,
+                  timestamp: 'Anchored on Testnet Ledger',
+                  anchorResult: newAnchor,
+                  feeReceipt: feeReceipt || item.feeReceipt,
+                }
+              : item
           );
           localStorage.setItem('solace_audit_history', JSON.stringify(updated));
         } catch (_) {}
+
+        window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { hash: contractHash, anchor: newAnchor } }));
+        window.dispatchEvent(new Event('storage'));
       } else {
         // Fallback: check if it was already recorded
         const checkRes = await fetch(`${API_BASE_URL}/api/contract/audit/${encodeURIComponent(contractHash)}`);
@@ -828,6 +1017,9 @@ impl SolaceContract {
           };
           setAnchorResult(fallbackAnchor);
           await syncActiveContract(codeSnippet, report, contractHash, undefined, fallbackAnchor, feeReceipt);
+
+          window.dispatchEvent(new CustomEvent('solace-audit-updated', { detail: { hash: contractHash, anchor: fallbackAnchor } }));
+          window.dispatchEvent(new Event('storage'));
         } else {
           setError(data.error || 'Failed to anchor audit on Soroban ledger.');
         }

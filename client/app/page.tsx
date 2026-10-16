@@ -39,6 +39,11 @@ interface ActiveAuditInfo {
   timestamp: string;
   date: string;
   linesCount: number;
+  vulnerabilities?: any[];
+  codeSnippet?: string;
+  report?: any;
+  anchorResult?: any;
+  feeReceipt?: any;
 }
 
 export default function DashboardPage() {
@@ -52,84 +57,59 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadAuditData = () => {
       try {
-        let cleanHistory: any[] = [];
+        let history: any[] = [];
         const storedHistory = localStorage.getItem('solace_audit_history');
         if (storedHistory) {
           const parsed = JSON.parse(storedHistory);
           if (Array.isArray(parsed)) {
-            // Purge known mock entries so only real scans persist
-            cleanHistory = parsed.filter((item: any) => {
-              const hash = (item.hash || '').toLowerCase();
-              const isMockHash =
-                hash.startsWith('2878352a68') ||
-                hash.startsWith('07c390518c') ||
-                hash.startsWith('8e5c8e34be') ||
-                hash.startsWith('3f7a18b2c9') ||
-                hash.startsWith('a1b2c3d4');
-              const isMockName =
-                item.contract === 'Solace Vault Protocol' ||
-                item.contract === 'Vault Lending Pool Protocol';
-              return !isMockHash && !isMockName;
-            });
-            if (cleanHistory.length !== parsed.length) {
-              localStorage.setItem('solace_audit_history', JSON.stringify(cleanHistory));
-            }
+            history = parsed;
           }
         }
-        setAuditHistory(cleanHistory);
+        setAuditHistory(history);
 
         const storedActive = localStorage.getItem('solace-active-contract-audit');
+        let activeToSet: ActiveAuditInfo | null = null;
+
         if (storedActive) {
           const parsedActive = JSON.parse(storedActive);
-          const hash = (parsedActive.contractHash || '').toLowerCase();
-          const isMock =
-            hash.startsWith('2878352a68') ||
-            hash.startsWith('07c390518c') ||
-            hash.startsWith('8e5c8e34be') ||
-            hash.startsWith('3f7a18b2c9') ||
-            parsedActive.contractName === 'Vault Lending Pool Protocol' ||
-            parsedActive.contractName === 'Solace Vault Protocol';
-          if (isMock) {
-            localStorage.removeItem('solace-active-contract-audit');
-            if (cleanHistory.length > 0) {
-              const first = cleanHistory[0];
-              setActiveAudit({
-                contractName: first.contract || 'Soroban Smart Contract',
-                subtitle: (first.contract || 'contract').toLowerCase().replace(/\s+/g, '_') + '.rs',
-                contractHash: first.hash,
-                riskScore: first.riskScore ?? (first.isSecure ? 95 : 60),
-                isSecure: first.isSecure ?? true,
-                summary: first.summary || 'Smart contract AST inspection verified invariants on Stellar Soroban.',
-                vulnerabilitiesCount: first.vulnerabilities?.length || (first.isSecure ? 0 : 1),
-                auditType: first.auditType || 'PRE_DEPLOYMENT',
-                timestamp: first.timestamp || 'Live',
-                date: first.date || new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
-                linesCount: first.codeSnippet ? first.codeSnippet.split('\n').length : 36,
-              });
-            } else {
-              setActiveAudit(null);
-            }
-          } else {
-            setActiveAudit(parsedActive);
+          const hasAuditData = Boolean(
+            parsedActive.report ||
+            (parsedActive.vulnerabilities && parsedActive.vulnerabilities.length > 0) ||
+            parsedActive.anchorResult ||
+            parsedActive.feeReceipt
+          );
+
+          if (hasAuditData || history.length === 0) {
+            activeToSet = {
+              ...parsedActive,
+              vulnerabilities: parsedActive.vulnerabilities || parsedActive.report?.vulnerabilities || [],
+            };
           }
-        } else if (cleanHistory.length > 0) {
-          const first = cleanHistory[0];
-          setActiveAudit({
+        }
+
+        if (!activeToSet && history.length > 0) {
+          const first = history[0];
+          activeToSet = {
             contractName: first.contract || 'Soroban Smart Contract',
             subtitle: (first.contract || 'contract').toLowerCase().replace(/\s+/g, '_') + '.rs',
             contractHash: first.hash,
             riskScore: first.riskScore ?? (first.isSecure ? 95 : 60),
             isSecure: first.isSecure ?? true,
             summary: first.summary || 'Smart contract AST inspection verified invariants on Stellar Soroban.',
-            vulnerabilitiesCount: first.vulnerabilities?.length || (first.isSecure ? 0 : 1),
+            vulnerabilitiesCount: first.vulnerabilities?.length ?? (first.isSecure ? 0 : 1),
             auditType: first.auditType || 'PRE_DEPLOYMENT',
             timestamp: first.timestamp || 'Live',
             date: first.date || new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
             linesCount: first.codeSnippet ? first.codeSnippet.split('\n').length : 36,
-          });
-        } else {
-          setActiveAudit(null);
+            vulnerabilities: first.vulnerabilities || first.report?.vulnerabilities || [],
+            codeSnippet: first.codeSnippet,
+            report: first.report || null,
+            anchorResult: first.anchorResult || null,
+            feeReceipt: first.feeReceipt || null,
+          };
         }
+
+        setActiveAudit(activeToSet);
       } catch (_) {
         setAuditHistory([]);
         setActiveAudit(null);

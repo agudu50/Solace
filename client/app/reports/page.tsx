@@ -152,40 +152,60 @@ function ReportsContent() {
 
     window.addEventListener('solace-network-updated', handleNetworkEvent);
 
-    try {
-      const stored = localStorage.getItem('solace_audit_history');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          // Clean out any legacy mock entries
-          const cleanHistory = parsed.filter((item: any) => {
-            const hash = (item.hash || '').toLowerCase();
-            const isMockHash =
-              hash.startsWith('2878352a68') ||
-              hash.startsWith('07c390518c') ||
-              hash.startsWith('8e5c8e34be') ||
-              hash.startsWith('3f7a18b2c9') ||
-              hash.startsWith('a1b2c3d4');
-            const isMockName =
-              item.contract === 'Solace Vault Protocol' ||
-              item.contract === 'Vault Lending Pool Protocol';
-            return !isMockHash && !isMockName;
-          });
-          if (cleanHistory.length !== parsed.length) {
-            localStorage.setItem('solace_audit_history', JSON.stringify(cleanHistory));
+    const loadReportsData = () => {
+      try {
+        const stored = localStorage.getItem('solace_audit_history');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setReportsList(parsed);
+            return;
           }
-          setReportsList(cleanHistory);
-        } else {
-          setReportsList([]);
         }
-      } else {
+
+        // Fallback: Check if an active contract audit exists
+        const storedActive = localStorage.getItem('solace-active-contract-audit');
+        if (storedActive) {
+          const parsedActive = JSON.parse(storedActive);
+          if (parsedActive.contractHash) {
+            const fallbackReport: VerifiedReport = {
+              hash: parsedActive.contractHash,
+              contract: parsedActive.contractName || 'Soroban Smart Contract',
+              auditType: parsedActive.auditType || 'PRE_DEPLOYMENT',
+              riskScore: parsedActive.riskScore ?? 95,
+              isSecure: parsedActive.isSecure ?? true,
+              auditor: 'Solace Signer',
+              timestamp: 'Confirmed on Stellar Soroban Ledger',
+              date: parsedActive.date || 'Today',
+              time: parsedActive.timestamp || 'Just now',
+              createdAt: Date.now(),
+              summary: parsedActive.summary,
+              vulnerabilities: parsedActive.vulnerabilities || [],
+              codeSnippet: parsedActive.codeSnippet,
+              notFound: false,
+            };
+            setReportsList([fallbackReport]);
+            return;
+          }
+        }
+        setReportsList([]);
+      } catch (_) {
         setReportsList([]);
       }
-    } catch (_) {
-      setReportsList([]);
-    }
+    };
 
-    return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
+    loadReportsData();
+
+    window.addEventListener('storage', loadReportsData);
+    window.addEventListener('solace-audit-updated', loadReportsData);
+    window.addEventListener('focus', loadReportsData);
+
+    return () => {
+      window.removeEventListener('solace-network-updated', handleNetworkEvent);
+      window.removeEventListener('storage', loadReportsData);
+      window.removeEventListener('solace-audit-updated', loadReportsData);
+      window.removeEventListener('focus', loadReportsData);
+    };
   }, []);
 
   const handleToggleRecommendation = (hash: string, e?: React.MouseEvent) => {
@@ -200,7 +220,42 @@ function ReportsContent() {
 
     try {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const localMatch = reportsList.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
+      let currentReports = reportsList;
+      if (currentReports.length === 0) {
+        try {
+          const stored = localStorage.getItem('solace_audit_history');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) currentReports = parsed;
+          }
+          if (currentReports.length === 0) {
+            const storedActive = localStorage.getItem('solace-active-contract-audit');
+            if (storedActive) {
+              const parsedActive = JSON.parse(storedActive);
+              if (parsedActive.contractHash) {
+                currentReports = [{
+                  hash: parsedActive.contractHash,
+                  contract: parsedActive.contractName || 'Soroban Smart Contract',
+                  auditType: parsedActive.auditType || 'PRE_DEPLOYMENT',
+                  riskScore: parsedActive.riskScore ?? 95,
+                  isSecure: parsedActive.isSecure ?? true,
+                  auditor: 'Solace Signer',
+                  timestamp: 'Confirmed on Stellar Soroban Ledger',
+                  date: parsedActive.date || 'Today',
+                  time: parsedActive.timestamp || 'Just now',
+                  createdAt: Date.now(),
+                  summary: parsedActive.summary,
+                  vulnerabilities: parsedActive.vulnerabilities || [],
+                  codeSnippet: parsedActive.codeSnippet,
+                  notFound: false,
+                }];
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      const localMatch = currentReports.find((r) => r.hash.toLowerCase().includes(query.toLowerCase()));
 
       let remoteData: any = null;
       try {
@@ -282,7 +337,7 @@ function ReportsContent() {
     if (hashParam) {
       executeLookup(hashParam);
     }
-  }, [searchParams]);
+  }, [searchParams, reportsList]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

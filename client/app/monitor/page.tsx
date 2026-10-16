@@ -53,6 +53,8 @@ export default function MonitorPage() {
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [auditedContracts, setAuditedContracts] = useState<any[]>([]);
+
   const fetchLiveTelemetry = async (targetId: string, isSilent = false, activeNet = network) => {
     if (!targetId.trim()) return;
     if (!isSilent) setMonitoring(true);
@@ -81,6 +83,59 @@ export default function MonitorPage() {
       if (!isSilent) setMonitoring(false);
     }
   };
+
+  // Synchronize audited contracts from local storage across pages
+  useEffect(() => {
+    const loadAuditedContracts = () => {
+      try {
+        const histStr = localStorage.getItem('solace_audit_history');
+        const activeStr = localStorage.getItem('solace-active-contract-audit');
+        const list: any[] = [];
+        if (activeStr) {
+          const act = JSON.parse(activeStr);
+          if (act.contractName && act.contractHash) {
+            list.push({
+              name: act.contractName,
+              hash: act.contractHash,
+              contractId: act.anchorResult?.contractId || DEFAULT_CONTRACT_ID,
+              riskScore: act.riskScore,
+              isSecure: act.isSecure,
+              isCurrent: true,
+            });
+          }
+        }
+        if (histStr) {
+          const parsed = JSON.parse(histStr);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((item: any) => {
+              if (!list.some((l) => l.hash === item.hash)) {
+                list.push({
+                  name: item.contract,
+                  hash: item.hash,
+                  contractId: item.anchorResult?.contractId || DEFAULT_CONTRACT_ID,
+                  riskScore: item.riskScore,
+                  isSecure: item.isSecure,
+                  isCurrent: false,
+                });
+              }
+            });
+          }
+        }
+        setAuditedContracts(list);
+      } catch (_) {}
+    };
+
+    loadAuditedContracts();
+    window.addEventListener('solace-audit-updated', loadAuditedContracts);
+    window.addEventListener('storage', loadAuditedContracts);
+    window.addEventListener('focus', loadAuditedContracts);
+
+    return () => {
+      window.removeEventListener('solace-audit-updated', loadAuditedContracts);
+      window.removeEventListener('storage', loadAuditedContracts);
+      window.removeEventListener('focus', loadAuditedContracts);
+    };
+  }, []);
 
   // Initial fetch and network listener
   useEffect(() => {
@@ -188,17 +243,41 @@ export default function MonitorPage() {
         {/* Live Stream Bar & Quick Sample Contract Pill */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Deployed instance:</span>
+            <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Monitored instances:</span>
             <button
               type="button"
               onClick={() => {
                 setContractId(DEFAULT_CONTRACT_ID);
                 fetchLiveTelemetry(DEFAULT_CONTRACT_ID);
               }}
-              className="text-xs font-mono px-3 py-1 rounded-full bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border border-slate-200/80 dark:border-slate-800 shadow-sm transition font-bold"
+              className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
+                contractId === DEFAULT_CONTRACT_ID
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border-slate-200/80 dark:border-slate-800'
+              }`}
             >
               # Solace Core (CBXV73...NKDQ)
             </button>
+            {auditedContracts.map((item, idx) => (
+              <button
+                key={item.hash || idx}
+                type="button"
+                onClick={() => {
+                  setContractId(item.contractId);
+                  fetchLiveTelemetry(item.contractId);
+                }}
+                className={`text-xs px-3 py-1 rounded-full border shadow-sm transition font-bold flex items-center gap-1.5 ${
+                  contractId === item.contractId && contractId !== DEFAULT_CONTRACT_ID
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
+                }`}
+                title={`Monitor ${item.name} (${item.hash})`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                <span>{item.name}</span>
+                <span className="text-[10px] opacity-75 font-mono">({item.hash.slice(0, 8)}...)</span>
+              </button>
+            ))}
           </div>
 
           {/* Real-Time Polling Controls */}
