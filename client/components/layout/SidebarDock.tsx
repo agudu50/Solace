@@ -8,6 +8,7 @@ import {
   FileText,
   Activity,
 } from 'lucide-react';
+import { useWallet } from '../../context/WalletContext';
 
 interface SidebarDockProps {
   onOpenAudit?: () => void;
@@ -15,31 +16,7 @@ interface SidebarDockProps {
 
 export default function SidebarDock({ onOpenAudit }: SidebarDockProps) {
   const pathname = usePathname();
-  const [walletKey, setWalletKey] = React.useState<string>('');
-
-  React.useEffect(() => {
-    try {
-      const stored = localStorage.getItem('solace_connected_wallet');
-      if (stored) setWalletKey(stored);
-    } catch (_) {}
-
-    const handleWallet = (e: any) => {
-      const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
-      setWalletKey(key);
-    };
-
-    window.addEventListener('solace-wallet-updated', handleWallet);
-    window.addEventListener('focus', () => {
-      try {
-        const stored = localStorage.getItem('solace_connected_wallet');
-        if (stored) setWalletKey(stored);
-      } catch (_) {}
-    });
-
-    return () => {
-      window.removeEventListener('solace-wallet-updated', handleWallet);
-    };
-  }, []);
+  const { walletKey } = useWallet();
 
   // When not connected, hide mobile navigation completely
   if (!walletKey) return null;

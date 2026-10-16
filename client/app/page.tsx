@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { connectWallet } from '../utils/solaceService';
 import WalletGate from '../components/auth/WalletGate';
+import { useWallet } from '../context/WalletContext';
 
 interface ActiveAuditInfo {
   contractName: string;
@@ -58,10 +59,9 @@ export default function DashboardPage() {
   };
 
   const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo>(defaultActiveAudit);
-  const [connectedWallet, setConnectedWallet] = useState<string>('');
+  const { walletKey: connectedWallet, network, connect } = useWallet();
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
-  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
 
   useEffect(() => {
     const loadActiveAudit = () => {
@@ -74,50 +74,16 @@ export default function DashboardPage() {
       } catch (_) {}
     };
 
-    const loadWallet = () => {
-      try {
-        const stored = localStorage.getItem('solace_connected_wallet');
-        if (stored) setConnectedWallet(stored);
-      } catch (_) {}
-    };
-
-    const loadNetwork = () => {
-      try {
-        const stored = localStorage.getItem('solace-network');
-        if (stored === 'mainnet' || stored === 'testnet') setNetwork(stored);
-      } catch (_) {}
-    };
-
     loadActiveAudit();
-    loadWallet();
-    loadNetwork();
-
-    const handleWalletUpdate = (e: any) => {
-      const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
-      setConnectedWallet(key);
-    };
-
-    const handleNetworkUpdate = (e: any) => {
-      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
-      if (net === 'mainnet' || net === 'testnet') setNetwork(net);
-    };
 
     window.addEventListener('storage', loadActiveAudit);
     window.addEventListener('solace-audit-updated', loadActiveAudit);
-    window.addEventListener('solace-wallet-updated', handleWalletUpdate);
-    window.addEventListener('solace-network-updated', handleNetworkUpdate);
     window.addEventListener('focus', loadActiveAudit);
-    window.addEventListener('focus', loadWallet);
-    window.addEventListener('focus', loadNetwork);
 
     return () => {
       window.removeEventListener('storage', loadActiveAudit);
       window.removeEventListener('solace-audit-updated', loadActiveAudit);
-      window.removeEventListener('solace-wallet-updated', handleWalletUpdate);
-      window.removeEventListener('solace-network-updated', handleNetworkUpdate);
       window.removeEventListener('focus', loadActiveAudit);
-      window.removeEventListener('focus', loadWallet);
-      window.removeEventListener('focus', loadNetwork);
     };
   }, []);
 
@@ -130,10 +96,7 @@ export default function DashboardPage() {
   const handleConnectDashboardWallet = async () => {
     setConnectingWallet(true);
     try {
-      const key = await connectWallet();
-      setConnectedWallet(key);
-      localStorage.setItem('solace_connected_wallet', key);
-      window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
+      await connect();
     } catch (err: any) {
       if (err?.message === 'FREIGHTER_NOT_INSTALLED') {
         window.open('https://www.freighter.app/', '_blank');
@@ -616,7 +579,7 @@ export default function DashboardPage() {
 
                 {/* Modern Smart Contract Risk Bar Graph with Distinct Colors (Mobile Responsive Container) */}
                 <div className="overflow-x-auto pb-1 scrollbar-none">
-                  <div className="flex items-end justify-between h-52 sm:h-60 px-1 sm:px-3 pt-3 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800 gap-1 sm:gap-2 min-w-[290px] sm:min-w-0">
+                  <div className="flex items-end justify-between h-56 sm:h-60 px-1 sm:px-3 pt-3 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800 gap-1 sm:gap-2 min-w-[290px] sm:min-w-0">
                     {/* Y Axis Risk Level Reference */}
                     <div className="flex flex-col justify-between h-full text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-200 py-1 pr-1 shrink-0">
                       <span className="text-accent">100%</span>
@@ -644,9 +607,9 @@ export default function DashboardPage() {
                           {item.score}%
                         </span>
 
-                        {/* Modern Capsule Track */}
+                        {/* Modern Capsule Track (Explicit h-40 on mobile, h-44 on desktop) */}
                         <div
-                          className="w-7 sm:w-10 md:w-11 h-38 sm:h-44 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
+                          className="w-7 sm:w-10 md:w-11 h-40 sm:h-44 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
                           style={{ borderColor: `${item.glowColor}50` }}
                         >
                           {/* Subtle grid pattern background in track */}

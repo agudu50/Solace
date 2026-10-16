@@ -21,6 +21,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { connectWallet, detectWalletNetwork, checkFreighterInstalled } from '../../utils/solaceService';
+import { useWallet } from '../../context/WalletContext';
 
 interface WalletGateProps {
   children: React.ReactNode;
@@ -31,78 +32,31 @@ interface WalletGateProps {
 type AuthStatus = 'idle' | 'requesting' | 'verifying' | 'authenticated';
 
 export default function WalletGate({ children, pageTitle, description }: WalletGateProps) {
-  const [walletKey, setWalletKey] = useState<string>('');
-  const [checking, setChecking] = useState<boolean>(true);
+  const { walletKey, network, setNetwork, setWalletKeyDirectly } = useWallet();
+  const [checking, setChecking] = useState<boolean>(!walletKey);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('idle');
   const [authStepMsg, setAuthStepMsg] = useState<string>('');
   const [verifiedKey, setVerifiedKey] = useState<string>('');
   const [freighterReady, setFreighterReady] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
-  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
 
   useEffect(() => {
-    // Check initial wallet state
-    try {
-      const storedWallet = localStorage.getItem('solace_connected_wallet');
-      if (storedWallet && /^G[A-Z0-9]{55}$/.test(storedWallet)) {
-        setWalletKey(storedWallet);
-      } else if (storedWallet) {
-        localStorage.removeItem('solace_connected_wallet');
-      }
-
-      const storedNet = localStorage.getItem('solace-network');
-      if (storedNet === 'mainnet' || storedNet === 'testnet') {
-        setNetwork(storedNet);
-      }
-    } catch (_) {}
-
-    // Check Freighter availability
-    checkFreighterInstalled().then((installed) => {
-      setFreighterReady(installed);
-    });
-
-    // Check system-determined network
-    detectWalletNetwork().then((net) => {
-      setNetwork(net);
-      try {
-        localStorage.setItem('solace-network', net);
-      } catch (_) {}
-    });
-
-    setChecking(false);
-
-    const handleWalletUpdate = (e: any) => {
-      const key = e.detail?.walletKey ?? localStorage.getItem('solace_connected_wallet') ?? '';
-      setWalletKey(key);
-      if (!key) {
-        setAuthStatus('idle');
-        setVerifiedKey('');
-      }
-    };
-
-    const handleNetworkUpdate = (e: any) => {
-      const net = e.detail?.network ?? localStorage.getItem('solace-network') ?? 'testnet';
-      if (net === 'mainnet' || net === 'testnet') {
-        setNetwork(net);
-      }
-    };
-
-    window.addEventListener('solace-wallet-updated', handleWalletUpdate);
-    window.addEventListener('solace-network-updated', handleNetworkUpdate);
-    window.addEventListener('focus', () => {
+    if (walletKey) {
+      setChecking(false);
+    } else {
       try {
         const stored = localStorage.getItem('solace_connected_wallet');
         if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
-          setWalletKey(stored);
+          setWalletKeyDirectly(stored);
         }
       } catch (_) {}
-    });
+      setChecking(false);
+    }
 
-    return () => {
-      window.removeEventListener('solace-wallet-updated', handleWalletUpdate);
-      window.removeEventListener('solace-network-updated', handleNetworkUpdate);
-    };
-  }, []);
+    checkFreighterInstalled().then((installed) => {
+      setFreighterReady(installed);
+    });
+  }, [walletKey, setWalletKeyDirectly]);
 
   const handleConnect = async () => {
     setErrorMsg('');
@@ -141,11 +95,7 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
 
   const handleConfirmEntry = () => {
     if (!verifiedKey) return;
-    try {
-      localStorage.setItem('solace_connected_wallet', verifiedKey);
-      window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: verifiedKey } }));
-    } catch (_) {}
-    setWalletKey(verifiedKey);
+    setWalletKeyDirectly(verifiedKey);
   };
 
   const handleUseDemoKey = () => {
