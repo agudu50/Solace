@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
@@ -46,7 +47,14 @@ export default function Footer() {
   return (
     <footer className="hidden md:block border-t border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-[#0f1422]/60 mt-16 py-6 text-xs text-slate-700 dark:text-slate-300 transition-colors">
       <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <Image
+            src="/solace-logo.jpg"
+            alt="Solace Logo"
+            width={20}
+            height={20}
+            className="w-5 h-5 rounded-md object-cover border border-accent/30"
+          />
           <span className="font-bold text-slate-900 dark:text-white">Solace</span>
           <span>•</span>
           <span className="font-medium text-slate-700 dark:text-slate-200">Autonomous AI Smart Contract Auditor &amp; Ledger Provenance for Stellar Soroban</span>

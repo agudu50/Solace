@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Wallet,
   ShieldCheck,
@@ -130,15 +131,25 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
         {/* Top glowing cyber accent gradient line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-90" />
 
-        {/* Floating cyber lock & shield badge */}
+        {/* Floating cyber lock & Solace logo badge */}
         <div className="relative mx-auto w-20 h-20 sm:w-24 sm:h-24 mb-6 flex items-center justify-center">
           {/* Animated concentric orbit */}
           <div className="absolute inset-0 rounded-3xl border border-accent/25 dark:border-accent/35 animate-[spin_12s_linear_infinite]" />
           <div className="absolute inset-1.5 rounded-2xl border border-dashed border-accent/20 dark:border-accent/30" />
           
-          {/* Central Shield Box */}
-          <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-accent/20 via-accent-subtle to-accent/10 border border-accent/40 flex items-center justify-center shadow-lg shadow-accent/20 group">
-            <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-accent transition-transform duration-300 group-hover:scale-110" />
+          {/* Central Solace Logo Box */}
+          <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border-2 border-accent/40 flex items-center justify-center shadow-xl shadow-accent/25 group bg-accent">
+            <Image
+              src="/solace-logo.jpg"
+              alt="Solace Logo"
+              width={64}
+              height={64}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              priority
+            />
+            <div className="absolute bottom-0 right-0 p-1 bg-[#111726]/90 rounded-tl-lg border-t border-l border-accent/40">
+              <Lock className="w-2.5 h-2.5 text-accent" />
+            </div>
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-accent animate-ping" />
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-accent border-2 border-white dark:border-[#111726]" />
           </div>

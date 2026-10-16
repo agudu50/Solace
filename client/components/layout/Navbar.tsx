@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -132,8 +133,15 @@ export default function Navbar() {
       <div className="w-full max-w-[1700px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand (Fixed visibility when scrolling) */}
         <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-accent text-white flex items-center justify-center font-black text-base sm:text-lg shadow-sm transition group-hover:scale-105">
-            S
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden bg-accent shadow-sm transition group-hover:scale-105 border border-accent/30 flex items-center justify-center shrink-0">
+            <Image
+              src="/solace-logo.jpg"
+              alt="Solace Logo"
+              width={36}
+              height={36}
+              className="w-full h-full object-cover"
+              priority
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white leading-none">

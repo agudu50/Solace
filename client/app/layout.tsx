@@ -8,6 +8,11 @@ import SidebarDock from '../components/layout/SidebarDock';
 export const metadata: Metadata = {
   title: 'Solace | AI-Powered Stellar & Soroban Smart Contract Auditor',
   description: 'Detect bugs and security vulnerabilities in Soroban smart contracts before and after deployment.',
+  icons: {
+    icon: '/solace-logo.jpg',
+    shortcut: '/solace-logo.jpg',
+    apple: '/solace-logo.jpg',
+  },
 };
 
 export default function RootLayout({
