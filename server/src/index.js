@@ -77,12 +77,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(60));
   console.log(`  SOLACE AI SECURITY SERVER RUNNING`);
-  console.log(`  Port:    http://localhost:${PORT}`);
-  console.log(`  Health:  http://localhost:${PORT}/api/health`);
-  console.log(`  Audit:   POST http://localhost:${PORT}/api/audit`);
+  console.log(`  Port:    http://0.0.0.0:${PORT}`);
+  console.log(`  Health:  /api/health`);
+  console.log(`  Audit:   POST /api/audit`);
   console.log('='.repeat(60));
 });
 
