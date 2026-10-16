@@ -338,10 +338,10 @@ export default function Navbar() {
                   On-Chain Solace Contract
                 </span>
                 <span className="font-mono text-xs font-bold text-slate-900 dark:text-white block truncate mt-0.5">
-                  CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ
+                  {CONTRACT_ID}
                 </span>
                 <a
-                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ`}
+                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${CONTRACT_ID}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-accent hover:underline flex items-center gap-1 mt-1 text-xs font-bold"

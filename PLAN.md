@@ -136,7 +136,7 @@ All foundational layers have been designed, built, and verified:
 - ✅ Migrated frontend to 100% strict TypeScript (`.tsx` and `.ts`).
 - ✅ Integrated Freighter browser wallet (`@stellar/freighter-api`) for on-chain anchoring.
 - ✅ Added multi-page navigation for Audit Studio (`/`), Verified Reports (`/reports`), and Live Monitor (`/monitor`).
-- ✅ Deployed `solace_core` to Stellar Testnet (Contract ID: [`CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ`](https://stellar.expert/explorer/testnet/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ)).
+- ✅ Deployed `solace_core` to Stellar Testnet (Contract ID: [`CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`](https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2)).
 - ✅ Built backend `sorobanService.js` connecting Express directly to the Stellar Soroban RPC.
 - ✅ Implemented and verified live REST endpoints for on-chain audits (`GET /api/contract/info`, `GET /api/contract/audit/:hash`, `POST /api/contract/record`).
 - ✅ Outlined 30-Day Instaward Scope ([`SCOPE.md`](SCOPE.md)) and initialized Progress Tracker ([`PLAN.md`](PLAN.md)).

@@ -4,7 +4,7 @@ const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhos
 
 // Deployed Solace Smart Contract ID on Stellar Testnet
 export const CONTRACT_ID: string =
-  process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
+  process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
 /**
  * Detect network automatically from connected Freighter wallet or production environment

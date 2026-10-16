@@ -49,9 +49,9 @@ Solace is an automated smart contract security platform engineered specifically 
 
 ### 🌐 Network & Deployed Contract Information
 - **Network**: Stellar Testnet (`https://soroban-testnet.stellar.org`)
-- **Contract ID**: [`CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ`](https://stellar.expert/explorer/testnet/contract/CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ)
+- **Contract ID**: [`CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`](https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2)
 - **Auditor Address**: [`GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI`](https://stellar.expert/explorer/testnet/account/GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI)
-- **Wasm Hash**: `b4d97348c0e5f429ea1329fbcc3f533b082a27a26b2de704c5a161d08ccc69c4`
+- **Wasm Hash**: `32ebebd07326cd5d0fa0ef77d7e268e06e3c68d3e43028dddc67245813957bbd`
 
 ---
 

@@ -39,7 +39,8 @@ interface LiveTelemetry {
   latencyMs?: number;
 }
 
-const DEFAULT_CONTRACT_ID = 'CBXV73FFYM45PJQYUB2VTGU2WUQL4JUSL6OG3SEWSGXW4WJH5YSNQKDQ';
+const DEFAULT_CONTRACT_ID =
+  process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function MonitorPage() {
@@ -256,7 +257,7 @@ export default function MonitorPage() {
                   : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border-slate-200/80 dark:border-slate-800'
               }`}
             >
-              # Solace Core (CBXV73...NKDQ)
+              # Solace Core (CAC2TV...NPN2)
             </button>
             {auditedContracts.map((item, idx) => (
               <button
