@@ -46,6 +46,24 @@ export async function detectWalletNetwork(): Promise<'testnet' | 'mainnet'> {
 }
 
 /**
+ * Check if the Freighter browser extension is available
+ */
+export async function checkFreighterInstalled(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (Boolean((window as any).freighter)) return true;
+  try {
+    const connPromise = isConnected();
+    const timeoutPromise = new Promise<{ isConnected: boolean }>((resolve) =>
+      setTimeout(() => resolve({ isConnected: false }), 1200)
+    );
+    const connResult = await Promise.race([connPromise, timeoutPromise]);
+    return connResult?.isConnected === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Connect to Freighter browser extension wallet with timeout guards
  * and automatically detect the active wallet network (Testnet vs Mainnet)
  */
@@ -98,6 +116,11 @@ export async function connectWallet(): Promise<string> {
 
   if (!publicKey) {
     throw new Error('No public key returned by Freighter wallet.');
+  }
+
+  // Validate format of Stellar public key (56-character string starting with G)
+  if (typeof publicKey !== 'string' || !/^G[A-Z0-9]{55}$/.test(publicKey)) {
+    throw new Error('Invalid Stellar auditor address returned by wallet extension.');
   }
 
   // 3. Automatically determine network from the wallet

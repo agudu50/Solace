@@ -287,28 +287,28 @@ export default function DashboardPage() {
         pageTitle="Security Dashboard"
         description="Connect your authorized Stellar / Soroban auditor wallet to view real-time security scores, AST invariant checks, and ledger state."
       >
-        {/* Main Dashboard Canvas */}
-        <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Top Greeting & Operations Banner (Item 5: Enhanced) */}
-          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 shadow-sm mb-6 transition-colors">
+        {/* Main Dashboard Canvas (Optimized for Mobile & Desktop) */}
+        <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
+          {/* Top Greeting & Operations Banner */}
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-4 sm:p-7 shadow-sm mb-4 sm:mb-6 transition-colors">
             {/* Subtle decorative glow */}
             <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-accent/5 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
               <div className="max-w-3xl">
                 {/* Status pill & Network tags */}
-                <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
-                    <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-2.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
+                    <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-accent animate-ping inline-block" />
                     SHIELD ENGINE ACTIVE
                   </span>
-                  <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                  <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
                     Stellar Soroban v22 Protocol
                   </span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
                   Welcome Back, Security Auditor
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-2xl leading-relaxed">
@@ -316,17 +316,17 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 self-stretch sm:self-auto flex-wrap shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap shrink-0">
                 {/* Date / Network Epoch Pill */}
-                <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-accent" />
-                  <span>15 Oct, 2026 · {network === 'mainnet' ? 'Mainnet Production' : 'Testnet Epoch 542'}</span>
+                <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-1.5 sm:gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span className="truncate">15 Oct, 2026 · {network === 'mainnet' ? 'Mainnet' : 'Testnet'}</span>
                 </div>
 
                 {/* Run Security Audit Action Button (Brand accent, never black) */}
                 <Link
                   href="/audit"
-                  className="bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md shadow-accent/25 transition flex items-center gap-2 whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
+                  className="bg-accent hover:bg-accent-hover text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold shadow-md shadow-accent/25 transition flex items-center gap-1.5 sm:gap-2 whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>Run Security Audit</span>
@@ -336,12 +336,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* 3-Column Dashboard Layout (matching the exact UI idea from the reference image) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* 3-Column Dashboard Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
             {/* ================= COLUMN 1 (Left): Card 1 & Card 4 ================= */}
-            <div className="lg:col-span-4 flex flex-col gap-5">
+            <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
               {/* Card 1: Connected Wallet & Target Score / Ledger State */}
-              <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
+              <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
                 <div className="flex justify-between items-center mb-3">
                   <div>
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -408,9 +408,9 @@ export default function DashboardPage() {
                 ) : null}
               </div>
             {/* Card 4: Recent Security Audits */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between overflow-hidden transition-colors">
+            <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between overflow-hidden transition-colors">
               <div>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
                   <div>
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white">Recent Security Audits</h2>
                     <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Live on-chain inscriptions</p>
@@ -424,23 +424,23 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-2 sm:space-y-2.5">
                   {recentAudits.map((item, idx) => (
                     <Link
                       key={idx}
                       href={`/reports?hash=${item.hash}`}
-                      className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 transition cursor-pointer w-full overflow-hidden"
+                      className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl sm:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 transition cursor-pointer w-full overflow-hidden"
                       title={`View audit for ${item.name}`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
-                        <div className={`w-8 h-8 rounded-xl ${item.bgColor} flex items-center justify-center font-bold text-xs shrink-0 shadow-sm`}>
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl ${item.bgColor} flex items-center justify-center font-bold text-[11px] sm:text-xs shrink-0 shadow-sm`}>
                           {item.initials}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={item.name}>
                             {item.name}
                           </div>
-                          <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1">
+                          <div className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1">
                             <Clock className="w-2.5 h-2.5 shrink-0" />
                             <span className="truncate">{item.date} • {item.time}</span>
                           </div>
@@ -448,14 +448,14 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="text-right shrink-0">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                        <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full inline-block ${
                           item.isSecure
                             ? 'bg-accent-subtle text-accent border border-accent/20'
                             : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
                         }`}>
                           • {item.status}
                         </span>
-                        <div className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-0.5">
+                        <div className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-0.5">
                           Score: {item.score}
                         </div>
                       </div>
@@ -466,10 +466,10 @@ export default function DashboardPage() {
 
               {/* View all reports footer link to ensure balanced height */}
               <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">4 of 3,945 records</span>
+                <span className="text-slate-600 dark:text-slate-300 text-[11px] sm:text-xs font-semibold">4 of 3,945 records</span>
                 <Link
                   href="/reports"
-                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-xs"
+                  className="font-bold text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent flex items-center gap-1 text-[11px] sm:text-xs"
                 >
                   <span>Explore all records</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -479,18 +479,18 @@ export default function DashboardPage() {
           </div>
 
           {/* ================= COLUMN 2 (Center): Card 2 ================= */}
-          <div className="lg:col-span-4 flex flex-col gap-5">
-            <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between h-full transition-colors">
+          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
+            <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between h-full transition-colors">
               <div>
                 {/* Header with Title and CTA to Audit Studio */}
-                <div className="flex flex-wrap justify-between items-center mb-4 gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex flex-wrap justify-between items-center mb-3 sm:mb-4 gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent">
+                    <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent shrink-0">
                       <Layers className="w-4 h-4" />
                     </div>
                     <div>
                       <span className="text-sm font-bold text-slate-900 dark:text-white block leading-tight">
-                        Security Threat & Invariant Engine
+                        Security Threat &amp; Invariant Engine
                       </span>
                       <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
                         Real-time Soroban AST flaw inspection &amp; verification
@@ -614,62 +614,70 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Modern Smart Contract Risk Bar Graph with Distinct Colors */}
-                <div className="flex items-end justify-between h-56 sm:h-60 px-1 sm:px-3 pt-3 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800 gap-1 sm:gap-2">
-                  {/* Y Axis Risk Level Reference */}
-                  <div className="flex flex-col justify-between h-full text-[10px] font-extrabold text-slate-600 dark:text-slate-300 py-1 pr-1 shrink-0">
-                    <span className="text-accent">100% Safe</span>
-                    <span>75%</span>
-                    <span>50%</span>
-                    <span>25%</span>
-                    <span className="text-red-500">0% Threat</span>
-                  </div>
+                {/* Modern Smart Contract Risk Bar Graph with Distinct Colors (Mobile Responsive Container) */}
+                <div className="overflow-x-auto pb-1 scrollbar-none">
+                  <div className="flex items-end justify-between h-52 sm:h-60 px-1 sm:px-3 pt-3 pb-2 border-b border-dashed border-slate-200 dark:border-slate-800 gap-1 sm:gap-2 min-w-[290px] sm:min-w-0">
+                    {/* Y Axis Risk Level Reference */}
+                    <div className="flex flex-col justify-between h-full text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-200 py-1 pr-1 shrink-0">
+                      <span className="text-accent">100%</span>
+                      <span>75%</span>
+                      <span>50%</span>
+                      <span>25%</span>
+                      <span className="text-red-500">0%</span>
+                    </div>
 
-                  {/* 6 Modern Risk Bars (Color-Coded) */}
-                  {riskVectors.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-col items-center gap-1.5 group cursor-pointer flex-1 min-w-0"
-                      title={`${item.category}: ${item.score}% Security (${item.threat}) — ${item.detail}`}
-                    >
-                      {/* Security Score percentage pill above bar with bar color */}
-                      <span className={`text-xs font-black transition-transform group-hover:scale-110 ${item.scoreColor}`}>
-                        {item.score}%
-                      </span>
-
-                      {/* Modern Capsule Track */}
+                    {/* 6 Modern Risk Bars (Color-Coded) */}
+                    {riskVectors.map((item, idx) => (
                       <div
-                        className="w-7 sm:w-10 md:w-11 h-40 sm:h-44 rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
-                        style={{ borderColor: `${item.glowColor}40` }}
+                        key={idx}
+                        className="flex flex-col items-center gap-1.5 group cursor-pointer flex-1 min-w-0"
+                        title={`${item.category}: ${item.score}% Security (${item.threat}) — ${item.detail}`}
                       >
-                        {/* Subtle grid pattern background in track */}
-                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(200,5,82,0.05)_50%,transparent_75%)] bg-[length:6px_6px]" />
-
-                        {/* Distinct Dynamic Gradient Bar with Glass Reflection */}
-                        <div
-                          className="w-full rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
+                        {/* High-Contrast Security Score Badge (Crystal Clear on Mobile) */}
+                        <span
+                          className="text-xs sm:text-sm font-black transition-transform group-hover:scale-110 px-1.5 py-0.5 rounded-lg bg-white dark:bg-[#111726] border shadow-xs tracking-tight select-none"
                           style={{
-                            height: `${item.score}%`,
-                            background: item.gradientStyle,
-                            boxShadow: `0 2px 10px ${item.glowColor}40`,
+                            color: item.glowColor,
+                            borderColor: `${item.glowColor}60`,
                           }}
                         >
-                          {/* Glass top reflection */}
-                          <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                          {item.score}%
+                        </span>
+
+                        {/* Modern Capsule Track */}
+                        <div
+                          className="w-7 sm:w-10 md:w-11 h-38 sm:h-44 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
+                          style={{ borderColor: `${item.glowColor}50` }}
+                        >
+                          {/* Subtle grid pattern background in track */}
+                          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(200,5,82,0.05)_50%,transparent_75%)] bg-[length:6px_6px]" />
+
+                          {/* Distinct Dynamic Gradient Bar with Glass Reflection */}
+                          <div
+                            className="w-full rounded-lg sm:rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
+                            style={{
+                              height: `${item.score}%`,
+                              background: item.gradientStyle,
+                              boxShadow: `0 2px 10px ${item.glowColor}40`,
+                            }}
+                          >
+                            {/* Glass top reflection */}
+                            <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
+                          </div>
+                        </div>
+
+                        {/* Bar Name and Risk Status Tag */}
+                        <div className="text-center w-full">
+                          <span className="text-xs sm:text-xs font-bold text-slate-900 dark:text-slate-100 block truncate leading-tight">
+                            {item.shortName}
+                          </span>
+                          <span className={`text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border inline-block mt-0.5 truncate max-w-[54px] sm:max-w-none ${item.statusColor}`}>
+                            {item.status}
+                          </span>
                         </div>
                       </div>
-
-                      {/* Bar Name and Risk Status Tag */}
-                      <div className="text-center w-full">
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block truncate leading-tight">
-                          {item.shortName}
-                        </span>
-                        <span className={`text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border inline-block mt-0.5 ${item.statusColor}`}>
-                          {item.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -701,9 +709,9 @@ export default function DashboardPage() {
           </div>
 
           {/* ================= COLUMN 3 (Right): Card 3 & Card 5 ================= */}
-          <div className="lg:col-span-4 flex flex-col gap-5">
+          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
             {/* Card 3: AI Analyzed Smart Contract (Auto-updates when audited/loaded) */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between transition-colors">
+            <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between transition-colors">
               <div>
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
@@ -728,7 +736,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Contract Identity & Score Highlight Box */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 mb-2">
+                <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 mb-2">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
                       {activeAudit.contractName}
@@ -754,20 +762,20 @@ export default function DashboardPage() {
                   {/* Score & Verdict Bar */}
                   <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
                     <div>
-                      <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
+                      <span className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
                         Security Score
                       </span>
-                      <span className="text-xl font-black text-slate-900 dark:text-white">
+                      <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                         {activeAudit.riskScore}
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">/100</span>
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
+                      <span className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-bold">
                         Quarantined Flaws
                       </span>
-                      <span className="text-sm font-bold text-accent">
+                      <span className="text-xs sm:text-sm font-bold text-accent">
                         {activeAudit.vulnerabilitiesCount} detected
                       </span>
                     </div>
@@ -801,14 +809,14 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Contract Hash Proof Pill */}
-                <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs flex items-center justify-between gap-2 mb-2">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800 text-xs flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase shrink-0">SHA256:</span>
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase shrink-0">SHA256:</span>
                     <span className="font-mono text-slate-800 dark:text-slate-200 font-medium truncate text-xs">
                       {activeAudit.contractHash.slice(0, 10)}...{activeAudit.contractHash.slice(-8)}
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
+                  <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 shrink-0">
                     Live AST
                   </span>
                 </div>
@@ -823,14 +831,14 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <Link
                   href="/audit"
-                  className="py-2.5 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/20 text-center flex items-center justify-center gap-1"
+                  className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/20 text-center flex items-center justify-center gap-1"
                 >
                   <span>Audit Studio</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   href={`/reports?hash=${activeAudit.contractHash}`}
-                  className="py-2.5 px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center"
+                  className="py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold transition border border-slate-200/60 dark:border-slate-700 text-center"
                 >
                   View Report
                 </Link>
@@ -838,7 +846,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Card 5: Live Threat Shield & AST Defense */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between transition-colors">
+            <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between transition-colors">
               <div>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3.5">
