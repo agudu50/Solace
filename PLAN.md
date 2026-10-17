@@ -80,12 +80,13 @@ All foundational layers have been designed, built, and verified:
 
 ---
 
-### ⚪ Week 3: Live Post-Deployment Monitor & Pilot Onboarding (Days 15–21)
+### 🟢 Week 3: Live Post-Deployment Monitor & Pilot Onboarding (Days 15–21)
 
-- [ ] **Live Telemetry & RPC Polling**:
-  - [ ] Connect `client/app/monitor/page.tsx` to live Stellar RPC (`SorobanRpc.Server.getLedgerEntries`).
-  - [ ] Implement real-time TTL calculation: warn when a contract's persistent storage has fewer than 10,000 ledgers remaining.
-  - [ ] Detect contract upgrade events and bytecode hash changes.
+- [x] **Live Telemetry & RPC Polling (Shipped Early)**:
+  - [x] Connected `client/app/monitor/page.tsx` to live Stellar RPC (`net.server.getLedgerEntries(footprint)`).
+  - [x] Implemented mathematical TTL calculation: $\text{liveUntil} - \text{latestLedger}$ with status warnings (Optimal, Warning, Critical).
+  - [x] Real-time 5s polling stream with instant local caching and 3.5s timeout guards.
+  - [x] Deployed live contract selector and interactive audit history switcher.
 - [ ] **Pilot Developer Outreach & Testing**:
   - [ ] Identify and reach out to 5 active Soroban developer teams building on Stellar.
   - [ ] Audit 5 real-world smart contracts through Solace.
@@ -119,24 +120,33 @@ All foundational layers have been designed, built, and verified:
 | :--- | :--- | :---: |
 | **1. Live Deployed Mainnet Contract** | Verified Mainnet Contract ID on Stellar Expert | ⚪ In Progress |
 | **2. Public GitHub Action Package** | Action testable on external open-source Soroban repos | ⚪ In Progress |
-| **3. Live Web Dashboard** | Hosted dashboard running audits and displaying PR checks | 🟡 Functional locally |
+| **3. Live Web Dashboard** | Hosted dashboard (Netlify + Render) running audits | 🟢 Live / Deployed |
 | **4. 5 External Pilot Smart Contracts** | 5 real contracts audited with hashes anchored on-chain | ⚪ In Progress |
 
 ---
 
 ## 📝 Recent Progress & Changelog
 
+### 2026-10-16 / 2026-10-17
+- ✅ **Live Contract Deployment on Stellar Testnet**: Deployed `solace_core` contract (`CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`).
+- ✅ **1.0 XLM On-Chain Audit Fee Protocol**: Implemented `get_audit_fee`, direct Treasury transfer (`GABQOW...KAJX`), and cryptographic memo payment verification.
+- ✅ **Freighter Wallet Active Authentication**: Integrated `signMessage` session challenge verification popup, preventing silent auto-reconnections.
+- ✅ **Unified Connect Buttons**: Synchronized Hero and Navbar connect triggers with shared loading states and instant session unlocking.
+- ✅ **Live Post-Deployment Monitor**:
+  - Real-time TTL storage rent tracking (`liveUntil` vs `latestLedgerSeq`).
+  - Three-tier eviction warning system (Optimal > 20k ledgers, Warning 5k–20k, Critical < 5k).
+  - Parallel RPC query runner with 3.5s timeout guards and 4-second memory caching.
+- ✅ **Cloud Hosting Configs**: Generated [`render.yaml`](render.yaml) for backend and [`netlify.toml`](netlify.toml) for frontend deployment.
+- ✅ **Modern Gradient-Free Design System**: Refactored Soroban Security Invariants modal and mobile bottom dock into a sleek, high-contrast, accessible flat UI.
+
 ### 2026-10-14 / 2026-10-15
 - ✅ Created `solace_core` Soroban smart contract with `record_audit` and `get_audit` in Rust.
 - ✅ Built Node.js Express backend with Gemini auditing engine via `@google/genai`.
-- ✅ Configured and verified user's Google AI Studio API key with multi-model fallback resiliency.
+- ✅ Configured user's Google AI Studio API key with multi-model fallback resiliency.
 - ✅ Validated end-to-end security audits across both CLI runner (`npm run audit`) and live Express API (`POST /api/audit`).
 - ✅ Restructured codebase into clean monorepo architecture: `contract/`, `server/`, `client/`.
 - ✅ Built Next.js 14 App Router frontend with custom `#C80552` accent theme.
 - ✅ Migrated frontend to 100% strict TypeScript (`.tsx` and `.ts`).
 - ✅ Integrated Freighter browser wallet (`@stellar/freighter-api`) for on-chain anchoring.
 - ✅ Added multi-page navigation for Audit Studio (`/`), Verified Reports (`/reports`), and Live Monitor (`/monitor`).
-- ✅ Deployed `solace_core` to Stellar Testnet (Contract ID: [`CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`](https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2)).
-- ✅ Built backend `sorobanService.js` connecting Express directly to the Stellar Soroban RPC.
-- ✅ Implemented and verified live REST endpoints for on-chain audits (`GET /api/contract/info`, `GET /api/contract/audit/:hash`, `POST /api/contract/record`).
 - ✅ Outlined 30-Day Instaward Scope ([`SCOPE.md`](SCOPE.md)) and initialized Progress Tracker ([`PLAN.md`](PLAN.md)).

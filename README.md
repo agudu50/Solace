@@ -9,24 +9,28 @@ Solace is an automated smart contract security platform engineered specifically 
 ## 🌟 Key Features
 
 - **Dual-Mode AI Auditing**:
-  - **PRE-DEPLOYMENT**: Static source code analysis targeting authorization checks, unsafe unwrapping, reentrancy, and integer overflow.
-  - **POST-DEPLOYMENT**: Live inspection of contract instance/persistent storage, rent TTL, upgrade vectors, and monitoring telemetry.
+  - **PRE-DEPLOYMENT**: Static source code AST analysis targeting authorization checks, unsafe unwrapping, reentrancy, integer overflow, and admin multi-sig vectors.
+  - **POST-DEPLOYMENT**: Live inspection of contract instance/persistent storage, storage rent TTL, upgrade vectors, host panic shields, and monitoring telemetry.
 - **Adaptive Multi-Model Resiliency**:
-  - Automatically queries active Gemini models (`gemini-3.5-flash`, `gemini-3.8-flash`, etc.) with exponential backoff to ensure continuous uptime even during regional or experimental demand spikes.
+  - Automatically queries active Gemini models (`gemini-3.5-flash-lite`, `gemini-3.5-flash`, etc.) with exponential backoff and candidate fallback to ensure 99.9% uptime.
 - **Freighter Wallet & On-Chain Anchoring**:
-  - Directly connect your [Freighter Wallet](https://www.freighter.app/) in the browser via `@stellar/freighter-api`.
+  - Connect browser extension wallet via `@stellar/freighter-api` with cryptographic session signature verification (`signMessage`).
   - Sign and anchor verified audit records onto the Stellar Soroban ledger with one click.
-- **On-Chain Audit Provenance**: Every audit report can be signed and recorded persistently on the Stellar ledger via the [`SolaceContract`](contract/src/lib.rs) smart contract.
-- **Soroban Vulnerability Detection**:
-  - Missing or improper `require_auth()` authorization checks.
-  - Unsafe `.unwrap()` calls leading to transaction panics.
-  - Instance vs. Persistent storage mismanagement & TTL rent expiration.
-  - Administrative access control defects and reentrancy vectors.
+- **On-Chain Audit Fee & Protocol Treasury**:
+  - 1.0 XLM micro-fee charged to the requesting auditor, transferred directly to the protocol treasury address (`GABQOW...KAJX`) with cryptographic transaction hash memo verification.
+- **Live Post-Deployment Contract Monitor (`/monitor`)**:
+  - Real-time storage rent TTL calculation ($\text{liveUntil} - \text{latestLedger}$).
+  - State eviction warning system: Optimal (> 20,000 ledgers), Warning (5,000–20,000), Critical (< 5,000).
+  - Soroban Protocol 22 consensus status, RPC node health, and latency tracking.
+  - 5-second auto-polling stream with instant local caching and sub-second responses.
 - **Interactive Multi-Page Web Studio (100% TypeScript)**:
-  - **Audit Studio** (`/`): Code editor with sample contract loader, real-time vulnerability breakdown, and Freighter wallet anchoring.
+  - **Dashboard & Audit Studio** (`/`): Code editor with sample contract loader, vulnerability breakdown, and on-chain anchoring.
   - **Verified Reports** (`/reports`): Search and verify on-chain audit reports by contract SHA-256 hash.
-  - **Live Monitor** (`/monitor`): Post-deployment telemetry, storage rent TTL tracking, and security invariants.
-- **Custom Design System**: Powered by Tailwind CSS with a custom accent token system (`var(--e-global-color-accent)` set to `#C80552`).
+  - **Live Monitor** (`/monitor`): Real-time contract telemetry and storage TTL monitoring.
+- **Custom Design System**:
+  - Modern, gradient-free flat UI with brand accent token `#C80552` (`var(--e-global-color-accent)`).
+  - Dark/Light mode support with synchronized navigation across desktop and mobile.
+
 ---
 
 ## 🏆 Built during Stellar 14 (5 – 17 October 2026)
@@ -35,22 +39,24 @@ Solace is an automated smart contract security platform engineered specifically 
 
 ### What was built during Stellar 14:
 - **Rust Soroban Smart Contract ([`contract/`](contract/src/lib.rs))**:
-  - Implemented `record_audit` and `get_audit` with persistent storage rent management.
-  - Successfully compiled to WebAssembly (`solace_core.wasm`, 1,950 bytes optimized) and deployed to **Stellar Testnet**.
+  - Implemented `record_audit`, `get_audit`, and `get_audit_fee` with persistent storage rent management.
+  - Compiled to WebAssembly (`solace_core.wasm`, 1,950 bytes optimized) and deployed to **Stellar Testnet**.
 - **Backend AI Engine & Soroban Service ([`server/`](server/src/index.js))**:
   - Integrated Google's adaptive Gemini AI engine via `@google/genai` with automatic candidate model fallback.
-  - Built `@stellar/stellar-sdk` Soroban service for programmatic transaction signing and ledger querying.
-  - Implemented real-time terminal telemetry with color-coded status codes and millisecond latency tracking.
+  - Built `@stellar/stellar-sdk` Soroban service for programmatic transaction signing, ledger querying, and telemetry metrics.
+  - Cloud-ready deployment configuration with [`render.yaml`](render.yaml).
 - **Frontend Web Studio ([`client/`](client/app/page.tsx))**:
-  - 100% strict TypeScript Next.js 14 App Router frontend.
-  - Custom Tailwind CSS design system driven by `--e-global-color-accent` (`#C80552`).
-  - Freighter wallet integration via `@stellar/freighter-api`.
-  - Three dedicated views: **Audit Studio** (`/`), **Verified Reports** (`/reports`), and **Live Monitor** (`/monitor`).
+  - Next.js 14 App Router in 100% strict TypeScript.
+  - Custom responsive design system with compact mobile bottom dock and desktop pill navigation.
+  - Freighter wallet integration with session challenge popup verification.
+  - Cloud-ready deployment configuration with [`netlify.toml`](netlify.toml).
 
 ### 🌐 Network & Deployed Contract Information
 - **Network**: Stellar Testnet (`https://soroban-testnet.stellar.org`)
+- **Protocol**: Soroban Protocol 22
 - **Contract ID**: [`CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`](https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2)
-- **Auditor Address**: [`GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI`](https://stellar.expert/explorer/testnet/account/GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI)
+- **Auditor Signer Address**: [`GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI`](https://stellar.expert/explorer/testnet/account/GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI)
+- **Treasury Wallet Address**: [`GABQOWDBI5MX6QYKP4JLB3PWJKVI7IXTQCNESBVSUK3SUUR2S3AEKAJX`](https://stellar.expert/explorer/testnet/account/GABQOWDBI5MX6QYKP4JLB3PWJKVI7IXTQCNESBVSUK3SUUR2S3AEKAJX)
 - **Wasm Hash**: `32ebebd07326cd5d0fa0ef77d7e268e06e3c68d3e43028dddc67245813957bbd`
 
 ---
@@ -62,42 +68,40 @@ Solace/
 ├── contract/                  # Soroban Smart Contract (Rust)
 │   ├── Cargo.toml             # Soroban SDK 28.0.0 dependencies & release profile
 │   └── src/
-│       └── lib.rs             # SolaceContract: record_audit & get_audit
+│       └── lib.rs             # SolaceContract: record_audit, get_audit, get_audit_fee
 ├── server/                    # Express.js Backend & Gemini AI Engine
 │   ├── src/
 │   │   ├── controllers/       # Request validation & Soroban payload formatting
-│   │   ├── routes/            # REST endpoints (/api/audit, /api/health)
-│   │   ├── services/          # Adaptive Gemini AI Engine via @google/genai (multi-model fallback)
+│   │   ├── routes/            # REST endpoints (/api/audit, /api/contract/...)
+│   │   ├── services/          # Gemini AI Engine & Soroban RPC Telemetry Service
 │   │   ├── scripts/           # Terminal audit runner (runAudit.js)
 │   │   └── index.js           # Server entry point (port 5000)
 │   ├── .env.example           # Environment template for keys and RPC
 │   └── package.json
 ├── client/                    # Next.js 14 Frontend (App Router + TypeScript + Tailwind)
 │   ├── app/
-│   │   ├── monitor/
-│   │   │   └── page.tsx       # Live contract monitoring page
-│   │   ├── reports/
-│   │   │   └── page.tsx       # Verified on-chain ledger reports page
-│   │   ├── globals.css        # Custom CSS variables & Tailwind imports
-│   │   ├── layout.tsx         # Root layout with persistent Navbar & Footer
-│   │   └── page.tsx           # Main Audit Studio page (Freighter + Anchor)
+│   │   ├── audit/             # Dedicated Audit Studio workspace
+│   │   ├── monitor/           # Live contract post-deployment monitoring
+│   │   ├── reports/           # Verified on-chain ledger reports explorer
+│   │   ├── globals.css        # CSS variables & Tailwind tokens
+│   │   ├── layout.tsx         # Root layout with persistent Navbar & SidebarDock
+│   │   └── page.tsx           # Security Dashboard canvas
 │   ├── components/            # Modular UI components (100% TSX)
-│   │   ├── audit/
-│   │   │   ├── AuditReportView.tsx
-│   │   │   └── ContractInput.tsx
-│   │   └── layout/
-│   │       ├── Footer.tsx
-│   │       └── Navbar.tsx
-│   ├── lib/
-│   │   ├── api.ts             # Typed API client for backend communication
-│   │   └── constants.ts       # Sample contracts & nav definitions
+│   │   ├── auth/              # WalletGate & auditor authentication
+│   │   ├── layout/            # Navbar, SidebarDock, and Modals
+│   │   └── audit/             # AuditReportView, ContractInput, Invariants
+│   ├── context/
+│   │   └── WalletContext.tsx  # Global Freighter wallet state provider
 │   ├── utils/
 │   │   └── solaceService.ts   # Freighter wallet & Soroban invocation service
 │   ├── package.json
-│   ├── postcss.config.js
 │   ├── tailwind.config.js
 │   └── tsconfig.json          # TypeScript strict configuration
-├── .vscode/                   # IDE lint settings (CSS unknown at-rules ignored)
+├── netlify.toml               # Client Netlify cloud deployment configuration
+├── render.yaml                # Backend Render cloud deployment configuration
+├── PITCH.md                   # 3-Minute Demo Pitch & presentation script
+├── PLAN.md                    # 30-Day Instaward milestone execution roadmap
+├── SCOPE.md                   # Formal Stellar Community Fund grant scope
 ├── .gitignore
 └── package.json               # Monorepo workspace runner scripts
 ```
@@ -273,6 +277,32 @@ Analyzes a smart contract code snippet using the adaptive Gemini AI Security Eng
     "functionName": "record_audit",
     "cliCommand": "stellar contract invoke --id ... -- record_audit ..."
   }
+}
+```
+
+### `GET /api/contract/info`
+Returns active Soroban smart contract metadata, RPC connectivity, network status, and explorer URLs.
+
+### `GET /api/contract/audit/:contractHash`
+Reads an immutable audit report directly from the live Soroban persistent ledger storage for a given contract SHA-256 hash.
+
+### `GET /api/contract/telemetry/:contractId?network=testnet`
+Fetches real-time contract footprint telemetry, current ledger sequence, `liveUntilLedgerSeq`, remaining TTL blocks, storage rent status, and RPC health metrics.
+
+### `GET /api/contract/fee`
+Returns the on-chain audit fee (1.0 XLM default) and protocol treasury destination address (`TREASURY_ADDRESS`).
+
+### `POST /api/contract/record`
+Anchors a verified audit report onto the Soroban smart contract using the authorized auditor keypair.
+
+**Request Body**:
+```json
+{
+  "contractHash": "ec6a4eb00b6281f6f765ff3d94bf187d153dd42a78627164dbf837e83023defe",
+  "riskScore": 15,
+  "isSecure": true,
+  "auditType": "PRE_DEPLOYMENT",
+  "auditor": "GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI"
 }
 ```
 
