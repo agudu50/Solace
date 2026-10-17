@@ -197,15 +197,31 @@ export async function recordOnChainAudit({
  * @param {string} contractId - Deployed Soroban contract address
  * @param {string} [network='testnet'] - 'testnet' or 'mainnet'
  */
+const telemetryCache = new Map();
+
+function withTimeout(promise, ms = 3500) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export async function getContractTelemetry(contractId, network = 'testnet') {
+  const cacheKey = `${contractId.trim()}:${network}`;
+  const cached = telemetryCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 4000) {
+    return cached.data;
+  }
+
   try {
     const net = getServerForNetwork(network);
     const contract = new Contract(contractId);
     const key = contract.getFootprint();
+
     const [entryRes, latestLedgerRes, healthRes] = await Promise.all([
-      net.server.getLedgerEntries(key).catch(() => null),
-      net.server.getLatestLedger().catch(() => null),
-      net.server.getHealth().catch(() => null),
+      withTimeout(net.server.getLedgerEntries(key).catch(() => null), 3500),
+      withTimeout(net.server.getLatestLedger().catch(() => null), 3500),
+      withTimeout(net.server.getHealth().catch(() => null), 2000),
     ]);
 
     const entry = entryRes?.entries?.[0];
@@ -215,7 +231,7 @@ export async function getContractTelemetry(contractId, network = 'testnet') {
     const lastModified = entry?.lastModifiedLedgerSeq || null;
     const exists = Boolean(entry);
 
-    return {
+    const result = {
       success: true,
       contractId,
       exists,
@@ -239,6 +255,9 @@ export async function getContractTelemetry(contractId, network = 'testnet') {
       explorerUrl: `${net.explorerBase}/contract/${contractId}`,
       timestamp: new Date().toISOString(),
     };
+
+    telemetryCache.set(cacheKey, { timestamp: Date.now(), data: result });
+    return result;
   } catch (err) {
     return {
       success: false,

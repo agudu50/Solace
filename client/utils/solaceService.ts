@@ -1,4 +1,4 @@
-import { isConnected, requestAccess, getNetwork, getNetworkDetails, signTransaction } from '@stellar/freighter-api';
+import { isConnected, requestAccess, getNetwork, getNetworkDetails, signTransaction, signMessage } from '@stellar/freighter-api';
 
 const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -123,7 +123,36 @@ export async function connectWallet(): Promise<string> {
     throw new Error('Invalid Stellar auditor address returned by wallet extension.');
   }
 
-  // 3. Automatically determine network from the wallet
+  // 3. Actively prompt Freighter extension popup window to confirm auditor session
+  // This ensures Freighter's popup modal appears on screen even after user previously disconnected
+  try {
+    const sessionNonce = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const authMessage = `Solace Security Auditor Verification\n\nPlease sign to confirm your auditor session in Freighter.\nAuditor: ${publicKey.slice(0, 6)}...${publicKey.slice(-6)}\nNonce: ${sessionNonce}\nTime: ${new Date().toLocaleTimeString()}`;
+    
+    const signPromise = signMessage(authMessage, { address: publicKey });
+    const signTimeout = new Promise<{ error?: any }>((resolve) =>
+      setTimeout(() => resolve({ error: { message: 'Freighter signature prompt timed out.' } }), 30000)
+    );
+    const signResult = await Promise.race([signPromise, signTimeout]);
+
+    if ((signResult as any)?.error) {
+      const signErr = (signResult as any).error;
+      const msg =
+        typeof signErr === 'string'
+          ? signErr
+          : signErr?.message || 'Wallet connection was cancelled in Freighter.';
+      throw new Error(msg);
+    }
+  } catch (err: any) {
+    // If the user cancelled/rejected the popup, propagate the rejection to prevent silent reconnect
+    if (err?.message && (err.message.toLowerCase().includes('reject') || err.message.toLowerCase().includes('cancel') || err.message.toLowerCase().includes('declined') || err.message.toLowerCase().includes('timed out'))) {
+      throw err;
+    }
+    // If signMessage is unsupported in older extension, fallback gracefully
+    console.warn('Freighter signature verification note:', err?.message);
+  }
+
+  // 4. Automatically determine network from the wallet
   try {
     const detectedNet = await detectWalletNetwork();
     localStorage.setItem('solace-network', detectedNet);

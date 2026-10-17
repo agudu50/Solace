@@ -45,8 +45,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function MonitorPage() {
   const [contractId, setContractId] = useState<string>(DEFAULT_CONTRACT_ID);
-  const [monitoring, setMonitoring] = useState<boolean>(false);
-  const [metrics, setMetrics] = useState<LiveTelemetry | null>(null);
+  const [monitoring, setMonitoring] = useState<boolean>(true);
+  const [metrics, setMetrics] = useState<LiveTelemetry | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('solace-last-telemetry');
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
+    }
+    return null;
+  });
   const [error, setError] = useState<string>('');
   const [isAutoPolling, setIsAutoPolling] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<boolean>(false);
@@ -68,18 +76,22 @@ export default function MonitorPage() {
       const latency = Date.now() - startTime;
 
       if (data.success) {
-        setMetrics({
+        const fullMetrics = {
           ...data,
           latencyMs: latency,
-        });
+        };
+        setMetrics(fullMetrics);
         setLastRefreshedAt(new Date().toLocaleTimeString());
+        try {
+          localStorage.setItem('solace-last-telemetry', JSON.stringify(fullMetrics));
+        } catch (_) {}
       } else {
         setError(data.error || `Contract telemetry offline or unreachable on Stellar ${activeNet === 'mainnet' ? 'Mainnet' : 'Testnet'}.`);
-        if (!isSilent) setMetrics(null);
+        if (!isSilent && !metrics) setMetrics(null);
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to connect to Solace backend server.');
-      if (!isSilent) setMetrics(null);
+      if (!isSilent && !metrics) setMetrics(null);
     } finally {
       if (!isSilent) setMonitoring(false);
     }
@@ -347,6 +359,23 @@ export default function MonitorPage() {
             >
               Dismiss
             </button>
+          </div>
+        )}
+
+        {/* Loading Skeleton */}
+        {monitoring && !metrics && (
+          <div className="space-y-6 animate-pulse mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="h-32 bg-slate-200/80 dark:bg-slate-800/80 rounded-3xl" />
+              <div className="h-32 bg-slate-200/80 dark:bg-slate-800/80 rounded-3xl" />
+              <div className="h-32 bg-slate-200/80 dark:bg-slate-800/80 rounded-3xl" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
+              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
+              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
+              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
+            </div>
           </div>
         )}
 

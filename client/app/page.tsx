@@ -358,21 +358,23 @@ export default function DashboardPage() {
 
             <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
               <div className="max-w-3xl">
-                {/* Status pill & Network tags */}
-                <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-2.5 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
-                    <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-accent animate-ping inline-block" />
-                    SHIELD ENGINE ACTIVE
+                {/* Simplified Status Badge */}
+                <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-accent animate-pulse inline-block" />
+                    <span className="font-bold">Shield Engine Active</span>
+                    <span className="text-accent/30 font-normal">|</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-normal">Soroban Protocol 22</span>
+                    {connectedWallet && (
+                      <>
+                        <span className="text-accent/30 font-normal">|</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                          Auditor Session
+                        </span>
+                      </>
+                    )}
                   </span>
-                  <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                    Stellar Soroban v22 Protocol
-                  </span>
-                  {connectedWallet && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>Authenticated Auditor Session</span>
-                    </span>
-                  )}
                 </div>
 
                 <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight flex items-center gap-2.5 flex-wrap">
@@ -1040,23 +1042,23 @@ export default function DashboardPage() {
                 {/* 4 Invariant Security Guards */}
                 <div className="space-y-2 mb-3">
                   {/* Guard 1: Authorization Guard */}
-                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${
                         !isScanningActive ? 'bg-slate-400' : hasAuthVuln ? 'bg-red-500' : 'bg-emerald-500'
                       }`} />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight truncate">
                           Authorization Guard
                         </span>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate" title={isScanningActive && hasAuthVuln ? 'Missing require_auth() signature enforcement' : 'require_auth() signature enforcement'}>
                           {isScanningActive && hasAuthVuln
                             ? 'Missing require_auth() signature enforcement'
                             : 'require_auth() signature enforcement'}
                         </span>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ml-1 ${
                       !isScanningActive
                         ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
                         : hasAuthVuln
@@ -1068,23 +1070,23 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Guard 2: Storage Rent Guardian */}
-                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${
                         !isScanningActive ? 'bg-slate-400' : hasStorageVuln ? 'bg-amber-500' : 'bg-cyan-500'
                       }`} />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight truncate">
                           Storage Rent Guardian
                         </span>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate" title={isScanningActive && hasStorageVuln ? 'Instance storage TTL exposure & eviction risk' : 'TTL auto-bump & state isolation'}>
                           {isScanningActive && hasStorageVuln
                             ? 'Instance storage TTL exposure & eviction risk'
                             : 'TTL auto-bump & state isolation'}
                         </span>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ml-1 ${
                       !isScanningActive
                         ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
                         : hasStorageVuln
@@ -1096,23 +1098,23 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Guard 3: Panic Crash Shield */}
-                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${
                         !isScanningActive ? 'bg-slate-400' : hasPanicVuln ? 'bg-red-500' : 'bg-purple-500'
                       }`} />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight truncate">
                           Panic Crash Shield
                         </span>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate" title={isScanningActive && hasPanicVuln ? 'Host panic vector from unhandled .unwrap()' : 'Zero unhandled .unwrap() host panics'}>
                           {isScanningActive && hasPanicVuln
                             ? 'Host panic vector from unhandled .unwrap()'
                             : 'Zero unhandled .unwrap() host panics'}
                         </span>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ml-1 ${
                       !isScanningActive
                         ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
                         : hasPanicVuln
@@ -1124,23 +1126,23 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Guard 4: Admin Access Control */}
-                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${
                         !isScanningActive ? 'bg-slate-400' : hasAdminVuln ? 'bg-red-500' : 'bg-accent'
                       }`} />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight truncate">
                           Admin Access Control
                         </span>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium block truncate" title={isScanningActive && hasAdminVuln ? 'Admin privilege escalation vector' : 'Multi-sig role & caller authentication'}>
                           {isScanningActive && hasAdminVuln
                             ? 'Admin privilege escalation vector'
                             : 'Multi-sig role & caller authentication'}
                         </span>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ml-1 ${
                       !isScanningActive
                         ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
                         : hasAdminVuln
