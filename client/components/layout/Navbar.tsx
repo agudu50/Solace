@@ -129,13 +129,13 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                  className={`flex items-center gap-2 sm:gap-2.5 px-4 py-2 rounded-full text-xs sm:text-[13px] font-bold transition ${
                     isActive
                       ? 'bg-accent text-white shadow-md shadow-accent/25'
                       : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
                   }`}
                 >
-                  <IconComponent className="w-3.5 h-3.5" />
+                  <IconComponent className="w-[18px] h-[18px] shrink-0" />
                   <span>{item.label}</span>
                 </Link>
               );
