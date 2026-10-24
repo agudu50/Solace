@@ -93,8 +93,8 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
 
       {/* Main Glassmorphic Card (Optimized for Mobile & Desktop) */}
       <div className="max-w-2xl w-full bg-white/95 dark:bg-[#111726]/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-9 shadow-2xl shadow-slate-900/10 dark:shadow-black/50 border border-slate-200/90 dark:border-slate-800/90 text-center relative overflow-hidden transition-all duration-300">
-        {/* Top glowing cyber accent gradient line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-90" />
+        {/* Top solid accent line (No gradient) */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-accent opacity-90" />
 
         {/* Floating cyber lock & Solace logo badge */}
         <div className="relative mx-auto w-16 h-16 sm:w-20 sm:h-20 mb-4 sm:mb-6 flex items-center justify-center">

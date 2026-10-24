@@ -359,10 +359,10 @@ export default function AuditStudioPage() {
       score: calcScore(hasAuthVuln, 45),
       status: !report ? 'Standby' : hasAuthVuln ? 'Breached' : 'Guarded',
       gradientStyle: !report
-        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        ? '#64748b'
         : hasAuthVuln
-        ? 'linear-gradient(to top, #991b1b 0%, #ef4444 50%, #f87171 100%)'
-        : 'linear-gradient(to top, #047857 0%, #10b981 50%, #34d399 100%)',
+        ? '#ef4444'
+        : '#10b981',
       glowColor: !report ? '#94a3b8' : hasAuthVuln ? '#ef4444' : '#10b981',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasAuthVuln ? 'text-red-500' : 'text-emerald-500 dark:text-emerald-400',
       statusColor: !report
@@ -376,10 +376,10 @@ export default function AuditStudioPage() {
       score: calcScore(hasStorageVuln, 35),
       status: !report ? 'Standby' : hasStorageVuln ? 'Eviction Risk' : 'Protected',
       gradientStyle: !report
-        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        ? '#64748b'
         : hasStorageVuln
-        ? 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fbbf24 100%)'
-        : 'linear-gradient(to top, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)',
+        ? '#f59e0b'
+        : '#06b6d4',
       glowColor: !report ? '#94a3b8' : hasStorageVuln ? '#f59e0b' : '#06b6d4',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasStorageVuln ? 'text-amber-500' : 'text-cyan-500 dark:text-cyan-400',
       statusColor: !report
@@ -393,10 +393,10 @@ export default function AuditStudioPage() {
       score: calcScore(hasPanicVuln, 40),
       status: !report ? 'Standby' : hasPanicVuln ? 'Host Panic' : 'Safe',
       gradientStyle: !report
-        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        ? '#64748b'
         : hasPanicVuln
-        ? 'linear-gradient(to top, #991b1b 0%, #ef4444 50%, #f87171 100%)'
-        : 'linear-gradient(to top, #6d28d9 0%, #a855f7 50%, #d946ef 100%)',
+        ? '#ef4444'
+        : '#a855f7',
       glowColor: !report ? '#94a3b8' : hasPanicVuln ? '#ef4444' : '#a855f7',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasPanicVuln ? 'text-red-500' : 'text-purple-500 dark:text-purple-400',
       statusColor: !report
@@ -410,10 +410,10 @@ export default function AuditStudioPage() {
       score: calcScore(hasAdminVuln, 40),
       status: !report ? 'Standby' : hasAdminVuln ? 'Escalation' : 'Guarded',
       gradientStyle: !report
-        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
+        ? '#64748b'
         : hasAdminVuln
-        ? 'linear-gradient(to top, #881337 0%, #f43f5e 50%, #fda4af 100%)'
-        : 'linear-gradient(to top, #9f1239 0%, #C80552 50%, #fb7185 100%)',
+        ? '#f43f5e'
+        : '#C80552',
       glowColor: !report ? '#94a3b8' : hasAdminVuln ? '#f43f5e' : '#C80552',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasAdminVuln ? 'text-rose-500' : 'text-accent',
       statusColor: !report
@@ -427,8 +427,8 @@ export default function AuditStudioPage() {
       score: calcScore(hasMathVuln, 30),
       status: !report ? 'Standby' : hasMathVuln ? 'Overflow' : 'Safe',
       gradientStyle: !report
-        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
-        : 'linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fcd34d 100%)',
+        ? '#64748b'
+        : '#f59e0b',
       glowColor: !report ? '#94a3b8' : '#f59e0b',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : 'text-amber-500 dark:text-amber-400',
       statusColor: !report
@@ -440,8 +440,8 @@ export default function AuditStudioPage() {
       score: calcScore(hasGasVuln, 25),
       status: !report ? 'Standby' : hasGasVuln ? 'Gas Spike' : 'Safe',
       gradientStyle: !report
-        ? 'linear-gradient(to top, #64748b 0%, #94a3b8 100%)'
-        : 'linear-gradient(to top, #3730a3 0%, #6366f1 50%, #818cf8 100%)',
+        ? '#64748b'
+        : '#6366f1',
       glowColor: !report ? '#94a3b8' : '#6366f1',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : 'text-indigo-500 dark:text-indigo-400',
       statusColor: !report
