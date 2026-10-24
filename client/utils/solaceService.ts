@@ -1,6 +1,8 @@
 import {
   isConnected,
   requestAccess,
+  setAllowed,
+  getAddress,
   getNetwork,
   getNetworkDetails,
   signTransaction,
@@ -31,7 +33,7 @@ export async function checkFreighterInstalled(): Promise<boolean> {
   try {
     const connPromise = isConnected();
     const timeoutPromise = new Promise<{ isConnected: boolean }>((resolve) =>
-      setTimeout(() => resolve({ isConnected: false }), 1200)
+      setTimeout(() => resolve({ isConnected: false }), 1500)
     );
     const connResult = await Promise.race([connPromise, timeoutPromise]);
     return connResult?.isConnected === true;
@@ -41,66 +43,92 @@ export async function checkFreighterInstalled(): Promise<boolean> {
 }
 
 /**
- * Connect to Freighter browser extension wallet with timeout guards
- * and automatically detect the active wallet network (Testnet vs Mainnet)
+ * Connect to Freighter browser extension wallet.
+ * Triggers requestAccess() immediately on the user's click gesture so that Chrome/Edge/Brave
+ * preserves user activation and does not block Freighter's extension confirmation popup.
  */
 export async function connectWallet(): Promise<string> {
   if (typeof window === 'undefined') {
     throw new Error('Wallet connection is only supported in browser environments.');
   }
 
-  // 1. Check if window.freighter exists or isConnected() responds within 2 seconds
-  let hasFreighter = Boolean((window as any).freighter);
-  
-  if (!hasFreighter) {
-    try {
-      const connPromise = isConnected();
-      const timeoutPromise = new Promise<{ isConnected: boolean }>((resolve) =>
-        setTimeout(() => resolve({ isConnected: false }), 2000)
-      );
-      const connResult = await Promise.race([connPromise, timeoutPromise]);
-      hasFreighter = connResult?.isConnected === true;
-    } catch {
-      hasFreighter = false;
+  // 1. Immediately initiate access request without any intermediate async delay.
+  // This preserves the browser's transient user-gesture activation context.
+  let publicKey = '';
+
+  try {
+    const accessPromise = (async () => {
+      // Primary: requestAccess() prompts the user and returns their address
+      const res: any = await requestAccess();
+      if (res && !res.error) {
+        const key = typeof res === 'string' ? res : res.address || res.publicKey;
+        if (key && /^G[A-Z0-9]{55}$/.test(key)) {
+          return key;
+        }
+      }
+
+      // Fallback: If requestAccess returned error or alternative Freighter extension structure
+      try {
+        const allowedRes: any = await setAllowed();
+        if (allowedRes && !allowedRes.error) {
+          const addrRes: any = await getAddress();
+          if (addrRes && !addrRes.error) {
+            const key = typeof addrRes === 'string' ? addrRes : addrRes.address || addrRes.publicKey;
+            if (key && /^G[A-Z0-9]{55}$/.test(key)) {
+              return key;
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (res?.error) {
+        const errObj = res.error;
+        const msg = typeof errObj === 'string' ? errObj : errObj.message || 'Freighter access request was rejected.';
+        throw new Error(msg);
+      }
+
+      return '';
+    })();
+
+    // 60-second timeout guard so user has ample time to unlock their wallet or click Approve
+    const timeoutPromise = new Promise<string>((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              'Freighter wallet connection request timed out. Please check if your Freighter extension is unlocked.'
+            )
+          ),
+        60000
+      )
+    );
+
+    publicKey = await Promise.race([accessPromise, timeoutPromise]);
+  } catch (err: any) {
+    const rawMsg = (err?.message || String(err)).toLowerCase();
+    if (
+      rawMsg.includes('reject') ||
+      rawMsg.includes('cancel') ||
+      rawMsg.includes('decline') ||
+      rawMsg.includes('denied') ||
+      rawMsg.includes('closed')
+    ) {
+      throw new Error('Wallet authorization was cancelled in Freighter. Please approve connection to authenticate.');
     }
+
+    // Check if Freighter extension is truly not installed
+    const isInstalled = await checkFreighterInstalled();
+    if (!isInstalled) {
+      throw new Error('FREIGHTER_NOT_INSTALLED');
+    }
+    throw err;
   }
 
-  if (!hasFreighter) {
-    throw new Error('FREIGHTER_NOT_INSTALLED');
+  if (!publicKey || !/^G[A-Z0-9]{55}$/.test(publicKey)) {
+    throw new Error('No valid Stellar auditor address returned by Freighter wallet.');
   }
 
-  // 2. Request access with a 10s timeout in case popup is ignored
-  const accessPromise = requestAccess();
-  const timeoutPromise = new Promise<{ address?: string; error?: any }>((resolve) =>
-    setTimeout(() => resolve({ error: { message: 'Wallet connection request timed out.' } }), 10000)
-  );
-
-  const response = await Promise.race([accessPromise, timeoutPromise]);
-
-  if ((response as any)?.error) {
-    const errPayload = (response as any).error;
-    const errorMsg =
-      typeof errPayload === 'string'
-        ? errPayload
-        : errPayload?.message || 'Freighter access request rejected.';
-    throw new Error(errorMsg);
-  }
-
-  const publicKey =
-    typeof response === 'string'
-      ? response
-      : (response as any)?.address || (response as any)?.publicKey;
-
-  if (!publicKey) {
-    throw new Error('No public key returned by Freighter wallet.');
-  }
-
-  // Validate format of Stellar public key (56-character string starting with G)
-  if (typeof publicKey !== 'string' || !/^G[A-Z0-9]{55}$/.test(publicKey)) {
-    throw new Error('Invalid Stellar auditor address returned by wallet extension.');
-  }
-
-  // 3. Save active network as testnet
+  // Save active network as testnet
   try {
     localStorage.setItem('solace-network', 'testnet');
     if (typeof window !== 'undefined') {
