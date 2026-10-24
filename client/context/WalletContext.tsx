@@ -44,18 +44,7 @@ export function WalletProvider({
     return '';
   });
 
-  const [network, setNetworkState] = useState<'testnet' | 'mainnet'>(() => {
-    if (initialNetwork === 'mainnet' || initialNetwork === 'testnet') {
-      return initialNetwork;
-    }
-    if (typeof window !== 'undefined') {
-      try {
-        const storedNet = localStorage.getItem('solace-network');
-        if (storedNet === 'mainnet' || storedNet === 'testnet') return storedNet;
-      } catch (_) {}
-    }
-    return 'testnet';
-  });
+  const [network, setNetworkState] = useState<'testnet' | 'mainnet'>('testnet');
 
   const [connecting, setConnecting] = useState<boolean>(false);
   const [freighterReady, setFreighterReady] = useState<boolean | null>(null);
@@ -111,9 +100,11 @@ export function WalletProvider({
         syncWalletToStorageAndCookies(stored);
       }
       const storedNet = localStorage.getItem('solace-network');
-      if (storedNet === 'mainnet' || storedNet === 'testnet') {
-        setNetworkState(storedNet);
-        syncNetworkToStorageAndCookies(storedNet);
+      if (storedNet === 'mainnet') {
+        setNetworkState('testnet');
+        syncNetworkToStorageAndCookies('testnet');
+      } else if (storedNet === 'testnet') {
+        setNetworkState('testnet');
       }
     } catch (_) {}
 

@@ -589,9 +589,9 @@ export default function InteractiveScanner() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-white/10 text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold">Protocol Inscription Fee</span>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                    1.0 XLM Micro-Fee
+                  <span className="font-semibold">Audit Model</span>
+                  <span className="font-mono font-bold text-accent">
+                    1 Credit (Prepaid Bundle)
                   </span>
                 </div>
               </div>

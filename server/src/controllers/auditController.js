@@ -1,6 +1,12 @@
 import crypto from 'node:crypto';
 import { analyzeContractWithAI, CANDIDATE_MODELS } from '../services/aiAuditor.js';
 import sorobanService from '../services/sorobanService.js';
+import creditStore, {
+  getPackages,
+  getUserBalance,
+  getUserHistory,
+  consumeCreditForContract,
+} from '../services/creditStore.js';
 
 export async function auditContract(req, res, next) {
   try {
@@ -19,6 +25,31 @@ export async function auditContract(req, res, next) {
     const contractHash = clientHash || calculatedHash;
     const auditType = isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT';
 
+    const userWallet = req.body.userWallet || req.body.auditor || req.body.walletAddress;
+    const clientFeeReceipt = req.body.feeReceipt;
+
+    // Credit-based verification: require user to have >= 1 credit (or verified receipt)
+    let creditReceipt = null;
+    if (userWallet) {
+      try {
+        creditReceipt = consumeCreditForContract({
+          userAddress: userWallet,
+          contractHash,
+        });
+      } catch (cErr) {
+        if (!clientFeeReceipt) {
+          return res.status(402).json({
+            success: false,
+            needsCredits: true,
+            error:
+              cErr.message ||
+              'Insufficient audit credits. Please purchase a prepaid credit bundle (Starter: 30 XLM for 3 audits, Growth: 60 XLM for 6 audits, or Professional: 90 XLM for 9 audits).',
+            packages: getPackages(),
+          });
+        }
+      }
+    }
+
     console.log(`[*] [Audit] Incoming ${auditType} audit request (Hash: ${contractHash.slice(0, 12)}...)`);
 
     const report = await analyzeContractWithAI(code, Boolean(isPostDeployment));
@@ -29,35 +60,18 @@ export async function auditContract(req, res, next) {
 
     const contractInfo = sorobanService.getContractInfo();
 
-    // Process audit fee deduction from the caller's wallet
-    const userWallet = req.body.userWallet || req.body.auditor || req.body.walletAddress;
-    const clientFeeReceipt = req.body.feeReceipt;
-    let feeReceipt = null;
-
-    if (clientFeeReceipt && (clientFeeReceipt.status === 'CONFIRMED' || clientFeeReceipt.transactionHash)) {
-      console.log(`[✓] [Audit] Verified on-chain fee receipt attached (Tx: ${clientFeeReceipt.transactionHash})`);
-      feeReceipt = clientFeeReceipt;
-    } else if (userWallet) {
-      try {
-        feeReceipt = await sorobanService.processAuditFeePayment({
-          userAddress: userWallet,
-          contractHash,
-        });
-      } catch (fErr) {
-        console.warn(`[!] [Audit] Fee charging warning: ${fErr.message}`);
-      }
-    } else {
-      // Default standard fee info
-      const feeInfo = await sorobanService.getAuditFeeInfo();
+    let feeReceipt = clientFeeReceipt || null;
+    if (!feeReceipt && creditReceipt) {
       feeReceipt = {
         success: true,
-        status: 'PENDING_CONFIRMATION',
-        feeXLM: feeInfo.feeXLM,
-        feeStroops: feeInfo.auditFeeStroops,
+        status: 'CREDIT_DEDUCTED',
         currency: 'XLM',
-        payer: 'Awaiting User Wallet Connection',
+        payer: userWallet,
         contractHash,
         contractId: contractInfo.contractId,
+        remainingCredits: creditReceipt.remainingCredits,
+        creditConsumed: creditReceipt.deducted,
+        timestamp: new Date().toISOString(),
       };
     }
 
@@ -253,5 +267,122 @@ export async function submitFeeTxHandler(req, res) {
     res.status(500).json({ success: false, error: err.message });
   }
 }
+
+// ============================================================================
+// Credit-Based Subscription Handlers (30, 60, 90 XLM)
+// ============================================================================
+
+export function getPackagesHandler(req, res) {
+  try {
+    const packages = getPackages();
+    res.status(200).json({
+      success: true,
+      packages,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export function getUserCreditsHandler(req, res) {
+  try {
+    const { address } = req.params;
+    if (!address) {
+      return res.status(400).json({ success: false, error: 'User wallet address is required in URL.' });
+    }
+    const balance = getUserBalance(address);
+    res.status(200).json({
+      success: true,
+      data: balance,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export function getUserCreditHistoryHandler(req, res) {
+  try {
+    const { address } = req.params;
+    if (!address) {
+      return res.status(400).json({ success: false, error: 'User wallet address is required in URL.' });
+    }
+    const history = getUserHistory(address);
+    const balance = getUserBalance(address);
+    res.status(200).json({
+      success: true,
+      balance,
+      purchases: history.purchases,
+      consumptions: history.consumptions,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function buildPackagePurchaseTxHandler(req, res) {
+  try {
+    const { userAddress, packageId, network } = req.body;
+    if (!userAddress || !packageId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userAddress and packageId (1, 2, or 3) are required to build purchase transaction.',
+      });
+    }
+
+    const txData = await sorobanService.buildPackagePurchaseTransaction({
+      userAddress,
+      packageId: Number(packageId),
+      network: network || 'testnet',
+    });
+    res.status(200).json(txData);
+  } catch (err) {
+    console.error(`[-] [AuditController] Failed to build package purchase tx: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function submitPackagePurchaseTxHandler(req, res) {
+  try {
+    const { signedXdr, userAddress, packageId, network } = req.body;
+    if (!signedXdr || !userAddress || !packageId) {
+      return res.status(400).json({
+        success: false,
+        error: 'signedXdr, userAddress, and packageId are required.',
+      });
+    }
+
+    const receipt = await sorobanService.submitSignedPackagePurchaseTransaction({
+      signedXdr,
+      userAddress,
+      packageId: Number(packageId),
+      network: network || 'testnet',
+    });
+    res.status(200).json(receipt);
+  } catch (err) {
+    console.error(`[-] [AuditController] Failed to submit package purchase tx: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export function consumeCreditHandler(req, res) {
+  try {
+    const { userAddress, contractHash } = req.body;
+    if (!userAddress || !contractHash) {
+      return res.status(400).json({
+        success: false,
+        error: 'userAddress and contractHash are required to consume credit.',
+      });
+    }
+
+    const result = consumeCreditForContract({
+      userAddress,
+      contractHash,
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+}
+
 
 

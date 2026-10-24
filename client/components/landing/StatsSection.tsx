@@ -25,11 +25,11 @@ const STATS = [
     tag: 'INVARIANTS',
   },
   {
-    value: '1.0 XLM',
-    label: 'Protocol Treasury Micro-Fee',
-    description: 'Self-sustaining economic model routing rent renewal funding to the protocol treasury',
+    value: '30-90 XLM',
+    label: 'Prepaid Audit Bundles',
+    description: 'Non-expiring credit bundles: Starter (30 XLM), Growth (60 XLM), Professional (90 XLM)',
     icon: Zap,
-    tag: 'TREASURY',
+    tag: 'PREPAID',
   },
   {
     value: '100% Ledger',

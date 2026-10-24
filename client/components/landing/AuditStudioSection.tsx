@@ -17,6 +17,8 @@ import {
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import { useWallet } from '../../context/WalletContext';
 import { motion } from 'framer-motion';
+import PricingModal from '../pricing/PricingModal';
+import { fetchUserCreditBalance, consumeAuditCredit } from '../../utils/solaceService';
 
 function renderColoredRust(line: string) {
   const trimmed = line.trim();
@@ -125,8 +127,20 @@ export default function AuditStudioSection() {
   const [auditDone, setAuditDone] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const txHash = '7a8f3d12c8b49e0f61254789ab23cd45ef67890123456789abcdef0123456789';
-
   const contractHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+  const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
+  const [availableCredits, setAvailableCredits] = useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (walletKey) {
+      fetchUserCreditBalance(walletKey)
+        .then((b) => setAvailableCredits(b.availableCredits))
+        .catch(() => setAvailableCredits(0));
+    } else {
+      setAvailableCredits(null);
+    }
+  }, [walletKey]);
 
   const handleRunAudit = async () => {
     let activeKey = walletKey;
@@ -139,10 +153,16 @@ export default function AuditStudioSection() {
       if (!activeKey) return;
     }
 
+    if (availableCredits !== null && availableCredits <= 0) {
+      setShowPricingModal(true);
+      return;
+    }
+
     setIsAuditing(true);
     setTimeout(() => {
       setIsAuditing(false);
       setAuditDone(true);
+      setAvailableCredits((prev) => (prev && prev > 0 ? prev - 1 : 0));
 
       const newAudit = {
         id: `audit-${Date.now()}`,
@@ -486,8 +506,15 @@ to.require_auth();`}</pre>
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                    <span>Protocol Fee</span>
-                    <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">1.0 XLM Micro-Fee</span>
+                    <span>Audit Credit</span>
+                    <span className="font-mono text-accent font-bold">
+                      1 Credit (Prepaid Bundle)
+                      {availableCredits !== null && (
+                        <span className="ml-1.5 text-[10px] text-slate-500 font-normal">
+                          ({availableCredits} left)
+                        </span>
+                      )}
+                    </span>
                   </div>
 
                   <div className="pt-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -510,6 +537,18 @@ to.require_auth();`}</pre>
           </div>
         </div>
       </div>
+
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => {
+          setShowPricingModal(false);
+          if (walletKey) {
+            fetchUserCreditBalance(walletKey)
+              .then((b) => setAvailableCredits(b.availableCredits))
+              .catch(() => {});
+          }
+        }}
+      />
     </section>
   );
 }

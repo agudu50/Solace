@@ -22,10 +22,14 @@ import {
   Wallet,
   Copy,
   Check,
+  Coins,
+  PlusCircle,
+  History,
 } from 'lucide-react';
-import { connectWallet } from '../../utils/solaceService';
+import { connectWallet, fetchUserCreditBalance, fetchUserCreditHistory } from '../../utils/solaceService';
 import WalletGate from '../../components/auth/WalletGate';
 import { useWallet } from '../../context/WalletContext';
+import PricingModal from '../../components/pricing/PricingModal';
 
 interface ActiveAuditInfo {
   contractName: string;
@@ -53,6 +57,38 @@ export default function DashboardPage() {
   const { walletKey: connectedWallet, network, connect } = useWallet();
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
+  const [userCredits, setUserCredits] = useState<{
+    availableCredits: number;
+    totalPurchased: number;
+    totalConsumed: number;
+  } | null>(null);
+  const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
+  const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
+  const [showHistoryView, setShowHistoryView] = useState<boolean>(false);
+
+  const loadCredits = async (address?: string) => {
+    const target = address || connectedWallet;
+    if (!target) {
+      setUserCredits(null);
+      setPurchaseHistory([]);
+      return;
+    }
+    try {
+      const balance = await fetchUserCreditBalance(target);
+      setUserCredits(balance);
+      const history = await fetchUserCreditHistory(target);
+      setPurchaseHistory(history?.purchases || []);
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    if (connectedWallet) {
+      loadCredits(connectedWallet);
+    } else {
+      setUserCredits(null);
+      setPurchaseHistory([]);
+    }
+  }, [connectedWallet]);
 
   useEffect(() => {
     const loadAuditData = () => {
@@ -486,6 +522,134 @@ export default function DashboardPage() {
                     </div>
                   </>
                 ) : null}
+              </div>
+
+              {/* Card 1B: Prepaid Audit Credit Management */}
+              <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center shadow-xs">
+                      <Coins className="w-4 h-4 text-accent" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900 dark:text-white">Audit Credit Balance</h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Prepaid Non-Expiring Bundles</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    NEVER EXPIRES
+                  </span>
+                </div>
+
+                {/* 3-Column Balance Statistics */}
+                <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800 text-center mb-3">
+                  <div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Available</div>
+                    <div className="text-xl sm:text-2xl font-black font-mono text-accent mt-0.5">
+                      {userCredits ? userCredits.availableCredits : 0}
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Credits</div>
+                  </div>
+                  <div className="border-x border-slate-200 dark:border-slate-800">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Purchased</div>
+                    <div className="text-xl sm:text-2xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
+                      {userCredits ? userCredits.totalPurchased : 0}
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Total</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Consumed</div>
+                    <div className="text-xl sm:text-2xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
+                      {userCredits ? userCredits.totalConsumed : 0}
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Audits</div>
+                  </div>
+                </div>
+
+                {/* Low Credits Alert */}
+                {userCredits && userCredits.availableCredits <= 1 && (
+                  <div
+                    className={`p-2.5 rounded-xl text-xs mb-3 flex items-start gap-2 border ${
+                      userCredits.availableCredits === 0
+                        ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300'
+                        : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300'
+                    }`}
+                  >
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-current" />
+                    <div>
+                      <div className="font-bold">
+                        {userCredits.availableCredits === 0 ? 'No Audit Credits Available' : 'Credits Running Low'}
+                      </div>
+                      <div className="text-[11px] opacity-90 mt-0.5 leading-relaxed">
+                        {userCredits.availableCredits === 0
+                          ? 'Purchase an audit bundle below to inspect smart contracts on Stellar Soroban.'
+                          : 'You only have 1 credit remaining. Stock up on prepaid credits at any time.'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions & History Toggle */}
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPricingModal(true)}
+                    className="w-full py-2.5 px-4 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Purchase Audit Bundles (30-90 XLM)</span>
+                  </button>
+
+                  {purchaseHistory.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowHistoryView(!showHistoryView)}
+                      className="w-full py-2 px-3 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 text-xs font-semibold transition flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5 text-accent" />
+                        <span>Verified Purchases ({purchaseHistory.length})</span>
+                      </span>
+                      <span className="text-[10px] text-accent font-bold font-mono">
+                        {showHistoryView ? 'Hide Details ▲' : 'View History ▼'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Collapsible Purchase History Details */}
+                {showHistoryView && purchaseHistory.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2 max-h-48 overflow-y-auto">
+                    {purchaseHistory.map((p, i) => (
+                      <div
+                        key={p.id || i}
+                        className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 text-[11px] space-y-1"
+                      >
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="text-slate-900 dark:text-white flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                            {p.packageName || 'Audit Bundle'} (+{p.credits} Credits)
+                          </span>
+                          <span className="font-mono text-accent">{p.amountXLM} XLM</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-500 text-[10px]">
+                          <span>{p.timestamp ? new Date(p.timestamp).toLocaleDateString() : 'Confirmed'}</span>
+                          {p.transactionHash && (
+                            <a
+                              href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/tx/${p.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent font-mono hover:underline flex items-center gap-0.5"
+                            >
+                              <span>{p.transactionHash.slice(0, 8)}...</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             {/* Card 4: Recent Security Audits */}
@@ -1187,6 +1351,14 @@ export default function DashboardPage() {
         </div>
       </main>
       </WalletGate>
+
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => {
+          setShowPricingModal(false);
+          loadCredits();
+        }}
+      />
     </div>
   );
 }

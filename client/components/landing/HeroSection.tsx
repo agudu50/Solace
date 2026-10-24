@@ -12,10 +12,12 @@ import {
   Layers,
   Cpu,
   CheckCircle2,
+  Coins,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useWallet } from '../../context/WalletContext';
+import PricingModal from '../pricing/PricingModal';
 
 const Hero3DCanvas = dynamic(() => import('./Hero3DCanvas'), {
   ssr: false,
@@ -37,6 +39,7 @@ const Hero3DCanvas = dynamic(() => import('./Hero3DCanvas'), {
 export default function HeroSection() {
   const { walletKey, network, connect, connecting } = useWallet();
   const [active3DMode, setActive3DMode] = useState<'guard' | 'scan' | 'anchor'>('guard');
+  const [showPricing, setShowPricing] = useState<boolean>(false);
 
   const handleConnectWallet = async () => {
     try {
@@ -124,6 +127,15 @@ export default function HeroSection() {
               <Terminal className="w-4 h-4 text-accent" />
               <span>Interactive AST Simulator</span>
             </a>
+
+            <button
+              type="button"
+              onClick={() => setShowPricing(true)}
+              className="px-6 py-3.5 rounded-full bg-accent-subtle hover:bg-accent/15 text-accent text-sm font-bold border border-accent/25 transition flex items-center justify-center gap-2 cursor-pointer shadow-xs hover:scale-[1.03] active:scale-[0.98]"
+            >
+              <Coins className="w-4 h-4 text-accent" />
+              <span>Prepaid Bundles (30-90 XLM)</span>
+            </button>
 
             {!walletKey && (
               <button
@@ -270,10 +282,10 @@ export default function HeroSection() {
           </div>
           <div>
             <div className="text-xl sm:text-2xl font-black font-mono text-accent">
-              1.0 XLM
+              30-90 XLM
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Treasury Anchor Fee
+              Prepaid Audit Bundles
             </div>
           </div>
           <div>
@@ -286,6 +298,9 @@ export default function HeroSection() {
           </div>
         </div>
       </div>
+
+      {/* Pricing & Credit Bundles Modal */}
+      <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
     </section>
   );
 }

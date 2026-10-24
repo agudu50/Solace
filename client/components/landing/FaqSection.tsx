@@ -31,7 +31,7 @@ const FAQS: FaqItem[] = [
   {
     question: 'What is the protocol revenue and economic sustainability model?',
     answer:
-      'Solace features a built-in on-chain micro-fee: a 1.0 XLM protocol fee is routed directly to the protocol treasury address during each on-chain audit anchor. This fee auto-funds the persistent storage rent longevity of solace_core on Stellar. In addition, automated CI/CD bots and multi-sig auditor signatures are offered for high-volume enterprise teams.',
+      'Solace uses a prepaid audit-credit bundle model: Starter (30 XLM for 3 audits), Growth (60 XLM for 6 audits), and Professional (90 XLM for 9 audits). Each payment is verified and recorded on-chain, routing XLM to the protocol treasury to fund persistent storage rent. Crucially, audit credits NEVER expire—users can consume them at their own pace without arbitrary monthly deadlines or recurring token deductions. Any newly purchased package adds to your existing balance.',
     tag: 'Tokenomics',
   },
   {

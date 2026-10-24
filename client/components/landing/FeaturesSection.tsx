@@ -46,7 +46,7 @@ const FEATURES: FeatureItem[] = [
     title: 'On-Chain Ledger Inscriptions',
     description:
       'Immutably stores audit risk scores, SHA-256 bytecode hashes, and auditor signatures on the deployed solace_core Soroban contract on the Stellar ledger.',
-    specs: ['1.0 XLM micro-fee treasury routing', 'Tamper-proof Soroban storage', 'Public ledger verification explorer'],
+    specs: ['Prepaid non-expiring credit bundles', 'Tamper-proof Soroban storage', 'Public ledger verification explorer'],
   },
   {
     icon: Bot,

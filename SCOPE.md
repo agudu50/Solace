@@ -7,10 +7,10 @@ Developers building Soroban smart contracts face severe risks from bugs, missing
 Where it stands now:
 Fully functional MVP built and deployed during Stellar 14:
 
-- Smart Contract (contract/): Written in Rust using Soroban SDK 28, compiled, and live on Stellar Testnet (Contract ID: `CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`). Stores and verifies immutable audit reports with persistent storage rent longevity and 1.0 XLM fee logic.
+- Smart Contract (contract/): Written in Rust using Soroban SDK 28, compiled, and live on Stellar Testnet (Contract ID: `CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`). Stores and verifies immutable audit reports and enforces prepaid non-expiring credit bundles (Starter 30 XLM / 3 audits, Growth 60 XLM / 6 audits, Pro 90 XLM / 9 audits) with persistent storage rent longevity.
 - Backend Server (server/): Express API powered by adaptive Gemini AI engine (with multi-model fallback across Gemini Flash models) performing pre-deployment code analysis and real-time Soroban RPC contract telemetry. Configured for cloud hosting on Render.
 - Client App (client/): Next.js 14 TypeScript dashboard featuring Freighter wallet integration with cryptographic signature verification, live on-chain anchoring, and real-time post-deployment storage TTL monitoring. Configured for cloud hosting on Netlify.
-- Security Treasury: Active treasury keypair (`GABQOW...KAJX`) receiving micro-fees for sustainable ledger state renewal.
+- Security Treasury: Active treasury keypair (`GABQOW...KAJX`) receiving bundle payments for sustainable ledger state renewal.
 
 Deliverables (What we will ship in 30 days):
 

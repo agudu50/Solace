@@ -35,8 +35,8 @@ const LAYERS = [
     layer: 'Layer 3 · On-Chain Core',
     title: 'solace_core Contract',
     description:
-      'Deployed Rust contract on Stellar Testnet and Mainnet. Inscribes audit records in persistent storage funded by a 1.0 XLM protocol micro-fee.',
-    tech: '1.0 XLM Rent Treasury',
+      'Deployed Rust contract on Stellar Testnet and Mainnet. Inscribes audit records in persistent storage powered by prepaid non-expiring credit bundles.',
+    tech: 'Prepaid Bundles (30-90 XLM)',
     icon: Layers,
   },
   {

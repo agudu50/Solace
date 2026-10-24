@@ -23,7 +23,8 @@ import {
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import WalletGate from '../../components/auth/WalletGate';
 import { useWallet } from '../../context/WalletContext';
-import { signAndPayAuditFee } from '../../utils/solaceService';
+import { signAndPayAuditFee, fetchUserCreditBalance } from '../../utils/solaceService';
+import PricingModal from '../../components/pricing/PricingModal';
 
 interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -222,6 +223,12 @@ export default function AuditStudioPage() {
     timestamp?: string;
     explorerUrl?: string;
   } | null>(null);
+  const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
+  const [userCredits, setUserCredits] = useState<{
+    availableCredits: number;
+    totalPurchased: number;
+    totalConsumed: number;
+  } | null>(null);
   const [auditFeeConfig, setAuditFeeConfig] = useState<{
     feeXLM: number;
     auditFeeStroops: string;
@@ -235,6 +242,16 @@ export default function AuditStudioPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (walletKey) {
+      fetchUserCreditBalance(walletKey)
+        .then((bal) => setUserCredits(bal))
+        .catch(() => setUserCredits(null));
+    } else {
+      setUserCredits(null);
+    }
+  }, [walletKey]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/contract/fee`)
@@ -839,23 +856,27 @@ impl SolaceContract {
       }
       setContractHash(resolvedHash);
 
-      // 2. Trigger Freighter browser wallet popup to request user confirmation for the 1.0 XLM fee
-      setAuditStep(`Triggering Freighter Wallet to confirm ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency} fee...`);
-      let confirmedFeeReceipt = null;
-      try {
-        confirmedFeeReceipt = await signAndPayAuditFee(walletKey, resolvedHash, network);
-        setFeeReceipt(confirmedFeeReceipt);
-      } catch (payErr: any) {
-        console.warn('Fee payment aborted or failed:', payErr);
-        const errMsg = payErr?.message || 'Audit fee payment cancelled.';
-        setError(errMsg);
+      // 2. Check user's prepaid audit credit balance
+      let currentBalance = userCredits;
+      if (!currentBalance && walletKey) {
+        try {
+          currentBalance = await fetchUserCreditBalance(walletKey);
+          setUserCredits(currentBalance);
+        } catch (_) {}
+      }
+
+      if (!currentBalance || currentBalance.availableCredits <= 0) {
+        setError(
+          'Insufficient audit credits (0 available). Solace operates on prepaid non-expiring credit bundles: Starter (30 XLM / 3 audits), Growth (60 XLM / 6 audits), or Professional (90 XLM / 9 audits).'
+        );
+        setShowPricingModal(true);
         setLoading(false);
         setAuditStep('');
         return;
       }
 
-      // 3. User confirmed & signed; fee transaction broadcast and verified on Stellar Testnet!
-      setAuditStep('Fee confirmed on-chain! Running Solace Dual Flash AST AI analysis...');
+      // 3. Consume 1 credit & execute Solace Dual Flash AST AI analysis
+      setAuditStep(`Consuming 1 audit credit (${currentBalance.availableCredits} remaining in prepaid bundle)...`);
       const response = await fetch(`${API_BASE_URL}/api/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -864,18 +885,41 @@ impl SolaceContract {
           isPostDeployment,
           userWallet: walletKey,
           contractHash: resolvedHash,
-          feeReceipt: confirmedFeeReceipt,
         }),
       });
 
       const data = await response.json();
+      if (response.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
+        setError(data.error || 'Insufficient audit credits. Please purchase an audit bundle to continue.');
+        setShowPricingModal(true);
+        setLoading(false);
+        setAuditStep('');
+        return;
+      }
       if (data.success) {
         const auditReport = data.data || data.report;
         setReport(auditReport);
-        const resolvedFeeReceipt = confirmedFeeReceipt || data.feeReceipt || null;
-        if (resolvedFeeReceipt) {
-          setFeeReceipt(resolvedFeeReceipt);
+
+        if (data.creditBalance) {
+          setUserCredits(data.creditBalance);
+        } else {
+          setUserCredits((prev) =>
+            prev ? { ...prev, availableCredits: Math.max(0, prev.availableCredits - 1), totalConsumed: prev.totalConsumed + 1 } : null
+          );
         }
+
+        const resolvedFeeReceipt = {
+          feeXLM: 10,
+          feeStroops: '1 audit credit',
+          currency: 'Credit',
+          payer: walletKey,
+          recipient: 'GABQOWDBI5MX6QYKP4JLB3PWJKVI7IXTQCNESBVSUK3SUUR2S3AEKAJX',
+          transactionHash: data.creditConsumptionRecord?.auditId || `audit-cred-${Date.now()}`,
+          status: 'CONFIRMED_PREPAID_CREDIT',
+          timestamp: new Date().toISOString(),
+          explorerUrl: `https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`,
+        };
+        setFeeReceipt(resolvedFeeReceipt);
 
         let verifiedAnchor = null;
         // Check if this contract is already permanently anchored on-chain
@@ -1369,13 +1413,28 @@ impl SolaceContract {
 
                 {/* Bottom Action Footer */}
                 <div className="pt-3.5 sm:pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-subtle text-accent border border-accent/25 text-xs font-bold">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setShowPricingModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-subtle text-accent border border-accent/25 text-xs font-bold hover:scale-105 transition cursor-pointer"
+                      title="Manage and purchase prepaid non-expiring audit bundles"
+                    >
                       <Coins className="w-3.5 h-3.5 text-accent" />
-                      <span>Audit Fee: {auditFeeConfig.feeXLM} {auditFeeConfig.currency}</span>
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden md:inline">
-                      Charged from wallet on AI analysis
+                      <span>
+                        Balance: <strong className="font-mono">{userCredits ? userCredits.availableCredits : 0}</strong> Credits
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-white font-mono font-bold">
+                        + Buy Bundles
+                      </span>
+                    </button>
+                    {userCredits && userCredits.availableCredits <= 1 && (
+                      <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                        {userCredits.availableCredits === 0 ? '0 Credits Available' : 'Running Low: 1 Credit Left'}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden lg:inline">
+                      1 credit per audit • Non-expiring
                     </span>
                   </div>
 
@@ -1388,8 +1447,8 @@ impl SolaceContract {
                     <ShieldCheck className="w-4 h-4" />
                     <span>
                       {loading
-                        ? (auditStep || `Authorizing & Deducting ${auditFeeConfig.feeXLM} ${auditFeeConfig.currency}...`)
-                        : `Audit Smart Contract (${auditFeeConfig.feeXLM} ${auditFeeConfig.currency})`}
+                        ? (auditStep || 'Deducting 1 credit & analyzing...')
+                        : 'Run AST Audit (1 Credit)'}
                     </span>
                   </button>
                 </div>
@@ -1551,7 +1610,7 @@ impl SolaceContract {
                       </div>
                     )}
 
-                    {/* On-Chain Audit Fee Settlement Card */}
+                    {/* On-Chain Audit Fee / Credit Settlement Card */}
                     {feeReceipt && (
                       <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 text-xs shadow-xs">
                         <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
@@ -1559,52 +1618,37 @@ impl SolaceContract {
                             <div className="w-5 h-5 rounded-md bg-accent-subtle text-accent flex items-center justify-center">
                               <Coins className="w-3 h-3 text-accent" />
                             </div>
-                            <span>Soroban Audit Fee Charged</span>
+                            <span>Prepaid Audit Credit Consumed</span>
                           </div>
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
-                            - {feeReceipt.feeXLM || 1.0} {feeReceipt.currency || 'XLM'} DEDUCTED
+                            - 1 CREDIT DEDUCTED
                           </span>
                         </div>
                         <div className="space-y-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/80 text-[11px] font-mono">
                           <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Payer Signer:</span>
+                            <span>Account:</span>
                             <span className="text-slate-800 dark:text-slate-200 font-bold truncate max-w-[190px]">
                               {feeReceipt.payer}
                             </span>
                           </div>
-                          {feeReceipt.recipient && (
-                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                              <span>Treasury Recipient:</span>
-                              <span className="text-slate-700 dark:text-slate-300 font-bold truncate max-w-[190px]">
-                                {feeReceipt.recipient.slice(0, 8)}...{feeReceipt.recipient.slice(-6)}
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                            <span>Credits Remaining:</span>
+                            <span className="text-accent font-bold">
+                              {userCredits ? userCredits.availableCredits : 0} Available
+                            </span>
+                          </div>
                           {feeReceipt.transactionHash && (
                             <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                              <span>Settlement Tx:</span>
-                              {feeReceipt.explorerUrl ? (
-                                <a
-                                  href={feeReceipt.explorerUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-accent font-bold truncate max-w-[190px] hover:underline flex items-center gap-1"
-                                  title="View on Stellar Expert"
-                                >
-                                  <span>{feeReceipt.transactionHash.slice(0, 10)}...{feeReceipt.transactionHash.slice(-6)}</span>
-                                  <ExternalLink className="w-3 h-3 shrink-0" />
-                                </a>
-                              ) : (
-                                <span className="text-accent font-bold truncate max-w-[190px]">
-                                  {feeReceipt.transactionHash.slice(0, 10)}...{feeReceipt.transactionHash.slice(-6)}
-                                </span>
-                              )}
+                              <span>Audit Identifier:</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-bold truncate max-w-[190px]">
+                                {feeReceipt.transactionHash.slice(0, 16)}...
+                              </span>
                             </div>
                           )}
                           <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
                             <span>Status:</span>
                             <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                              ✓ CONFIRMED ON TESTNET LEDGER
+                              ✓ VERIFIED ON PREPAID BALANCE
                             </span>
                           </div>
                         </div>
@@ -1830,6 +1874,18 @@ impl SolaceContract {
         )}
         </main>
       </WalletGate>
+
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => {
+          setShowPricingModal(false);
+          if (walletKey) {
+            fetchUserCreditBalance(walletKey)
+              .then((bal) => setUserCredits(bal))
+              .catch(() => {});
+          }
+        }}
+      />
     </div>
   );
 }

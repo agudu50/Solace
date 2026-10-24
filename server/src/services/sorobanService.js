@@ -480,6 +480,105 @@ export async function submitSignedAuditFeeTransaction({ signedXdr, userAddress, 
   };
 }
 
+/**
+ * Builds an unsigned on-chain transaction for purchasing a prepaid audit credit package (30, 60, or 90 XLM)
+ */
+export async function buildPackagePurchaseTransaction({ userAddress, packageId, network = 'testnet' }) {
+  if (!userAddress) {
+    throw new Error('User wallet address is required to build package purchase transaction.');
+  }
+
+  const { getPackageById } = await import('./creditStore.js');
+  const pkg = getPackageById(packageId);
+  if (!pkg) {
+    throw new Error(`Invalid package ID ${packageId}. Valid packages: 1 (Starter: 30 XLM), 2 (Growth: 60 XLM), 3 (Professional: 90 XLM).`);
+  }
+
+  const net = getServerForNetwork(network);
+  const account = await loadOrFundAccount(userAddress, net.server, network);
+
+  const tx = new TransactionBuilder(account, {
+    fee: '100000',
+    networkPassphrase: net.networkPassphrase,
+  })
+    .addOperation(
+      Operation.payment({
+        destination: TREASURY_ADDRESS,
+        asset: Asset.native(),
+        amount: String(pkg.priceXLM.toFixed(7)),
+      })
+    )
+    .addMemo(Memo.text(`Solace:Pkg${pkg.id}:${pkg.credits}Audits`))
+    .setTimeout(300)
+    .build();
+
+  return {
+    success: true,
+    xdr: tx.toXDR(),
+    networkPassphrase: net.networkPassphrase,
+    packageId: pkg.id,
+    packageName: pkg.name,
+    priceXLM: pkg.priceXLM,
+    credits: pkg.credits,
+    currency: 'XLM',
+    payer: userAddress,
+    recipient: TREASURY_ADDRESS,
+  };
+}
+
+/**
+ * Submits the user-signed package purchase transaction to the Stellar ledger and grants non-expiring audit credits
+ */
+export async function submitSignedPackagePurchaseTransaction({ signedXdr, userAddress, packageId, network = 'testnet' }) {
+  if (!signedXdr || !userAddress || !packageId) {
+    throw new Error('signedXdr, userAddress, and packageId are required.');
+  }
+
+  const { getPackageById, recordPackagePurchase } = await import('./creditStore.js');
+  const pkg = getPackageById(packageId);
+  if (!pkg) {
+    throw new Error(`Invalid package ID: ${packageId}`);
+  }
+
+  const net = getServerForNetwork(network);
+  const horizonUrl =
+    network === 'mainnet' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org';
+  const horizonServer = new Horizon.Server(horizonUrl);
+
+  const tx = TransactionBuilder.fromXDR(signedXdr, net.networkPassphrase);
+  console.log(`[+] [SorobanService] Broadcasting package purchase tx (${pkg.name} - ${pkg.priceXLM} XLM) to Stellar ${network}...`);
+
+  const submitResult = await horizonServer.submitTransaction(tx);
+  const txHash = submitResult.hash;
+  const explorerUrl = `${net.explorerBase}/tx/${txHash}`;
+
+  console.log(`[✓] [SorobanService] Package purchase confirmed on-chain! Tx: ${txHash}`);
+
+  // Credit accounting grant
+  const updatedBalance = recordPackagePurchase({
+    userAddress,
+    packageId: pkg.id,
+    txHash,
+    explorerUrl,
+    amountXLM: pkg.priceXLM,
+  });
+
+  return {
+    success: true,
+    status: 'CONFIRMED',
+    transactionHash: txHash,
+    packageId: pkg.id,
+    packageName: pkg.name,
+    priceXLM: pkg.priceXLM,
+    creditsGranted: pkg.credits,
+    payer: userAddress,
+    recipient: TREASURY_ADDRESS,
+    explorerUrl,
+    timestamp: new Date().toISOString(),
+    creditBalance: updatedBalance,
+  };
+}
+
 export default {
   getContractInfo,
   getOnChainAudit,
@@ -490,5 +589,7 @@ export default {
   processAuditFeePayment,
   buildAuditFeeTransaction,
   submitSignedAuditFeeTransaction,
+  buildPackagePurchaseTransaction,
+  submitSignedPackagePurchaseTransaction,
 };
 

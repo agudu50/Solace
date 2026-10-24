@@ -59,7 +59,7 @@ pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
       'The audit risk score, auditor keypair signature, and contract SHA-256 hash are submitted via an active Freighter session to the deployed solace_core Soroban contract on Stellar Testnet or Mainnet, creating a permanent on-chain record.',
     detailPoints: [
       'Anchored on solace_core (CAC2TVMF...V6PNPN2)',
-      '1.0 XLM micro-fee routed to protocol rent treasury',
+      '1 audit credit consumed from prepaid non-expiring bundle',
       'Publicly verifiable on Stellar Expert and Soroban RPC',
     ],
     codePreview: `// Step 3: Soroban On-Chain Anchor
