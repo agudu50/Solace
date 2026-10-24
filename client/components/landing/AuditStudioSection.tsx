@@ -45,6 +45,52 @@ export default function AuditStudioSection() {
     setTimeout(() => {
       setIsAuditing(false);
       setAuditDone(true);
+
+      const newAudit = {
+        id: `audit-${Date.now()}`,
+        contract: contractName || 'VaultContract.rs',
+        contractName: contractName || 'VaultContract.rs',
+        hash: contractHash,
+        contractHash: contractHash,
+        auditType: auditMode === 'PRE' ? 'PRE_DEPLOYMENT' : 'POST_DEPLOYMENT',
+        riskScore: 95,
+        isSecure: true,
+        auditor: walletKey || 'GBWSB2X7WUXPZXW2HQY2CYHCKY76T7G3R4H5P3WXZHAYL7SF3FDYPI',
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        ledgerSequence: `#${Math.floor(4829100 + Math.random() * 50)}`,
+        invariants: [
+          'Invariant-1: require_auth() on State Mutations',
+          'Invariant-2: Storage TTL Rent Extension Bound',
+          'Invariant-4: Reentrancy CEI Ordering',
+        ],
+        vulnerabilities: [
+          {
+            title: 'Missing Authorization on withdraw() Endpoint',
+            severity: 'CRITICAL',
+            description: 'Original code did not enforce to.require_auth() or admin signature before balance deduction.',
+            recommendation: 'Injected to.require_auth() directly prior to ledger balance read and storage deduction.',
+          },
+          {
+            title: 'Unchecked Re-initialization on init()',
+            severity: 'HIGH',
+            description: 'Admin key could be overwritten if init was invoked subsequent times.',
+            recommendation: 'Added env.storage().instance().has(&DataKey::Admin) panic guard check.',
+          },
+        ],
+      };
+
+      try {
+        const stored = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
+        const filtered = Array.isArray(stored)
+          ? stored.filter((item: any) => (item.contract || item.contractName) !== newAudit.contract)
+          : [];
+        localStorage.setItem('solace_audit_history', JSON.stringify([newAudit, ...filtered]));
+      } catch (_) {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('solace-audit-completed', { detail: newAudit }));
+      }
     }, 900);
   };
 
@@ -59,6 +105,34 @@ export default function AuditStudioSection() {
     setTimeout(() => {
       setAnchoring(false);
       setAnchored(true);
+
+      const anchorPayload = {
+        contract: contractName || 'VaultContract.rs',
+        contractName: contractName || 'VaultContract.rs',
+        hash: contractHash,
+        contractHash: contractHash,
+        auditType: auditMode === 'PRE' ? 'PRE_DEPLOYMENT' : 'POST_DEPLOYMENT',
+        riskScore: 95,
+        isSecure: true,
+        auditor: walletKey || 'GBWSB2X7WUXPZXW2HQY2CYHCKY76T7G3R4H5P3WXZHAYL7SF3FDYPI',
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        ledgerSequence: `#4829105`,
+        isAnchored: true,
+        txHash,
+      };
+
+      try {
+        const stored = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
+        const filtered = Array.isArray(stored)
+          ? stored.filter((item: any) => (item.contract || item.contractName) !== anchorPayload.contract)
+          : [];
+        localStorage.setItem('solace_audit_history', JSON.stringify([anchorPayload, ...filtered]));
+      } catch (_) {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('solace-audit-completed', { detail: anchorPayload }));
+      }
     }, 1200);
   };
 
@@ -308,12 +382,12 @@ to.require_auth();`}</pre>
                       TxHash: {txHash.slice(0, 24)}...
                     </div>
                     <a
-                      href="https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2"
+                      href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[11px] text-accent font-bold underline flex items-center gap-1 mt-1"
                     >
-                      <span>Verify on Stellar Expert</span>
+                      <span>Verify on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>

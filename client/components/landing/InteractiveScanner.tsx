@@ -273,6 +273,46 @@ export default function InteractiveScanner() {
       setScanStage('Solace AI Verification & Ledger Seal Ready');
       setIsScanning(false);
       setScanCompleted(true);
+
+      const scanReport = {
+        id: `scan-${Date.now()}`,
+        contract: selectedSample.filename,
+        contractName: selectedSample.filename,
+        hash: selectedSample.contractHash,
+        contractHash: selectedSample.contractHash,
+        auditType: 'PRE_DEPLOYMENT',
+        riskScore: selectedSample.riskScore,
+        isSecure: selectedSample.riskScore >= 90,
+        auditor: 'GBWSB2X7WUXPZXW2HQY2CYHCKY76T7G3R4H5P3WXZHAYL7SF3FDYPI',
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        ledgerSequence: '#4829104',
+        invariants: [
+          'Invariant-1: require_auth() on State Mutations',
+          'Invariant-2: Storage TTL Rent Extension Bound',
+          'Invariant-3: Safe Checked Arithmetic',
+        ],
+        vulnerabilities: [
+          {
+            title: selectedSample.vulnTitle,
+            severity: selectedSample.severity,
+            description: selectedSample.astExplanation,
+            recommendation: selectedSample.fixedSnippet,
+          },
+        ],
+      };
+
+      try {
+        const stored = JSON.parse(localStorage.getItem('solace_audit_history') || '[]');
+        const filtered = Array.isArray(stored)
+          ? stored.filter((item: any) => (item.contract || item.contractName) !== scanReport.contract)
+          : [];
+        localStorage.setItem('solace_audit_history', JSON.stringify([scanReport, ...filtered]));
+      } catch (_) {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('solace-audit-completed', { detail: scanReport }));
+      }
     }, 1350);
   };
 

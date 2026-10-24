@@ -12,6 +12,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useWallet } from '../../context/WalletContext';
 
 const LAYERS = [
   {
@@ -49,6 +50,7 @@ const LAYERS = [
 ];
 
 export default function ArchitectureSection() {
+  const { network } = useWallet();
   const [copiedContract, setCopiedContract] = useState<boolean>(false);
   const contractId = 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
@@ -151,7 +153,7 @@ export default function ArchitectureSection() {
               <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse shrink-0" />
               <div className="text-left">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-bold block">
-                  Deployed On-Chain Contract (Stellar Testnet Protocol 22)
+                  Deployed On-Chain Contract (Stellar {network === 'mainnet' ? 'Mainnet Production' : 'Testnet Protocol 22'})
                 </span>
                 <span className="font-mono text-xs sm:text-sm font-bold text-accent break-all">
                   {contractId}
@@ -170,12 +172,12 @@ export default function ArchitectureSection() {
               </button>
 
               <a
-                href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
+                href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${contractId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-white/20 transition flex items-center gap-1.5"
               >
-                <span>Stellar Expert</span>
+                <span>Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>

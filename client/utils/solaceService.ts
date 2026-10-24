@@ -1,4 +1,14 @@
-import { isConnected, requestAccess, getNetwork, getNetworkDetails, signTransaction, signMessage } from '@stellar/freighter-api';
+import {
+  isConnected,
+  requestAccess,
+  getNetwork,
+  getNetworkDetails,
+  signTransaction,
+  signMessage,
+  WatchWalletChanges,
+} from '@stellar/freighter-api';
+
+export { WatchWalletChanges };
 
 const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -7,42 +17,48 @@ export const CONTRACT_ID: string =
   process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
 /**
- * Detect network automatically from connected Freighter wallet or production environment
+ * Detect network automatically from connected Freighter wallet or stored preference
  */
 export async function detectWalletNetwork(): Promise<'testnet' | 'mainnet'> {
   if (typeof window === 'undefined') return 'testnet';
 
-  const isProdEnv = process.env.NODE_ENV === 'production';
-
   try {
     const detailsPromise = getNetworkDetails();
-    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2000));
+    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1800));
     const details: any = await Promise.race([detailsPromise, timeoutPromise]);
 
-    if (details) {
+    if (details && !details.error) {
       const net = String(details.network || details.networkPassphrase || '').toUpperCase();
       if (net.includes('PUBLIC') || net.includes('MAINNET')) {
         return 'mainnet';
       }
-      if (net.includes('TEST')) {
+      if (net.includes('TEST') || net.includes('FUTURE')) {
         return 'testnet';
       }
     }
 
     const netPromise = getNetwork();
     const netName: any = await Promise.race([netPromise, timeoutPromise]);
-    if (netName) {
+    if (netName && !netName.error) {
       const str = String(typeof netName === 'string' ? netName : netName?.network || '').toUpperCase();
       if (str.includes('PUBLIC') || str.includes('MAINNET')) {
         return 'mainnet';
       }
-      if (str.includes('TEST')) {
+      if (str.includes('TEST') || str.includes('FUTURE')) {
         return 'testnet';
       }
     }
   } catch (_) {}
 
-  return isProdEnv ? 'mainnet' : 'testnet';
+  // Respect user-selected persistent preference in localStorage
+  try {
+    const stored = localStorage.getItem('solace-network');
+    if (stored === 'mainnet' || stored === 'testnet') {
+      return stored;
+    }
+  } catch (_) {}
+
+  return process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet';
 }
 
 /**

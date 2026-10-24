@@ -33,10 +33,9 @@ import {
 } from 'lucide-react';
 import { connectWallet, detectWalletNetwork, CONTRACT_ID } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
-
 export default function Navbar() {
   const pathname = usePathname();
-  const { walletKey, network, connecting, connect, disconnect, setNetwork } = useWallet();
+  const { walletKey, network, connecting, connect, disconnect, setNetwork, toggleNetwork } = useWallet();
   const [notice, setNotice] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
@@ -171,14 +170,17 @@ export default function Navbar() {
 
         {/* Right Tools (Network, Theme Toggle, Search, Bell, Settings, Wallet) - Compact on Mobile */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* System-Determined Network Status Indicator */}
-          <div
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-xs text-[10px] sm:text-xs font-semibold shrink-0 transition-colors ${
+          {/* Interactive Live Network Switcher */}
+          <button
+            type="button"
+            onClick={toggleNetwork}
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-xs text-[10px] sm:text-xs font-semibold shrink-0 transition cursor-pointer hover:opacity-85 active:scale-95 ${
               network === 'mainnet'
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
                 : 'bg-accent/10 border-accent/25 text-accent'
             }`}
-            title={`Active Network: Stellar ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Staging)'}`}
+            title={`Active Stellar Network: ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'} • Click to toggle`}
+            aria-label="Toggle network"
           >
             <span
               className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full inline-block ${
@@ -189,9 +191,9 @@ export default function Navbar() {
               {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
             </span>
             <span className="text-[10px] opacity-75 hidden md:inline">
-              ({network === 'mainnet' ? 'Production' : 'Staging'})
+              ({network === 'mainnet' ? 'Production' : 'Protocol 22'})
             </span>
-          </div>
+          </button>
 
           {/* Theme Toggle Button */}
           <button

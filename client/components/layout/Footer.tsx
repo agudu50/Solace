@@ -171,12 +171,12 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
+                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${contractId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-accent transition flex items-center gap-1.5"
                 >
-                  <span>solace_core on Stellar Expert</span>
+                  <span>solace_core on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" />
                 </a>
               </li>

@@ -41,30 +41,6 @@ interface LedgerReport {
 
 const DEFAULT_REPORTS: LedgerReport[] = [
   {
-    id: 'rep-00',
-    contractName: 'VulnerableCrowdfunding',
-    contractHash: 'ea63f0d3ca6af6b927474031afc834154ba57749b4d20e30be856d2cc539a30e',
-    auditType: 'PRE_DEPLOYMENT',
-    riskScore: 95,
-    isSecure: true,
-    auditor: 'GBWSB2X7WUXPZXW2HQY2CYHCKY76T7G3R4H5P3WXZHAYL7SF3FDYPI',
-    timestamp: '16 Oct 2026 06:44 PM',
-    ledgerSequence: '#4829104',
-    invariants: [
-      'Invariant-1: require_auth() on State Mutations',
-      'Invariant-2: Storage TTL Rent Extension Bound',
-      'Invariant-4: Reentrancy CEI Ordering',
-    ],
-    vulnerabilities: [
-      {
-        title: 'Missing Authorization on withdraw() Endpoint',
-        severity: 'CRITICAL',
-        description: 'Original code did not enforce to.require_auth() or admin signature before balance deduction.',
-        recommendation: 'Injected to.require_auth() directly prior to ledger balance read and storage deduction.',
-      },
-    ],
-  },
-  {
     id: 'rep-01',
     contractName: 'VaultContract.rs',
     contractHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -141,51 +117,142 @@ const DEFAULT_REPORTS: LedgerReport[] = [
       },
     ],
   },
+  {
+    id: 'rep-04',
+    contractName: 'LiquidityPoolSwap.rs',
+    contractHash: 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e',
+    auditType: 'PRE_DEPLOYMENT',
+    riskScore: 96,
+    isSecure: true,
+    auditor: 'GCVBNM987654321QWERTYUIOPASDFGHJKLZXCVBNM87654321QWER',
+    timestamp: '2026-10-21 14:10 UTC',
+    ledgerSequence: '#4824310',
+    invariants: [
+      'Invariant-3: Safe Checked Arithmetic (checked_add/sub)',
+      'Invariant-4: Reentrancy CEI Ordering',
+      'Invariant-6: Host Panic Bound Verification',
+    ],
+    vulnerabilities: [
+      {
+        title: 'Unchecked Arithmetic in Fee Computation',
+        severity: 'MEDIUM',
+        description: 'Intermediate fee math could overflow the Soroban VM on extreme high token swap amounts.',
+        recommendation: 'Wrapped multiplication in checked_mul() and checked_div() with CustomError return.',
+      },
+    ],
+  },
 ];
 
+function deduplicateReports(incoming: LedgerReport[], fallbackDefaults: LedgerReport[]): LedgerReport[] {
+  const seen = new Set<string>();
+  const result: LedgerReport[] = [];
+
+  for (const r of [...incoming, ...fallbackDefaults]) {
+    const key = `${(r.contractHash || '').toLowerCase()}::${(r.contractName || '').toLowerCase()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(r);
+    }
+  }
+  return result;
+}
+
 export default function ReportsSection() {
-  const { network } = useWallet();
+  const { network, toggleNetwork } = useWallet();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterMode, setFilterMode] = useState<'ALL' | 'SECURE' | 'LOCAL'>('ALL');
   const [reports, setReports] = useState<LedgerReport[]>(DEFAULT_REPORTS);
   const [expandedId, setExpandedId] = useState<string | null>('rep-01');
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
+  const [liveNotice, setLiveNotice] = useState<string | null>(null);
 
-  // Load any locally audited contracts from localStorage
+  // Load and live-sync any audited contracts from localStorage or live events
   useEffect(() => {
-    try {
-      const storedHistory = localStorage.getItem('solace_audit_history');
-      if (storedHistory) {
-        const parsed = JSON.parse(storedHistory);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const localConverted: LedgerReport[] = parsed.map((item: any, idx: number) => ({
-            id: `local-${idx}`,
-            contractName: item.contract || 'CustomContract.rs',
-            contractHash: item.hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-            auditType: item.auditType || 'PRE_DEPLOYMENT',
-            riskScore: item.riskScore ?? 95,
-            isSecure: item.isSecure ?? true,
-            auditor: item.auditor || 'Solace Signer',
-            timestamp: item.date ? `${item.date} ${item.time || ''}` : 'Recent Session',
-            ledgerSequence: '#4829104',
-            invariants: [
+    const syncReports = (newAuditDetail?: any) => {
+      try {
+        let localConverted: LedgerReport[] = [];
+        const storedHistory = localStorage.getItem('solace_audit_history');
+        if (storedHistory) {
+          const parsed = JSON.parse(storedHistory);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            localConverted = parsed.map((item: any, idx: number) => ({
+              id: item.id || `local-${idx}`,
+              contractName: item.contract || item.contractName || 'CustomContract.rs',
+              contractHash: item.hash || item.contractHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+              auditType: item.auditType || 'PRE_DEPLOYMENT',
+              riskScore: item.riskScore ?? 95,
+              isSecure: item.isSecure ?? ((item.riskScore ?? 95) >= 90),
+              auditor: item.auditor || 'Solace Signer',
+              timestamp: item.date ? `${item.date} ${item.time || ''}` : 'Recent Session',
+              ledgerSequence: item.ledgerSequence || '#4829104',
+              invariants: item.invariants || [
+                'Invariant-1: require_auth() Enforced',
+                'Invariant-2: Storage TTL Rent Protected',
+                'Invariant-4: Reentrancy Safe',
+              ],
+              vulnerabilities: (item.vulnerabilities || []).map((v: any) => ({
+                title: v.title || 'Invariant Flaw',
+                severity: v.severity || 'HIGH',
+                description: v.description || 'AST static analysis finding detected.',
+                recommendation: v.recommendation || 'Apply suggested remediation pattern.',
+              })),
+            }));
+          }
+        }
+
+        if (newAuditDetail) {
+          const liveItem: LedgerReport = {
+            id: newAuditDetail.id || `live-${Date.now()}`,
+            contractName: newAuditDetail.contract || newAuditDetail.contractName || 'AuditedContract.rs',
+            contractHash: newAuditDetail.hash || newAuditDetail.contractHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+            auditType: newAuditDetail.auditType || 'PRE_DEPLOYMENT',
+            riskScore: newAuditDetail.riskScore ?? 95,
+            isSecure: newAuditDetail.isSecure ?? ((newAuditDetail.riskScore ?? 95) >= 90),
+            auditor: newAuditDetail.auditor || 'Solace Signer',
+            timestamp: newAuditDetail.date ? `${newAuditDetail.date} ${newAuditDetail.time || ''}` : 'Just Now',
+            ledgerSequence: newAuditDetail.ledgerSequence || '#4829105',
+            invariants: newAuditDetail.invariants || [
               'Invariant-1: require_auth() Enforced',
               'Invariant-2: Storage TTL Rent Protected',
               'Invariant-4: Reentrancy Safe',
             ],
-            vulnerabilities: (item.vulnerabilities || []).map((v: any) => ({
+            vulnerabilities: (newAuditDetail.vulnerabilities || []).map((v: any) => ({
               title: v.title || 'Invariant Flaw',
               severity: v.severity || 'HIGH',
               description: v.description || 'AST static analysis finding detected.',
               recommendation: v.recommendation || 'Apply suggested remediation pattern.',
             })),
-          }));
-
-          // Merge local audits first, followed by default verified reports
-          setReports([...localConverted, ...DEFAULT_REPORTS]);
+          };
+          localConverted = [liveItem, ...localConverted];
+          setExpandedId(liveItem.id);
+          setLiveNotice(`⚡ Verified On-Chain Report Added: ${liveItem.contractName}`);
+          setTimeout(() => setLiveNotice(null), 4000);
         }
+
+        const merged = deduplicateReports(localConverted, DEFAULT_REPORTS);
+        setReports(merged);
+      } catch (_) {}
+    };
+
+    syncReports();
+
+    const handleAuditCompleted = (e: any) => {
+      syncReports(e.detail);
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'solace_audit_history') {
+        syncReports();
       }
-    } catch (_) {}
+    };
+
+    window.addEventListener('solace-audit-completed', handleAuditCompleted);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('solace-audit-completed', handleAuditCompleted);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const handleCopyHash = (hash: string) => {
@@ -211,10 +278,44 @@ export default function ReportsSection() {
       <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold mb-3 shadow-xs">
-            <FileText className="w-4 h-4 text-accent" />
-            <span>On-Chain Provenance Ledger</span>
+          {/* Active Network Switcher Badge */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+            <button
+              type="button"
+              onClick={toggleNetwork}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold cursor-pointer transition shadow-xs hover:opacity-85 active:scale-95 ${
+                network === 'mainnet'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-accent/10 border-accent/25 text-accent'
+              }`}
+              title={`Active Network: Stellar ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'} • Click to toggle`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full inline-block ${
+                  network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
+                }`}
+              />
+              <span className="font-bold">
+                Stellar {network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'}
+              </span>
+              <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 opacity-75">
+                Live
+              </span>
+            </button>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold shadow-xs">
+              <FileText className="w-3.5 h-3.5 text-accent" />
+              <span>On-Chain Provenance Ledger</span>
+            </div>
           </div>
+
+          {liveNotice && (
+            <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold animate-in fade-in duration-200 shadow-xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>{liveNotice}</span>
+            </div>
+          )}
+
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
             Verified Ledger Reports
           </h2>
@@ -449,12 +550,12 @@ export default function ReportsSection() {
                         </div>
 
                         <a
-                          href={`https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`}
+                          href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-accent hover:underline font-bold self-start sm:self-auto shrink-0"
                         >
-                          <span>Verify on Stellar Expert</span>
+                          <span>Verify on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>

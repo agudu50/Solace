@@ -1,7 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { connectWallet as freighterConnect, detectWalletNetwork, checkFreighterInstalled } from '../utils/solaceService';
+import {
+  connectWallet as freighterConnect,
+  detectWalletNetwork,
+  checkFreighterInstalled,
+  WatchWalletChanges,
+} from '../utils/solaceService';
 
 interface WalletContextType {
   walletKey: string;
@@ -11,6 +16,7 @@ interface WalletContextType {
   connect: () => Promise<string>;
   disconnect: () => void;
   setNetwork: (network: 'testnet' | 'mainnet') => void;
+  toggleNetwork: () => void;
   setWalletKeyDirectly: (key: string) => void;
 }
 
@@ -91,7 +97,12 @@ export function WalletProvider({
     }
   }, [syncNetworkToStorageAndCookies]);
 
-  // Initial client hydration check
+  const toggleNetwork = useCallback(() => {
+    const next = network === 'mainnet' ? 'testnet' : 'mainnet';
+    setNetwork(next);
+  }, [network, setNetwork]);
+
+  // Initial client hydration check and live wallet watcher
   useEffect(() => {
     try {
       const stored = localStorage.getItem('solace_connected_wallet');
@@ -110,12 +121,38 @@ export function WalletProvider({
       setFreighterReady(installed);
     });
 
+    // Detect actual wallet network from Freighter API
     detectWalletNetwork().then((detected) => {
       if (detected) {
         setNetworkState(detected);
         syncNetworkToStorageAndCookies(detected);
       }
     });
+
+    // Real-time WatchWalletChanges from Freighter extension
+    let watcher: any = null;
+    try {
+      if (typeof window !== 'undefined' && WatchWalletChanges) {
+        watcher = new WatchWalletChanges(2000);
+        watcher.watch((params: any) => {
+          if (params) {
+            const netStr = String(params.network || params.networkPassphrase || '').toUpperCase();
+            if (netStr.includes('PUBLIC') || netStr.includes('MAINNET')) {
+              setNetworkState('mainnet');
+              syncNetworkToStorageAndCookies('mainnet');
+            } else if (netStr.includes('TEST') || netStr.includes('FUTURE')) {
+              setNetworkState('testnet');
+              syncNetworkToStorageAndCookies('testnet');
+            }
+
+            if (params.address && /^G[A-Z0-9]{55}$/.test(params.address)) {
+              setWalletKeyState(params.address);
+              syncWalletToStorageAndCookies(params.address);
+            }
+          }
+        });
+      }
+    } catch (_) {}
 
     const handleWalletEvent = (e: any) => {
       const key = e.detail?.walletKey ?? (typeof window !== 'undefined' ? localStorage.getItem('solace_connected_wallet') : '') ?? '';
@@ -131,20 +168,33 @@ export function WalletProvider({
       }
     };
 
-    window.addEventListener('solace-wallet-updated', handleWalletEvent);
-    window.addEventListener('solace-network-updated', handleNetworkEvent);
-    window.addEventListener('focus', () => {
+    const handleFocus = async () => {
       try {
         const stored = localStorage.getItem('solace_connected_wallet');
         if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
           setWalletKeyState(stored);
         }
+        const detected = await detectWalletNetwork();
+        if (detected) {
+          setNetworkState(detected);
+          syncNetworkToStorageAndCookies(detected);
+        }
       } catch (_) {}
-    });
+    };
+
+    window.addEventListener('solace-wallet-updated', handleWalletEvent);
+    window.addEventListener('solace-network-updated', handleNetworkEvent);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
+      if (watcher && typeof watcher.stop === 'function') {
+        try {
+          watcher.stop();
+        } catch (_) {}
+      }
       window.removeEventListener('solace-wallet-updated', handleWalletEvent);
       window.removeEventListener('solace-network-updated', handleNetworkEvent);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [syncWalletToStorageAndCookies, syncNetworkToStorageAndCookies]);
 
@@ -181,6 +231,7 @@ export function WalletProvider({
         connect,
         disconnect,
         setNetwork,
+        toggleNetwork,
         setWalletKeyDirectly,
       }}
     >
