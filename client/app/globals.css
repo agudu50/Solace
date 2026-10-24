@@ -71,3 +71,30 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(200, 5, 82, 0.45) rgba(15, 23, 42, 0.7);
 }
+
+/* Sleek Remediation Code Horizontal Scrollbar */
+.remediation-code-scrollbar::-webkit-scrollbar {
+  height: 5px;
+}
+
+.remediation-code-scrollbar::-webkit-scrollbar-track {
+  background: rgba(9, 12, 21, 0.95);
+  border-radius: 9999px;
+  margin: 0 4px;
+}
+
+.remediation-code-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--e-global-color-accent);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background-color 0.2s ease;
+}
+
+.remediation-code-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--e-global-color-accent-hover);
+}
+
+.remediation-code-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--e-global-color-accent) rgba(9, 12, 21, 0.95);
+}

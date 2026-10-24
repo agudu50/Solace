@@ -47,7 +47,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors selection:bg-accent selection:text-white overflow-x-hidden">
+    <div className="relative w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors selection:bg-accent selection:text-white overflow-x-hidden">
       {/* Connected Auditor Session Quick-Bar (Shown when wallet is authenticated) */}
       {walletKey && (
         <aside

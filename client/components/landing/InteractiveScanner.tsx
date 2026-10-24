@@ -317,12 +317,14 @@ export default function InteractiveScanner() {
                 <Code2 className="w-4 h-4 shrink-0" />
                 <span>{sample.name}</span>
                 <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
-                    sample.severity === 'CRITICAL'
-                      ? 'bg-red-500/20 text-red-100'
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : sample.severity === 'CRITICAL'
+                      ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30'
                       : sample.severity === 'HIGH'
-                      ? 'bg-amber-500/20 text-amber-100'
-                      : 'bg-blue-500/20 text-blue-100'
+                      ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
+                      : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30'
                   }`}
                 >
                   {sample.severity}
@@ -482,7 +484,7 @@ export default function InteractiveScanner() {
                   <Cpu className="w-3.5 h-3.5 text-accent" />
                   <span>Solace AI Remediation Patch</span>
                 </span>
-                <div className="p-3.5 rounded-2xl bg-[#090c15] border border-emerald-500/40 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner">
+                <div className="p-3.5 rounded-2xl bg-[#090c15] border border-emerald-500/40 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner remediation-code-scrollbar">
                   <pre>
                     {selectedSample.fixedSnippet.split('\n').map((snipLine, sIdx) => (
                       <div key={sIdx} className="leading-relaxed whitespace-pre">
