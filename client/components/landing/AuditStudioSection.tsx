@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import { useWallet } from '../../context/WalletContext';
+import { motion } from 'framer-motion';
 
 export default function AuditStudioSection() {
   const { walletKey, network } = useWallet();
@@ -68,24 +69,48 @@ export default function AuditStudioSection() {
   };
 
   return (
-    <section id="audit" className="relative w-full py-16 sm:py-24 bg-white dark:bg-[#0e1320] border-t border-slate-200 dark:border-slate-800">
+    <section id="audit" className="relative w-full py-16 sm:py-24 bg-white/40 dark:bg-[#090b10]/40 border-t border-slate-200/80 dark:border-white/10 backdrop-blur-md">
       <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold mb-3 shadow-xs">
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold mb-3 shadow-xs"
+          >
             <ShieldCheck className="w-4 h-4 text-accent" />
             <span>On-Page Security Studio</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4"
+          >
             Solace Audit Studio
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed"
+          >
             Run complete static AST invariant audits on your Soroban smart contracts directly on this page. Inspect risk scores, review Gemini AI remediations, and inscribe audit proofs onto the Stellar ledger.
-          </p>
+          </motion.p>
         </div>
 
         {/* Studio Controls Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-2xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-2xl bg-white/80 dark:bg-[#111726]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-sm"
+        >
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
               Audit Mode:
@@ -134,7 +159,7 @@ export default function AuditStudioSection() {
               <span>{isAuditing ? 'Running AST Engine...' : 'Run Security Audit'}</span>
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Main 2-Column Studio Canvas */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

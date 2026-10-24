@@ -18,6 +18,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LedgerReport {
   id: string;
@@ -39,6 +40,30 @@ interface LedgerReport {
 }
 
 const DEFAULT_REPORTS: LedgerReport[] = [
+  {
+    id: 'rep-00',
+    contractName: 'VulnerableCrowdfunding',
+    contractHash: 'ea63f0d3ca6af6b927474031afc834154ba57749b4d20e30be856d2cc539a30e',
+    auditType: 'PRE_DEPLOYMENT',
+    riskScore: 95,
+    isSecure: true,
+    auditor: 'GBWSB2X7WUXPZXW2HQY2CYHCKY76T7G3R4H5P3WXZHAYL7SF3FDYPI',
+    timestamp: '16 Oct 2026 06:44 PM',
+    ledgerSequence: '#4829104',
+    invariants: [
+      'Invariant-1: require_auth() on State Mutations',
+      'Invariant-2: Storage TTL Rent Extension Bound',
+      'Invariant-4: Reentrancy CEI Ordering',
+    ],
+    vulnerabilities: [
+      {
+        title: 'Missing Authorization on withdraw() Endpoint',
+        severity: 'CRITICAL',
+        description: 'Original code did not enforce to.require_auth() or admin signature before balance deduction.',
+        recommendation: 'Injected to.require_auth() directly prior to ledger balance read and storage deduction.',
+      },
+    ],
+  },
   {
     id: 'rep-01',
     contractName: 'VaultContract.rs',

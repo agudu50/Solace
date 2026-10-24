@@ -377,7 +377,7 @@ export default function InteractiveScanner() {
               </div>
 
               {/* On-Chain Anchor Inscription Details */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 space-y-2.5 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                   <span className="font-semibold">Ledger Destination</span>
                   <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
@@ -409,7 +409,7 @@ export default function InteractiveScanner() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-white/10 text-slate-500 dark:text-slate-400">
                   <span className="font-semibold">Protocol Inscription Fee</span>
                   <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                     1.0 XLM Micro-Fee
@@ -417,16 +417,16 @@ export default function InteractiveScanner() {
                 </div>
               </div>
 
-              {/* Launch Studio CTA */}
+              {/* Launch Studio CTA (Glide directly to #audit on single page) */}
               <div className="mt-5">
-                <Link
-                  href="/audit"
-                  className="w-full py-3 px-4 rounded-full bg-accent hover:bg-accent-hover text-white text-xs sm:text-sm font-bold shadow-md shadow-accent/25 transition flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
+                <a
+                  href="#audit"
+                  className="w-full py-3.5 px-4 rounded-full bg-accent hover:bg-accent-hover text-white text-xs sm:text-sm font-bold shadow-md shadow-accent/25 transition flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>Open Full Audit in Solace Studio</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
+                </a>
               </div>
             </div>
           </div>
