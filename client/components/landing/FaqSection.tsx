@@ -101,7 +101,8 @@ export default function FaqSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.06 }}
-                className={`rounded-2xl sm:rounded-3xl border transition-all duration-200 overflow-hidden ${
+                onMouseEnter={() => setOpenIdx(idx)}
+                className={`rounded-2xl sm:rounded-3xl border transition-all duration-200 overflow-hidden cursor-pointer ${
                   isOpen
                     ? 'bg-white/95 dark:bg-[#111726]/90 border-accent/60 shadow-xl shadow-accent/5 dark:shadow-black/50'
                     : 'bg-white/70 dark:bg-[#111726]/50 backdrop-blur-xl border-slate-200/80 dark:border-white/10 hover:border-accent/40 hover:bg-white/90 dark:hover:bg-[#111726]/70'
@@ -110,6 +111,7 @@ export default function FaqSection() {
                 <button
                   type="button"
                   onClick={() => toggle(idx)}
+                  onFocus={() => setOpenIdx(idx)}
                   className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 cursor-pointer"
                   aria-expanded={isOpen}
                 >

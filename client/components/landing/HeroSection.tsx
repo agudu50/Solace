@@ -67,8 +67,12 @@ export default function HeroSection() {
               Solace Security Core
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span className="text-xs font-bold text-accent flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-accent" />
+            <span className="text-xs font-bold text-accent flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9.5" />
+                <path d="M3.5 8.5h17" />
+                <path d="M3.5 15.5h17" />
+              </svg>
               <span>Stellar Protocol 22</span>
             </span>
           </motion.div>

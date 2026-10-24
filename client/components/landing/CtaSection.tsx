@@ -112,7 +112,14 @@ export default function CtaSection() {
                 <span>Non-Custodial Session</span>
               </span>
               <span>•</span>
-              <span>Stellar Protocol 22</span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9.5" />
+                  <path d="M3.5 8.5h17" />
+                  <path d="M3.5 15.5h17" />
+                </svg>
+                <span>Stellar Protocol 22</span>
+              </span>
               <span>•</span>
               <span>Zero Key Storage</span>
               <span>•</span>

@@ -20,6 +20,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import { useWallet } from '../../context/WalletContext';
 
 interface ContractSample {
   id: string;
@@ -239,6 +240,7 @@ function renderColoredRust(line: string) {
 }
 
 export default function InteractiveScanner() {
+  const { walletKey, connect } = useWallet();
   const [selectedSample, setSelectedSample] = useState<ContractSample>(SAMPLES[0]);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<number>(100);
@@ -253,7 +255,19 @@ export default function InteractiveScanner() {
     setScanStage('Awaiting AST Inspection');
   };
 
-  const handleRunScan = () => {
+  const handleRunScan = async () => {
+    let activeKey = walletKey;
+    if (!activeKey) {
+      try {
+        activeKey = await connect();
+      } catch (_) {
+        return;
+      }
+      if (!activeKey) {
+        return;
+      }
+    }
+
     setIsScanning(true);
     setScanProgress(15);
     setScanStage('Parsing Soroban Syn AST...');
@@ -283,7 +297,7 @@ export default function InteractiveScanner() {
         auditType: 'PRE_DEPLOYMENT',
         riskScore: selectedSample.riskScore,
         isSecure: selectedSample.riskScore >= 90,
-        auditor: 'GBWSB2X7WUXPZXW2HQY2CYHCKY76T7G3R4H5P3WXZHAYL7SF3FDYPI',
+        auditor: activeKey,
         date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         ledgerSequence: '#4829104',
@@ -375,9 +389,9 @@ export default function InteractiveScanner() {
         </div>
 
         {/* Live Simulator Workspace Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Left: Code Editor Terminal Window */}
-          <div className="lg:col-span-7 bg-white dark:bg-[#111726] rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col">
+          <div className="lg:col-span-7 bg-white dark:bg-[#111726] rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-full justify-between">
             {/* Terminal Window Header Bar */}
             <div className="flex items-center justify-between px-4 py-3 bg-slate-100/80 dark:bg-[#0a0d14]/80 border-b border-slate-200/80 dark:border-slate-800 text-xs font-mono">
               <div className="flex items-center gap-2">
@@ -398,7 +412,13 @@ export default function InteractiveScanner() {
                   className="px-3.5 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Play className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-                  <span>{isScanning ? 'Scanning...' : 'Run AST Scan'}</span>
+                  <span>
+                    {!walletKey
+                      ? 'Connect Wallet to Scan'
+                      : isScanning
+                      ? 'Scanning...'
+                      : 'Run AST Scan'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -414,7 +434,7 @@ export default function InteractiveScanner() {
             )}
 
             {/* Code Content with Line Numbers & Laser Scan Overlay */}
-            <div className="relative p-4 sm:p-6 font-mono text-xs sm:text-[13px] leading-relaxed overflow-x-auto bg-[#0a0d14] text-slate-200 modern-code-scrollbar">
+            <div className="relative p-4 sm:p-6 font-mono text-xs sm:text-[13px] leading-relaxed overflow-y-auto flex-1 bg-[#0a0d14] text-slate-200 modern-code-scrollbar min-h-[460px]">
               {/* Animated Laser Scanning Beam in Dominant Color */}
               {isScanning && (
                 <div className="absolute left-0 right-0 h-1 bg-accent border-b border-accent pointer-events-none shadow-sm shadow-accent animate-[bounce_1.5s_infinite]" />
@@ -473,9 +493,9 @@ export default function InteractiveScanner() {
           </div>
 
           {/* Right: Real-Time Findings & Cryptographic Inscription Panel */}
-          <div className="lg:col-span-5 flex flex-col gap-4">
+          <div className="lg:col-span-5 flex flex-col h-full">
             {/* Finding Card */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xl flex flex-col">
+            <div className="bg-white dark:bg-[#111726] rounded-3xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xl flex flex-col h-full justify-between">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   AST Invariant Report
