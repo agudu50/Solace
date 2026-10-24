@@ -12,7 +12,7 @@ import {
   FileCode,
   Terminal,
   ArrowUpRight,
-  Sparkles,
+  Cpu,
   Lock,
   Layers,
   Database,
@@ -49,7 +49,7 @@ const SAMPLES: ContractSample[] = [
     to: Address,
     amount: i128
 ) -> Result<i128, Error> {
-    // ⚠️ CRITICAL INVARIANT FLAW:
+    // CRITICAL INVARIANT FLAW:
     // Missing admin.require_auth() check!
     // Anyone can invoke this function and drain the vault!
     
@@ -67,7 +67,7 @@ const SAMPLES: ContractSample[] = [
     vulnCategory: 'Soroban Auth Invariant',
     severity: 'CRITICAL',
     riskScore: 72,
-    fixedSnippet: `// 🛡️ SOLACE AI REMEDIATION:
+    fixedSnippet: `// SOLACE AI REMEDIATION:
 admin.require_auth(); // Enforce Soroban cryptographic caller signature`,
     astExplanation:
       'Solace AST engine traversed all mutation endpoints and identified state modification of `DataKey::Balance` without a preceding `admin.require_auth()` signature verification.',
@@ -85,7 +85,7 @@ admin.require_auth(); // Enforce Soroban cryptographic caller signature`,
 ) -> Result<(), Error> {
     caller.require_auth();
     
-    // ⚠️ STORAGE RENT THREAT:
+    // STORAGE RENT THREAT:
     // Writing to persistent storage without extending TTL rent.
     // In Protocol 22, this state will be evicted by the ledger!
     env.storage().persistent().set(&caller, &record);
@@ -97,7 +97,7 @@ admin.require_auth(); // Enforce Soroban cryptographic caller signature`,
     vulnCategory: 'Ledger State Rent Eviction',
     severity: 'HIGH',
     riskScore: 68,
-    fixedSnippet: `// 🛡️ SOLACE AI REMEDIATION:
+    fixedSnippet: `// SOLACE AI REMEDIATION:
 env.storage().persistent().extend_ttl(&caller, 535_680, 535_680); // ~30 days rent longevity`,
     astExplanation:
       'Stellar Protocol 22 archives expired persistent storage keys. Without proactive TTL bump extension, user account balances and states face permanent ledger eviction.',
@@ -115,7 +115,7 @@ env.storage().persistent().extend_ttl(&caller, 535_680, 535_680); // ~30 days re
 ) -> Result<i128, Error> {
     caller.require_auth();
     
-    // ⚠️ HOST PANIC CRASH VECTOR:
+    // HOST PANIC CRASH VECTOR:
     // Raw arithmetic addition can overflow and crash the Soroban VM!
     let fee: i128 = (amount_in * 3) / 1000;
     let new_reserves: i128 = env.storage().instance().get(&DataKey::Reserve).unwrap() + amount_in;
@@ -127,7 +127,7 @@ env.storage().persistent().extend_ttl(&caller, 535_680, 535_680); // ~30 days re
     vulnCategory: 'Soroban VM Safety',
     severity: 'MEDIUM',
     riskScore: 58,
-    fixedSnippet: `// 🛡️ SOLACE AI REMEDIATION:
+    fixedSnippet: `// SOLACE AI REMEDIATION:
 let new_reserves = env.storage().instance().get(&DataKey::Reserve).unwrap()
     .checked_add(amount_in).ok_or(Error::ArithmeticOverflow)?;`,
     astExplanation:
@@ -135,6 +135,108 @@ let new_reserves = env.storage().instance().get(&DataKey::Reserve).unwrap()
     contractHash: 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e',
   },
 ];
+
+// High-speed syntax coloring function for Soroban Rust code
+function renderColoredRust(line: string) {
+  const trimmed = line.trim();
+  if (trimmed.startsWith('//')) {
+    const isWarning =
+      trimmed.includes('CRITICAL') ||
+      trimmed.includes('THREAT') ||
+      trimmed.includes('CRASH') ||
+      trimmed.includes('FLAW') ||
+      trimmed.includes('Missing') ||
+      trimmed.includes('Writing to persistent') ||
+      trimmed.includes('Raw arithmetic');
+    return (
+      <span className={isWarning ? 'text-red-400 font-bold' : 'text-slate-500 italic'}>
+        {line}
+      </span>
+    );
+  }
+
+  const tokenRegex =
+    /(\b(?:pub|fn|let|mut|if|return|match|else|true|false|struct|impl|use|mod|Ok|Err)\b|\b(?:Env|Address|i128|Result|Error|UserRecord|DataKey|Balance|Reserve|ArithmeticOverflow|InsufficientFunds)\b|\b(?:withdraw|save_record|swap_exact_tokens|storage|instance|persistent|get|set|unwrap|require_auth|extend_ttl|checked_add|ok_or)\b|\b\d+[\d_]*\b|"[^"]*"|\/\/.+$|[-><&:=+*/-]+|\s+|[^\s\w]+|\w+)/g;
+
+  const matches = line.match(tokenRegex);
+  if (!matches) return <span>{line}</span>;
+
+  return (
+    <>
+      {matches.map((token, i) => {
+        if (/^(pub|fn|let|mut|if|return|match|else|struct|impl|use|mod)$/.test(token)) {
+          return (
+            <span key={i} className="text-accent font-bold">
+              {token}
+            </span>
+          );
+        }
+        if (/^(Ok|Err)$/.test(token)) {
+          return (
+            <span key={i} className="text-amber-400 font-bold">
+              {token}
+            </span>
+          );
+        }
+        if (
+          /^(Env|Address|i128|Result|Error|UserRecord|DataKey|Balance|Reserve|ArithmeticOverflow|InsufficientFunds)$/.test(
+            token
+          )
+        ) {
+          return (
+            <span key={i} className="text-sky-400 font-semibold">
+              {token}
+            </span>
+          );
+        }
+        if (
+          /^(withdraw|save_record|swap_exact_tokens|storage|instance|persistent|get|set|unwrap|require_auth|extend_ttl|checked_add|ok_or)$/.test(
+            token
+          )
+        ) {
+          return (
+            <span key={i} className="text-emerald-400">
+              {token}
+            </span>
+          );
+        }
+        if (/^\d+[\d_]*$/.test(token)) {
+          return (
+            <span key={i} className="text-amber-300">
+              {token}
+            </span>
+          );
+        }
+        if (token.startsWith('"')) {
+          return (
+            <span key={i} className="text-emerald-300">
+              {token}
+            </span>
+          );
+        }
+        if (token.startsWith('//')) {
+          return (
+            <span key={i} className="text-slate-500 italic">
+              {token}
+            </span>
+          );
+        }
+        if (/^[-><&:=+*/-]+$/.test(token)) {
+          return (
+            <span key={i} className="text-slate-400 font-medium">
+              {token}
+            </span>
+          );
+        }
+        return (
+          <span key={i} className="text-slate-200">
+            {token}
+          </span>
+        );
+      })}
+    </>
+  );
+}
 
 export default function InteractiveScanner() {
   const [selectedSample, setSelectedSample] = useState<ContractSample>(SAMPLES[0]);
@@ -168,7 +270,7 @@ export default function InteractiveScanner() {
 
     setTimeout(() => {
       setScanProgress(100);
-      setScanStage('Gemini AI Verification & Ledger Seal Ready');
+      setScanStage('Solace AI Verification & Ledger Seal Ready');
       setIsScanning(false);
       setScanCompleted(true);
     }, 1350);
@@ -279,20 +381,29 @@ export default function InteractiveScanner() {
               <pre className="text-slate-300 font-mono">
                 {selectedSample.code.split('\n').map((line, idx) => {
                   const lineNum = idx + 1;
-                  const isVuln = scanCompleted && line.includes('⚠️');
+                  const isVuln =
+                    scanCompleted &&
+                    (line.includes('CRITICAL INVARIANT FLAW') ||
+                      line.includes('STORAGE RENT THREAT') ||
+                      line.includes('HOST PANIC CRASH VECTOR') ||
+                      line.includes('Missing admin.require_auth') ||
+                      line.includes('Writing to persistent storage') ||
+                      line.includes('Raw arithmetic addition'));
                   return (
                     <div
                       key={idx}
-                      className={`flex items-start gap-4 py-0.5 px-2 rounded-md ${
+                      className={`flex items-start gap-4 py-0.5 px-2 rounded-md transition-colors ${
                         isVuln
                           ? 'bg-red-950/60 text-red-200 border-l-4 border-red-500 font-bold'
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <span className="w-6 text-right text-slate-600 select-none shrink-0">
+                      <span className="w-6 text-right text-slate-600 select-none shrink-0 font-mono">
                         {lineNum}
                       </span>
-                      <span className="flex-1 whitespace-pre">{line}</span>
+                      <span className="flex-1 whitespace-pre font-mono">
+                        {renderColoredRust(line)}
+                      </span>
                     </div>
                   );
                 })}
@@ -368,11 +479,17 @@ export default function InteractiveScanner() {
               {/* AI Auto-Remediation Code Box */}
               <div className="mb-5">
                 <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-accent" />
-                  <span>Gemini Remediation Code</span>
+                  <Cpu className="w-3.5 h-3.5 text-accent" />
+                  <span>Solace AI Remediation Patch</span>
                 </span>
-                <div className="p-3.5 rounded-2xl bg-slate-900 border border-emerald-500/40 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner">
-                  <pre>{selectedSample.fixedSnippet}</pre>
+                <div className="p-3.5 rounded-2xl bg-[#090c15] border border-emerald-500/40 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner">
+                  <pre>
+                    {selectedSample.fixedSnippet.split('\n').map((snipLine, sIdx) => (
+                      <div key={sIdx} className="leading-relaxed whitespace-pre">
+                        {renderColoredRust(snipLine)}
+                      </div>
+                    ))}
+                  </pre>
                 </div>
               </div>
 

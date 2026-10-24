@@ -11,7 +11,7 @@ import {
   Code2,
   Terminal,
   ArrowRight,
-  Sparkles,
+  Cpu,
   Lock,
   Layers,
   Database,
@@ -99,7 +99,7 @@ export default function AuditStudioSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed"
           >
-            Run complete static AST invariant audits on your Soroban smart contracts directly on this page. Inspect risk scores, review Gemini AI remediations, and inscribe audit proofs onto the Stellar ledger.
+            Run complete static AST invariant audits on your Soroban smart contracts directly on this page. Inspect risk scores, review Solace AI remediations, and inscribe audit proofs onto the Stellar ledger.
           </motion.p>
         </div>
 
@@ -270,11 +270,11 @@ export default function AuditStudioSection() {
                 Line 38 (`withdraw`): State balance is decremented without verifying caller authorization via `to.require_auth()` or admin address signature.
               </p>
 
-              {/* Gemini AI Remediation Code */}
+              {/* Solace AI Remediation Code */}
               <div className="mb-4">
                 <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-accent" />
-                  <span>Gemini Remediation Patch</span>
+                  <Cpu className="w-3.5 h-3.5 text-accent" />
+                  <span>Solace AI Remediation Patch</span>
                 </span>
                 <div className="p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-xs border border-accent/30 overflow-x-auto">
                   <pre>{`// Enforce caller authorization:

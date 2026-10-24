@@ -12,6 +12,7 @@ import {
   Sparkles,
   Lock,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import HeroSection from '../components/landing/HeroSection';
 import StatsSection from '../components/landing/StatsSection';
 import FeaturesSection from '../components/landing/FeaturesSection';
@@ -23,6 +24,11 @@ import ReportsSection from '../components/landing/ReportsSection';
 import FaqSection from '../components/landing/FaqSection';
 import CtaSection from '../components/landing/CtaSection';
 import { useWallet } from '../context/WalletContext';
+
+const AmbientBackground3D = dynamic(
+  () => import('../components/landing/AmbientBackground3D'),
+  { ssr: false }
+);
 
 export default function LandingPage() {
   const { walletKey, network } = useWallet();
@@ -73,6 +79,9 @@ export default function LandingPage() {
           </div>
         </aside>
       )}
+
+      {/* Ambient 3D Motion Background (Throughout Entire Landing Page) */}
+      <AmbientBackground3D />
 
       {/* 1. Visually Rich 3D Hero Section */}
       <HeroSection />

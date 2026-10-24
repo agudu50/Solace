@@ -20,7 +20,7 @@ import { useWallet } from '../../context/WalletContext';
 const Hero3DCanvas = dynamic(() => import('./Hero3DCanvas'), {
   ssr: false,
   loading: () => (
-    <div className="relative w-full h-[460px] sm:h-[540px] lg:h-[620px] flex items-center justify-center">
+    <div className="relative w-full h-[340px] xs:h-[380px] sm:h-[540px] lg:h-[620px] flex items-center justify-center">
       <div className="relative w-64 h-64 flex items-center justify-center">
         <div className="absolute inset-0 rounded-full border-2 border-accent/40 animate-[spin_8s_linear_infinite]" />
         <div className="absolute inset-4 rounded-full border-2 border-accent/20 animate-[spin_12s_linear_infinite_reverse]" />
@@ -45,7 +45,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden pt-8 pb-16 sm:pt-14 sm:pb-24 lg:pt-16 lg:pb-28 bg-[#f4f5f8] dark:bg-[#090b10] transition-colors">
+    <section className="relative w-full overflow-hidden pt-8 pb-16 sm:pt-14 sm:pb-24 lg:pt-16 lg:pb-28 bg-transparent transition-colors">
       {/* Background Ambient Glows (Dominant #C80552) */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[650px] pointer-events-none overflow-hidden">
         <div className="absolute top-[-140px] left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-accent/12 rounded-full blur-[160px]" />
@@ -138,18 +138,18 @@ export default function HeroSection() {
         {/* 3D Liquid Motion Centerpiece with Floating Glassmorphic Cards (Dribbble Layout) */}
         <div className="relative w-full max-w-5xl mx-auto mt-2 sm:mt-6">
           {/* Ambient Lighting Behind Liquid Glass Sphere */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[540px] h-[340px] sm:h-[540px] bg-accent/15 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[540px] h-[300px] sm:h-[540px] bg-accent/15 rounded-full blur-[100px] sm:blur-[120px] pointer-events-none" />
 
           {/* Central Three.js Molten Fluid Glass Sphere Canvas */}
-          <div className="relative w-full h-[460px] sm:h-[560px] lg:h-[640px] flex items-center justify-center">
+          <div className="relative w-full h-[340px] xs:h-[380px] sm:h-[540px] lg:h-[620px] flex items-center justify-center">
             <Hero3DCanvas mode={active3DMode} onModeChange={setActive3DMode} />
 
-            {/* Left Floating Glassmorphic Card (Directly from Dribbble Reference) */}
+            {/* Desktop Left Floating Glassmorphic Card */}
             <motion.div
               initial={{ opacity: 0, x: -30, y: 20 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ duration: 0.9, delay: 0.4, ease: 'easeOut' }}
-              className="absolute left-2 sm:left-6 lg:left-8 top-1/3 -translate-y-1/2 z-20 max-w-[210px] sm:max-w-[260px] p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-[#111726]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-2xl shadow-slate-900/10 dark:shadow-black/60 group hover:scale-[1.03] transition-transform duration-300 pointer-events-auto"
+              className="hidden sm:block absolute left-4 lg:left-8 top-1/3 -translate-y-1/2 z-20 max-w-[240px] lg:max-w-[260px] p-4 lg:p-5 rounded-2xl bg-white/70 dark:bg-[#111726]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-2xl shadow-slate-900/10 dark:shadow-black/60 group hover:scale-[1.03] transition-transform duration-300 pointer-events-auto"
             >
               <div className="flex items-start justify-between gap-3 mb-2.5">
                 <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-accent">
@@ -174,12 +174,12 @@ export default function HeroSection() {
               </div>
             </motion.div>
 
-            {/* Right Floating Glassmorphic Card (Directly from Dribbble Reference) */}
+            {/* Desktop Right Floating Glassmorphic Card */}
             <motion.div
               initial={{ opacity: 0, x: 30, y: 20 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ duration: 0.9, delay: 0.5, ease: 'easeOut' }}
-              className="absolute right-2 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 z-20 max-w-[200px] sm:max-w-[250px] p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-[#111726]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-2xl shadow-slate-900/10 dark:shadow-black/60 group hover:scale-[1.03] transition-transform duration-300 pointer-events-auto"
+              className="hidden sm:block absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 max-w-[230px] lg:max-w-[250px] p-4 lg:p-5 rounded-2xl bg-white/70 dark:bg-[#111726]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-2xl shadow-slate-900/10 dark:shadow-black/60 group hover:scale-[1.03] transition-transform duration-300 pointer-events-auto"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-accent">
@@ -208,6 +208,41 @@ export default function HeroSection() {
                 Stellar Soroban Ledger Testnet
               </p>
             </motion.div>
+          </div>
+
+          {/* Mobile Dedicated Glassmorphic Cards (Clean, visible, and never obscuring the 3D canvas) */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 mt-3 sm:hidden px-2">
+            <div className="p-4 rounded-2xl bg-white/80 dark:bg-[#111726]/70 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-lg">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-accent">
+                  INVARIANT PROTOCOL
+                </span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              </div>
+              <h4 className="font-extrabold text-xs text-slate-900 dark:text-white leading-snug mb-1">
+                6 Formal Invariant Guards
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                Autonomous AST verification on state mutations.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/80 dark:bg-[#111726]/70 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-lg">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-accent">
+                  SECURITY SCORE
+                </span>
+                <span className="text-xs font-bold text-emerald-500">
+                  99.8% Safe
+                </span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden mb-1.5">
+                <div className="w-[99.8%] h-full bg-accent rounded-full" />
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                Stellar Soroban Testnet
+              </p>
+            </div>
           </div>
         </div>
 

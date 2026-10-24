@@ -189,11 +189,14 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
     // Dimensions
     const width = container.clientWidth || 800;
     const height = container.clientHeight || 560;
+    const isMobile = width < 640;
+    const aspect = width / height;
 
     // Scene, Camera, Renderer
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, -0.2, 6.2);
+    const camera = new THREE.PerspectiveCamera(isMobile ? 46 : 40, aspect, 0.1, 1000);
+    const cameraZ = isMobile ? Math.max(6.6, 5.0 / aspect) : 6.2;
+    camera.position.set(0, isMobile ? 0 : -0.2, cameraZ);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -345,21 +348,50 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
       setIsInteracting(false);
     };
 
-    // Mobile Touch Support
+    // Mobile Touch Drag & Gyro Interaction
+    let isTouchDragging = false;
+    let prevTouchPos = { x: 0, y: 0 };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        isTouchDragging = true;
+        setIsInteracting(true);
+        prevTouchPos = { x: touch.clientX, y: touch.clientY };
+      }
+    };
+
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
         const touch = e.touches[0];
         const rect = container.getBoundingClientRect();
         targetMouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
         targetMouse.y = -(((touch.clientY - rect.top) / rect.height) * 2 - 1);
+
+        if (isTouchDragging && e.touches.length === 1) {
+          const deltaX = touch.clientX - prevTouchPos.x;
+          const deltaY = touch.clientY - prevTouchPos.y;
+          targetRotationY += deltaX * 0.007;
+          targetRotationX += deltaY * 0.007;
+          prevTouchPos = { x: touch.clientX, y: touch.clientY };
+        }
       }
+    };
+
+    const handleTouchEnd = () => {
+      isTouchDragging = false;
+      setIsInteracting(false);
+      targetMouse.x = 0;
+      targetMouse.y = 0;
     };
 
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mouseleave', handleMouseLeave);
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
     container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
 
     // Animation Loop
     let animationFrameId: number;
@@ -411,13 +443,20 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
 
     animate();
 
-    // Window Resize Handler
+    // Window Resize Handler with Mobile Aspect Optimization
     const handleResize = () => {
       if (!container) return;
       const newWidth = container.clientWidth;
       const newHeight = container.clientHeight;
-      camera.aspect = newWidth / newHeight;
+      const isMob = newWidth < 640;
+      const newAspect = newWidth / newHeight;
+
+      camera.aspect = newAspect;
+      camera.fov = isMob ? 46 : 40;
+      const newZ = isMob ? Math.max(6.6, 5.0 / newAspect) : 6.2;
+      camera.position.set(0, isMob ? 0 : -0.2, newZ);
       camera.updateProjectionMatrix();
+
       renderer.setSize(newWidth, newHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     };
@@ -431,7 +470,9 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
       container.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
       container.removeEventListener('mouseleave', handleMouseLeave);
+      container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('resize', handleResize);
 
       liquidGeometry.dispose();
@@ -450,7 +491,7 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
   }, [mode]);
 
   return (
-    <div className="relative w-full h-full min-h-[460px] sm:min-h-[540px] lg:min-h-[620px] flex items-center justify-center select-none overflow-hidden">
+    <div className="relative w-full h-full min-h-[340px] xs:min-h-[380px] sm:min-h-[520px] lg:min-h-[600px] flex items-center justify-center select-none overflow-hidden touch-pan-y">
       {/* Three.js Canvas Container */}
       <div
         ref={containerRef}

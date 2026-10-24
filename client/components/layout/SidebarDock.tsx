@@ -20,11 +20,16 @@ export default function SidebarDock({ onOpenAudit }: SidebarDockProps) {
   const pathname = usePathname();
   const { walletKey } = useWallet();
 
+  // Only display mobile bottom navigation bar when wallet is connected
+  if (!walletKey) {
+    return null;
+  }
+
   const navItems = [
     {
-      label: walletKey ? 'Dashboard' : 'Home',
-      href: walletKey ? '/dashboard' : '/',
-      icon: walletKey ? LayoutDashboard : Home,
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: LayoutDashboard,
     },
     { label: 'Audit', href: '/audit', icon: ShieldCheck },
     { label: 'Reports', href: '/reports', icon: FileText },

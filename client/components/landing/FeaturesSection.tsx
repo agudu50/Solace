@@ -9,7 +9,8 @@ import {
   Lock,
   CheckCircle2,
   FileCheck2,
-  Sparkles,
+  Bot,
+  Terminal,
   ArrowUpRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -24,7 +25,7 @@ interface FeatureItem {
 
 const FEATURES: FeatureItem[] = [
   {
-    icon: Cpu,
+    icon: Terminal,
     badge: 'AST Deep Analysis',
     title: 'Static Invariant Verification',
     description:
@@ -48,11 +49,11 @@ const FEATURES: FeatureItem[] = [
     specs: ['1.0 XLM micro-fee treasury routing', 'Tamper-proof Soroban storage', 'Public ledger verification explorer'],
   },
   {
-    icon: Sparkles,
+    icon: Bot,
     badge: 'Multi-Model Fallback',
-    title: 'Adaptive Gemini AI Auditor',
+    title: 'Autonomous AI Remediation Engine',
     description:
-      'High-throughput static rule analysis enriched by Google Gemini AI with automatic multi-model failover, generating exact, syntax-highlighted Rust remediations.',
+      'High-throughput static rule analysis enriched by Solace AI with automatic multi-model failover, generating exact, syntax-highlighted Rust remediations.',
     specs: ['Zero single-point-of-failure fallback', 'Line-by-line vulnerability attribution', 'Context-aware code diffs'],
   },
   {
