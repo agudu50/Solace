@@ -522,12 +522,12 @@ to.require_auth();`}</pre>
                       Tx: {txHash.slice(0, 16)}...
                     </span>
                     <a
-                      href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`}
+                      href="https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[11px] text-accent font-bold hover:underline flex items-center gap-1"
                     >
-                      <span>Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
+                      <span>Stellar Expert (Testnet)</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>

@@ -14,27 +14,10 @@ import {
   CheckCircle2,
   Coins,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
+import Hero3DCanvas from './Hero3DCanvas';
 import { useWallet } from '../../context/WalletContext';
 import PricingModal from '../pricing/PricingModal';
-
-const Hero3DCanvas = dynamic(() => import('./Hero3DCanvas'), {
-  ssr: false,
-  loading: () => (
-    <div className="relative w-full h-[340px] xs:h-[380px] sm:h-[540px] lg:h-[620px] flex items-center justify-center">
-      <div className="relative w-64 h-64 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full border-2 border-accent/40 animate-[spin_8s_linear_infinite]" />
-        <div className="absolute inset-4 rounded-full border-2 border-accent/20 animate-[spin_12s_linear_infinite_reverse]" />
-        <div className="w-28 h-28 rounded-full bg-accent/20 backdrop-blur-xl border border-accent/50 shadow-2xl shadow-accent/40 flex items-center justify-center animate-pulse">
-          <span className="text-white font-mono font-black text-xs uppercase tracking-widest text-center">
-            FLUID CORE
-          </span>
-        </div>
-      </div>
-    </div>
-  ),
-});
 
 export default function HeroSection() {
   const { walletKey, network, connect, connecting } = useWallet();

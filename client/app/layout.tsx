@@ -39,8 +39,11 @@ export default function RootLayout({
                 } else {
                   document.documentElement.classList.remove('dark');
                 }
+                const isDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
                 const storedWallet = localStorage.getItem('solace_connected_wallet');
-                if (storedWallet && !document.cookie.includes('solace_connected_wallet=')) {
+                if (isDisconnected) {
+                  document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+                } else if (storedWallet && !document.cookie.includes('solace_connected_wallet=')) {
                   document.cookie = 'solace_connected_wallet=' + storedWallet + '; path=/; max-age=31536000; SameSite=Lax';
                 }
                 const storedNet = localStorage.getItem('solace-network');

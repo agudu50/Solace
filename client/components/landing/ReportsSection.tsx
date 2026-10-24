@@ -280,28 +280,18 @@ export default function ReportsSection() {
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12">
           {/* Active Network Switcher Badge */}
           <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-            <button
-              type="button"
-              onClick={toggleNetwork}
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold cursor-pointer transition shadow-xs hover:opacity-85 active:scale-95 ${
-                network === 'mainnet'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-accent/10 border-accent/25 text-accent'
-              }`}
-              title={`Active Network: Stellar ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'} • Click to toggle`}
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-accent/25 bg-accent/10 text-accent text-xs font-semibold shadow-xs"
+              title="Active Network: Stellar Testnet (Protocol 22)"
             >
-              <span
-                className={`w-2 h-2 rounded-full inline-block ${
-                  network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
-                }`}
-              />
+              <span className="w-2 h-2 rounded-full inline-block bg-accent animate-pulse" />
               <span className="font-bold">
-                Stellar {network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'}
+                Stellar Testnet (Protocol 22)
               </span>
               <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 opacity-75">
                 Live
               </span>
-            </button>
+            </div>
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold shadow-xs">
               <FileText className="w-3.5 h-3.5 text-accent" />
@@ -550,12 +540,12 @@ export default function ReportsSection() {
                         </div>
 
                         <a
-                          href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`}
+                          href="https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-accent hover:underline font-bold self-start sm:self-auto shrink-0"
                         >
-                          <span>Verify on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
+                          <span>Verify on Stellar Expert (Testnet)</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>

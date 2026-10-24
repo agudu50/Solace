@@ -12,7 +12,6 @@ import {
   Sparkles,
   Lock,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import HeroSection from '../components/landing/HeroSection';
 import StatsSection from '../components/landing/StatsSection';
 import FeaturesSection from '../components/landing/FeaturesSection';
@@ -23,12 +22,8 @@ import AuditStudioSection from '../components/landing/AuditStudioSection';
 import ReportsSection from '../components/landing/ReportsSection';
 import FaqSection from '../components/landing/FaqSection';
 import CtaSection from '../components/landing/CtaSection';
+import AmbientBackground3D from '../components/landing/AmbientBackground3D';
 import { useWallet } from '../context/WalletContext';
-
-const AmbientBackground3D = dynamic(
-  () => import('../components/landing/AmbientBackground3D'),
-  { ssr: false }
-);
 
 export default function LandingPage() {
   const { walletKey, network } = useWallet();
@@ -48,38 +43,6 @@ export default function LandingPage() {
 
   return (
     <div className="relative w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors selection:bg-accent selection:text-white overflow-x-hidden">
-      {/* Connected Auditor Session Quick-Bar (Shown when wallet is authenticated) */}
-      {walletKey && (
-        <aside
-          aria-label="Auditor Session Notice"
-          className="w-full bg-accent text-white py-2 px-4 text-xs font-semibold shadow-inner"
-        >
-          <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>
-                Auditor Session Active: <span className="font-mono font-bold">{walletKey.slice(0, 6)}...{walletKey.slice(-6)}</span>
-              </span>
-              <span className="opacity-60 hidden sm:inline">|</span>
-              <span className="hidden sm:inline opacity-90">
-                Stellar {network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="px-3 py-1 rounded-full bg-white text-accent hover:bg-slate-100 font-bold transition flex items-center gap-1.5 shadow-xs"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Go to Auditor Dashboard</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        </aside>
-      )}
-
       {/* Ambient 3D Motion Background (Throughout Entire Landing Page) */}
       <AmbientBackground3D />
 

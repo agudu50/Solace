@@ -59,8 +59,8 @@ export default function Footer() {
 
             {/* Protocol 22 Status Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Stellar {network === 'mainnet' ? 'Mainnet' : 'Testnet'} (Protocol 22)</span>
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span>Stellar Testnet (Protocol 22)</span>
             </div>
           </div>
 
@@ -171,12 +171,12 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${contractId}`}
+                  href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-accent transition flex items-center gap-1.5"
                 >
-                  <span>solace_core on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
+                  <span>solace_core on Stellar Expert (Testnet)</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" />
                 </a>
               </li>

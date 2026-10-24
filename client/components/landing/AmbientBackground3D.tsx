@@ -277,6 +277,8 @@ export default function AmbientBackground3D() {
       renderer.render(scene, camera);
     };
 
+    // Render immediate first frame synchronously so there is zero delay
+    renderer.render(scene, camera);
     animate();
 
     return () => {
@@ -305,9 +307,16 @@ export default function AmbientBackground3D() {
 
   return (
     <div
-      ref={mountRef}
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none z-0 w-full h-full overflow-hidden"
-    />
+    >
+      {/* Immediate Ambient Depth Glows (Active on millisecond 0 of page load) */}
+      <div className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-accent/10 dark:bg-accent/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-[35%] -left-32 w-[450px] h-[450px] bg-accent/8 dark:bg-accent/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute top-[70%] -right-32 w-[500px] h-[500px] bg-accent/7 dark:bg-accent/9 rounded-full blur-[140px] pointer-events-none" />
+
+      {/* WebGL Three.js Canvas Container */}
+      <div ref={mountRef} className="absolute inset-0 w-full h-full" />
+    </div>
   );
 }

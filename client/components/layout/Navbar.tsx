@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShieldCheck,
@@ -35,6 +35,7 @@ import { connectWallet, detectWalletNetwork, CONTRACT_ID } from '../../utils/sol
 import { useWallet } from '../../context/WalletContext';
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { walletKey, network, connecting, connect, disconnect, setNetwork, toggleNetwork } = useWallet();
   const [notice, setNotice] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
@@ -72,6 +73,7 @@ export default function Navbar() {
     setNotice('');
     try {
       await connect();
+      router.push('/dashboard');
     } catch (err: any) {
       const msg = err?.message || 'Connection failed.';
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
@@ -88,6 +90,9 @@ export default function Navbar() {
 
   const handleDisconnect = () => {
     disconnect();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const navItems = [
@@ -174,24 +179,16 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleNetwork}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-xs text-[10px] sm:text-xs font-semibold shrink-0 transition cursor-pointer hover:opacity-85 active:scale-95 ${
-              network === 'mainnet'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                : 'bg-accent/10 border-accent/25 text-accent'
-            }`}
-            title={`Active Stellar Network: ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'} • Click to toggle`}
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-xs text-[10px] sm:text-xs font-semibold shrink-0 transition cursor-pointer hover:opacity-85 active:scale-95 bg-accent/10 border-accent/25 text-accent"
+            title="Active Stellar Network: Testnet (Protocol 22) • Protocol Smart Contract Live"
             aria-label="Toggle network"
           >
-            <span
-              className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full inline-block ${
-                network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
-              }`}
-            />
+            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full inline-block bg-accent animate-pulse" />
             <span className="font-bold uppercase tracking-wide text-[10px] sm:text-xs">
-              {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+              Testnet
             </span>
             <span className="text-[10px] opacity-75 hidden md:inline">
-              ({network === 'mainnet' ? 'Production' : 'Protocol 22'})
+              (Protocol 22)
             </span>
           </button>
 
@@ -424,20 +421,16 @@ export default function Navbar() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
-                    }`}
-                  />
+                  <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
                   <span className="font-bold text-sm text-slate-900 dark:text-white">
-                    Stellar {network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'}
+                    Stellar Testnet (Protocol 22)
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  Network environment is determined automatically by the system from your connected Freighter wallet and production configuration.
+                  Network environment is locked to Stellar Testnet (Protocol 22) where the Solace core smart contract is deployed.
                 </p>
                 <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300 font-semibold block truncate mt-2 bg-slate-100 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700">
-                  RPC: {network === 'mainnet' ? 'https://soroban-rpc.mainnet.stellar.org' : 'https://soroban-testnet.stellar.org'}
+                  RPC: https://soroban-testnet.stellar.org
                 </span>
               </div>
 
@@ -462,12 +455,12 @@ export default function Navbar() {
                   {CONTRACT_ID}
                 </span>
                 <a
-                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${CONTRACT_ID}`}
+                  href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-accent hover:underline flex items-center gap-1 mt-1 text-xs font-bold"
                 >
-                  <span>Inspect on Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
+                  <span>Inspect on Stellar Expert (Testnet)</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
@@ -515,7 +508,7 @@ export default function Navbar() {
                   </div>
                   <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1.5 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                    <span>All Soroban security invariants active on Stellar {network === 'mainnet' ? 'Mainnet' : 'Testnet'}</span>
+                    <span>All Soroban security invariants active on Stellar Testnet</span>
                   </p>
                 </div>
               </div>
@@ -749,12 +742,12 @@ export default function Navbar() {
                   <span>{copiedContract ? 'Copied' : 'Copy'}</span>
                 </button>
                 <a
-                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${CONTRACT_ID}`}
+                  href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Stellar Expert</span>
+                  <span>Stellar Expert (Testnet)</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" />
                 </a>
               </div>
@@ -882,12 +875,12 @@ export default function Navbar() {
                 </button>
 
                 <a
-                  href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/account/${walletKey}`}
+                  href={`https://stellar.expert/explorer/testnet/account/${walletKey}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/15 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                 >
-                  <span>Stellar Expert</span>
+                  <span>Stellar Expert (Testnet)</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" />
                 </a>
               </div>
@@ -896,13 +889,7 @@ export default function Navbar() {
             {/* Network Protocol & Environment Tile */}
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    network === 'mainnet'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                      : 'bg-accent/10 text-accent border border-accent/20'
-                  }`}
-                >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-accent/10 text-accent border border-accent/20">
                   <Globe className="w-4 h-4" />
                 </div>
                 <div>
@@ -910,18 +897,14 @@ export default function Navbar() {
                     Network Protocol
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block mt-0.5">
-                    Stellar {network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet (Protocol 22)'}
+                    Stellar Testnet (Protocol 22)
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    network === 'mainnet' ? 'bg-emerald-500 animate-pulse' : 'bg-accent animate-pulse'
-                  }`}
-                />
-                <span>{network.toUpperCase()}</span>
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                <span>TESTNET</span>
               </div>
             </div>
 

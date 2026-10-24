@@ -404,7 +404,7 @@ export default function MonitorPage() {
                 </div>
 
                 <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold mt-1.5 block">
-                  {metrics.exists ? `Contract footprint verified on Stellar ${network === 'mainnet' ? 'Mainnet' : 'Testnet'}` : 'No active storage entry on network'}
+                  {metrics.exists ? 'Contract footprint verified on Stellar Testnet' : 'No active storage entry on network'}
                 </span>
               </div>
 
@@ -446,7 +446,7 @@ export default function MonitorPage() {
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                    Current {network === 'mainnet' ? 'Mainnet' : 'Testnet'} Ledger
+                    Current Testnet Ledger
                   </span>
                   <span className="text-[10px] font-mono text-slate-500">
                     Protocol v{metrics.protocolVersion}
@@ -482,12 +482,12 @@ export default function MonitorPage() {
                     Last update: {lastRefreshedAt || 'Live'}
                   </span>
                   <a
-                    href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${metrics.contractId}`}
+                    href={`https://stellar.expert/explorer/testnet/contract/${metrics.contractId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs px-3 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white font-bold transition flex items-center gap-1 shadow-xs"
                   >
-                    <span>Stellar Expert ({network === 'mainnet' ? 'Mainnet' : 'Testnet'})</span>
+                    <span>Stellar Expert (Testnet)</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>

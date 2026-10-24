@@ -434,7 +434,7 @@ export default function DashboardPage() {
                 <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-1.5 sm:gap-2">
                   <Calendar className="w-3.5 h-3.5 text-accent shrink-0" />
                   <span className="truncate">
-                    {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} · {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+                    {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} · Stellar Testnet (Protocol 22)
                   </span>
                 </div>
 
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                     </h2>
                     <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Target Score &amp; Ledger State</p>
                   </div>
-                  <span className={`w-2.5 h-2.5 rounded-full ${network === 'mainnet' ? 'bg-emerald-500' : 'bg-accent'} animate-pulse`} title={`Active on Stellar ${network === 'mainnet' ? 'Mainnet (Production)' : 'Testnet'}`} />
+                  <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" title="Active on Stellar Testnet (Protocol 22)" />
                 </div>
 
                 {connectedWallet ? (
@@ -480,7 +480,7 @@ export default function DashboardPage() {
                         </span>
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>{network === 'mainnet' ? 'Mainnet Active' : 'Testnet Active'}</span>
+                          <span>Testnet Active</span>
                         </span>
                       </div>
 
@@ -636,7 +636,7 @@ export default function DashboardPage() {
                           <span>{p.timestamp ? new Date(p.timestamp).toLocaleDateString() : 'Confirmed'}</span>
                           {p.transactionHash && (
                             <a
-                              href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/tx/${p.transactionHash}`}
+                              href={`https://stellar.expert/explorer/testnet/tx/${p.transactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-accent font-mono hover:underline flex items-center gap-0.5"

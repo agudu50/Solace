@@ -441,6 +441,8 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
       renderer.render(scene, camera);
     };
 
+    // Render immediate first frame synchronously so there is zero delay
+    renderer.render(scene, camera);
     animate();
 
     // Window Resize Handler with Mobile Aspect Optimization
@@ -492,10 +494,13 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
 
   return (
     <div className="relative w-full h-full min-h-[340px] xs:min-h-[380px] sm:min-h-[520px] lg:min-h-[600px] flex items-center justify-center select-none overflow-hidden touch-pan-y">
+      {/* Instant Fluid Core Ambient Glow (Active from millisecond 0) */}
+      <div className="absolute w-56 h-56 sm:w-80 sm:h-80 rounded-full bg-accent/20 blur-3xl pointer-events-none animate-pulse" />
+
       {/* Three.js Canvas Container */}
       <div
         ref={containerRef}
-        className={`w-full h-full absolute inset-0 cursor-${isInteracting ? 'grabbing' : 'grab'} transition-opacity duration-700`}
+        className={`w-full h-full absolute inset-0 cursor-${isInteracting ? 'grabbing' : 'grab'} transition-opacity duration-300`}
       />
 
       {/* Non-WebGL Fallback */}

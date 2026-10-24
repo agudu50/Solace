@@ -917,7 +917,7 @@ impl SolaceContract {
           transactionHash: data.creditConsumptionRecord?.auditId || `audit-cred-${Date.now()}`,
           status: 'CONFIRMED_PREPAID_CREDIT',
           timestamp: new Date().toISOString(),
-          explorerUrl: `https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`,
+          explorerUrl: `https://stellar.expert/explorer/testnet/contract/CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2`,
         };
         setFeeReceipt(resolvedFeeReceipt);
 
@@ -1665,7 +1665,7 @@ impl SolaceContract {
                         <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
                           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-[11px] font-bold">
                             <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                            <span>Permanently Anchored on Stellar {network === 'mainnet' ? 'Mainnet' : 'Testnet'}</span>
+                            <span>Permanently Anchored on Stellar Testnet</span>
                           </div>
                           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
                             CONFIRMED ON LEDGER
@@ -1676,7 +1676,7 @@ impl SolaceContract {
                         <p className="text-slate-700 dark:text-slate-200 text-xs leading-relaxed mb-3 font-medium">
                           Audit findings cryptographically anchored in contract{' '}
                           <a
-                            href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
+                            href={`https://stellar.expert/explorer/testnet/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-mono text-accent font-bold hover:underline"
@@ -1723,7 +1723,7 @@ impl SolaceContract {
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                           <a
-                            href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
+                            href={`https://stellar.expert/explorer/testnet/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200/80 dark:border-slate-700 transition flex items-center justify-center gap-1.5"
@@ -1743,7 +1743,7 @@ impl SolaceContract {
                           <span className="text-[10px] font-semibold text-slate-500">Unanchored Session</span>
                         </div>
                         <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mb-3 font-medium">
-                          Anchor this audit verdict directly onto the Stellar Soroban {network === 'mainnet' ? 'mainnet' : 'testnet'} ledger. Produces a verifiable, tamper-proof security proof.
+                          Anchor this audit verdict directly onto the Stellar Soroban testnet ledger. Produces a verifiable, tamper-proof security proof.
                         </p>
                         <button
                           type="button"

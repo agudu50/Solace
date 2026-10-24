@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   connectWallet as freighterConnect,
   detectWalletNetwork,
@@ -31,21 +32,26 @@ export function WalletProvider({
   initialWallet?: string;
   initialNetwork?: 'testnet' | 'mainnet';
 }) {
+  const router = useRouter();
+
   const [walletKey, setWalletKeyState] = useState<string>(() => {
-    if (initialWallet && /^G[A-Z0-9]{55}$/.test(initialWallet)) {
-      return initialWallet;
-    }
     if (typeof window !== 'undefined') {
       try {
+        if (localStorage.getItem('solace_wallet_disconnected') === 'true') {
+          return '';
+        }
         const stored = localStorage.getItem('solace_connected_wallet');
         if (stored && /^G[A-Z0-9]{55}$/.test(stored)) return stored;
       } catch (_) {}
     }
+    if (initialWallet && /^G[A-Z0-9]{55}$/.test(initialWallet)) {
+      return initialWallet;
+    }
     return '';
   });
 
+  // Solace is strictly in the Stellar Testnet (Protocol 22) phase
   const [network, setNetworkState] = useState<'testnet' | 'mainnet'>('testnet');
-
   const [connecting, setConnecting] = useState<boolean>(false);
   const [freighterReady, setFreighterReady] = useState<boolean | null>(null);
 
@@ -53,11 +59,13 @@ export function WalletProvider({
     if (typeof window === 'undefined') return;
     try {
       if (key && /^G[A-Z0-9]{55}$/.test(key)) {
+        localStorage.removeItem('solace_wallet_disconnected');
         localStorage.setItem('solace_connected_wallet', key);
         document.cookie = `solace_connected_wallet=${key}; path=/; max-age=31536000; SameSite=Lax`;
       } else {
         localStorage.removeItem('solace_connected_wallet');
         document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'solace_connected_wallet=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       }
     } catch (_) {}
   }, []);
@@ -65,82 +73,88 @@ export function WalletProvider({
   const syncNetworkToStorageAndCookies = useCallback((net: 'testnet' | 'mainnet') => {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem('solace-network', net);
-      document.cookie = `solace_network=${net}; path=/; max-age=31536000; SameSite=Lax`;
+      localStorage.setItem('solace-network', 'testnet');
+      document.cookie = `solace_network=testnet; path=/; max-age=31536000; SameSite=Lax`;
     } catch (_) {}
   }, []);
 
   const setWalletKeyDirectly = useCallback((key: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('solace_wallet_disconnected');
+    }
     setWalletKeyState(key);
     syncWalletToStorageAndCookies(key);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
     }
-  }, [syncWalletToStorageAndCookies]);
+    if (key) {
+      try {
+        router.push('/dashboard');
+      } catch (_) {}
+    }
+  }, [syncWalletToStorageAndCookies, router]);
 
   const setNetwork = useCallback((net: 'testnet' | 'mainnet') => {
-    setNetworkState(net);
-    syncNetworkToStorageAndCookies(net);
+    setNetworkState('testnet');
+    syncNetworkToStorageAndCookies('testnet');
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('solace-network-updated', { detail: { network: net } }));
+      window.dispatchEvent(new CustomEvent('solace-network-updated', { detail: { network: 'testnet' } }));
     }
   }, [syncNetworkToStorageAndCookies]);
 
   const toggleNetwork = useCallback(() => {
-    const next = network === 'mainnet' ? 'testnet' : 'mainnet';
-    setNetwork(next);
-  }, [network, setNetwork]);
+    // Contract is currently deployed on Testnet
+    setNetwork('testnet');
+  }, [setNetwork]);
 
   // Initial client hydration check and live wallet watcher
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('solace_connected_wallet');
-      if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
-        setWalletKeyState(stored);
-        syncWalletToStorageAndCookies(stored);
+      const isExplicitlyDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
+      if (isExplicitlyDisconnected) {
+        setWalletKeyState('');
+        syncWalletToStorageAndCookies('');
+      } else {
+        const stored = localStorage.getItem('solace_connected_wallet');
+        if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
+          setWalletKeyState(stored);
+          syncWalletToStorageAndCookies(stored);
+        } else {
+          setWalletKeyState('');
+        }
       }
-      const storedNet = localStorage.getItem('solace-network');
-      if (storedNet === 'mainnet') {
-        setNetworkState('testnet');
-        syncNetworkToStorageAndCookies('testnet');
-      } else if (storedNet === 'testnet') {
-        setNetworkState('testnet');
-      }
+      localStorage.setItem('solace-network', 'testnet');
+      document.cookie = `solace_network=testnet; path=/; max-age=31536000; SameSite=Lax`;
+      setNetworkState('testnet');
     } catch (_) {}
 
     checkFreighterInstalled().then((installed) => {
       setFreighterReady(installed);
     });
 
-    // Detect actual wallet network from Freighter API
-    detectWalletNetwork().then((detected) => {
-      if (detected) {
-        setNetworkState(detected);
-        syncNetworkToStorageAndCookies(detected);
-      }
-    });
-
-    // Real-time WatchWalletChanges from Freighter extension
+    // Real-time WatchWalletChanges from Freighter extension:
+    // CRITICAL: NEVER auto-connect an unauthenticated visitor!
+    // Only update if the user has already explicitly authenticated and switches accounts in Freighter.
     let watcher: any = null;
     try {
       if (typeof window !== 'undefined' && WatchWalletChanges) {
         watcher = new WatchWalletChanges(2000);
         watcher.watch((params: any) => {
-          if (params) {
-            const netStr = String(params.network || params.networkPassphrase || '').toUpperCase();
-            if (netStr.includes('PUBLIC') || netStr.includes('MAINNET')) {
-              setNetworkState('mainnet');
-              syncNetworkToStorageAndCookies('mainnet');
-            } else if (netStr.includes('TEST') || netStr.includes('FUTURE')) {
-              setNetworkState('testnet');
-              syncNetworkToStorageAndCookies('testnet');
+          setWalletKeyState((currentKey) => {
+            // If the user has not connected or has logged out, DO NOT auto-connect
+            if (!currentKey) return '';
+            
+            if (params && params.address && /^G[A-Z0-9]{55}$/.test(params.address)) {
+              if (params.address !== currentKey) {
+                syncWalletToStorageAndCookies(params.address);
+                return params.address;
+              }
+            } else if (!params || !params.address) {
+              syncWalletToStorageAndCookies('');
+              return '';
             }
-
-            if (params.address && /^G[A-Z0-9]{55}$/.test(params.address)) {
-              setWalletKeyState(params.address);
-              syncWalletToStorageAndCookies(params.address);
-            }
-          }
+            return currentKey;
+          });
         });
       }
     } catch (_) {}
@@ -151,31 +165,12 @@ export function WalletProvider({
       syncWalletToStorageAndCookies(key);
     };
 
-    const handleNetworkEvent = (e: any) => {
-      const net = e.detail?.network ?? (typeof window !== 'undefined' ? localStorage.getItem('solace-network') : 'testnet') ?? 'testnet';
-      if (net === 'mainnet' || net === 'testnet') {
-        setNetworkState(net);
-        syncNetworkToStorageAndCookies(net);
-      }
-    };
-
-    const handleFocus = async () => {
-      try {
-        const stored = localStorage.getItem('solace_connected_wallet');
-        if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
-          setWalletKeyState(stored);
-        }
-        const detected = await detectWalletNetwork();
-        if (detected) {
-          setNetworkState(detected);
-          syncNetworkToStorageAndCookies(detected);
-        }
-      } catch (_) {}
+    const handleNetworkEvent = () => {
+      setNetworkState('testnet');
     };
 
     window.addEventListener('solace-wallet-updated', handleWalletEvent);
     window.addEventListener('solace-network-updated', handleNetworkEvent);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
       if (watcher && typeof watcher.stop === 'function') {
@@ -185,19 +180,25 @@ export function WalletProvider({
       }
       window.removeEventListener('solace-wallet-updated', handleWalletEvent);
       window.removeEventListener('solace-network-updated', handleNetworkEvent);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [syncWalletToStorageAndCookies, syncNetworkToStorageAndCookies]);
 
   const connect = async (): Promise<string> => {
     setConnecting(true);
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('solace_wallet_disconnected');
+      }
       const key = await freighterConnect();
       setWalletKeyState(key);
       syncWalletToStorageAndCookies(key);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
       }
+      // Automatically navigate to dashboard upon connection
+      try {
+        router.push('/dashboard');
+      } catch (_) {}
       return key;
     } finally {
       setConnecting(false);
@@ -206,9 +207,15 @@ export function WalletProvider({
 
   const disconnect = () => {
     setWalletKeyState('');
-    syncWalletToStorageAndCookies('');
     if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('solace_connected_wallet');
+        localStorage.setItem('solace_wallet_disconnected', 'true');
+        document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'solace_connected_wallet=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      } catch (_) {}
       window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: '' } }));
+      window.location.href = '/';
     }
   };
 

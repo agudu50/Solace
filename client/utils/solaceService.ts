@@ -4,7 +4,6 @@ import {
   getNetwork,
   getNetworkDetails,
   signTransaction,
-  signMessage,
   WatchWalletChanges,
 } from '@stellar/freighter-api';
 
@@ -17,47 +16,9 @@ export const CONTRACT_ID: string =
   process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
 /**
- * Detect network automatically from connected Freighter wallet or stored preference
+ * Detect network automatically - strictly Testnet (Stellar Protocol 22)
  */
 export async function detectWalletNetwork(): Promise<'testnet' | 'mainnet'> {
-  if (typeof window === 'undefined') return 'testnet';
-
-  try {
-    const detailsPromise = getNetworkDetails();
-    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1800));
-    const details: any = await Promise.race([detailsPromise, timeoutPromise]);
-
-    if (details && !details.error) {
-      const net = String(details.network || details.networkPassphrase || '').toUpperCase();
-      if (net.includes('PUBLIC') || net.includes('MAINNET')) {
-        return 'mainnet';
-      }
-      if (net.includes('TEST') || net.includes('FUTURE')) {
-        return 'testnet';
-      }
-    }
-
-    const netPromise = getNetwork();
-    const netName: any = await Promise.race([netPromise, timeoutPromise]);
-    if (netName && !netName.error) {
-      const str = String(typeof netName === 'string' ? netName : netName?.network || '').toUpperCase();
-      if (str.includes('PUBLIC') || str.includes('MAINNET')) {
-        return 'mainnet';
-      }
-      if (str.includes('TEST') || str.includes('FUTURE')) {
-        return 'testnet';
-      }
-    }
-  } catch (_) {}
-
-  // Respect user-selected persistent preference in localStorage
-  try {
-    const stored = localStorage.getItem('solace-network');
-    if (stored === 'mainnet' || stored === 'testnet') {
-      return stored;
-    }
-  } catch (_) {}
-
   return 'testnet';
 }
 
@@ -139,40 +100,12 @@ export async function connectWallet(): Promise<string> {
     throw new Error('Invalid Stellar auditor address returned by wallet extension.');
   }
 
-  // 3. Actively prompt Freighter extension popup window to confirm auditor session
-  // This ensures Freighter's popup modal appears on screen even after user previously disconnected
+  // 3. Save active network as testnet
   try {
-    const sessionNonce = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const authMessage = `Solace Security Auditor Verification\n\nPlease sign to confirm your auditor session in Freighter.\nAuditor: ${publicKey.slice(0, 6)}...${publicKey.slice(-6)}\nNonce: ${sessionNonce}\nTime: ${new Date().toLocaleTimeString()}`;
-    
-    const signPromise = signMessage(authMessage, { address: publicKey });
-    const signTimeout = new Promise<{ error?: any }>((resolve) =>
-      setTimeout(() => resolve({ error: { message: 'Freighter signature prompt timed out.' } }), 30000)
-    );
-    const signResult = await Promise.race([signPromise, signTimeout]);
-
-    if ((signResult as any)?.error) {
-      const signErr = (signResult as any).error;
-      const msg =
-        typeof signErr === 'string'
-          ? signErr
-          : signErr?.message || 'Wallet connection was cancelled in Freighter.';
-      throw new Error(msg);
+    localStorage.setItem('solace-network', 'testnet');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('solace-network-updated', { detail: { network: 'testnet' } }));
     }
-  } catch (err: any) {
-    // If the user cancelled/rejected the popup, propagate the rejection to prevent silent reconnect
-    if (err?.message && (err.message.toLowerCase().includes('reject') || err.message.toLowerCase().includes('cancel') || err.message.toLowerCase().includes('declined') || err.message.toLowerCase().includes('timed out'))) {
-      throw err;
-    }
-    // If signMessage is unsupported in older extension, fallback gracefully
-    console.warn('Freighter signature verification note:', err?.message);
-  }
-
-  // 4. Automatically determine network from the wallet
-  try {
-    const detectedNet = await detectWalletNetwork();
-    localStorage.setItem('solace-network', detectedNet);
-    window.dispatchEvent(new CustomEvent('solace-network-updated', { detail: { network: detectedNet } }));
   } catch (_) {}
 
   return publicKey;
