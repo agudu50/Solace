@@ -94,6 +94,12 @@ export default function Footer() {
                   <span>Live Storage Rent Monitor</span>
                 </Link>
               </li>
+              <li>
+                <Link href="/admin/login" className="hover:text-accent transition flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-accent" />
+                  <span>Admin Security Portal</span>
+                </Link>
+              </li>
             </ul>
           </div>
 

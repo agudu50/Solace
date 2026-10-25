@@ -1,0 +1,74 @@
+[
+  {
+    "id": "ses_09c74870351fde0be741f0f13f5e1956",
+    "user_id": "usr_568f1c99e30eb3e9062bda56b6bcd5d8",
+    "wallet_address": "GCETKHEOQCYMJPZJ4WYJ7ZFTLHBWRMICENMDJHYVLELPPHI22HI34MEO",
+    "role": "user",
+    "token_hash": "742fd1c0e0c2fdd181a7ee484804f93a66c29c2b0e8a20e65105ff0f813477e9",
+    "expires_at": "2026-10-25T18:38:56.542Z",
+    "revoked": true,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Jest-Automated-Test",
+    "created_at": "2026-10-24T18:38:56.542Z"
+  },
+  {
+    "id": "ses_1251420c5a705b412aaf0d86630d4e13",
+    "user_id": "usr_cdd5ecea29b602451d3e6d165fb22e28",
+    "wallet_address": "GD5CX2BCR6HLCA3GL6LAD7BLRK3YD3SCSAA7WXSTORW4A3RMKDODCXQF",
+    "role": "user",
+    "token_hash": "117a27e6a6b9e6b233a36b60b71d327592ec5b37d88944d9f44ab078eb6bf129",
+    "expires_at": "2026-10-25T18:38:56.560Z",
+    "revoked": false,
+    "ip_address": null,
+    "user_agent": null,
+    "created_at": "2026-10-24T18:38:56.560Z"
+  },
+  {
+    "id": "ses_d482d07cd5bed64ed47179a5381a74ed",
+    "user_id": "usr_7b7b70dd89e2099c1bedf9ad7683e2c4",
+    "wallet_address": "GDQNJ7HOYLBUUFXLN2MCBONDNZWUTF2FXZE2I457NXMTNDXAHAAJ7Z7A",
+    "role": "user",
+    "token_hash": "7f990ab3946e19d5385dcc63a071607a2f95c7685f447d12f056e2e177fe9efc",
+    "expires_at": "2026-10-25T18:39:21.870Z",
+    "revoked": true,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Jest-Automated-Test",
+    "created_at": "2026-10-24T18:39:21.870Z"
+  },
+  {
+    "id": "ses_c9c0df1da0114624d50bb8cdf54aafa4",
+    "user_id": "usr_86fb774ba559f18ce9c74091b378c9e2",
+    "wallet_address": "GBE42DT5V3R2WE3PXFP6OY6PPKJKRNGOFVFREZNFTG6GS5OJXHGGCT43",
+    "role": "user",
+    "token_hash": "acf901f5572826556d313994587b400794f165fc184c114aa9f3133a88e67f86",
+    "expires_at": "2026-10-25T18:39:21.889Z",
+    "revoked": false,
+    "ip_address": null,
+    "user_agent": null,
+    "created_at": "2026-10-24T18:39:21.889Z"
+  },
+  {
+    "id": "ses_a22aa37710ca0758fd43dffc2e1ebd40",
+    "user_id": "usr_1ba59f733b4555274722377138ee7321",
+    "wallet_address": "GBVQIZMCCSDRJQP74CCA7DQDPGC4FYWOOUZKUKH63HAPSXLZK3R5J6LI",
+    "role": "user",
+    "token_hash": "ae4f98bf6a66f449aa6fee89e366fba06c2939af15c6fa7666b1270c73615858",
+    "expires_at": "2026-10-25T18:51:01.383Z",
+    "revoked": true,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Jest-Automated-Test",
+    "created_at": "2026-10-24T18:51:01.383Z"
+  },
+  {
+    "id": "ses_1968799c18db9b97b580c9316a0eec41",
+    "user_id": "usr_f4224522a4a2d050480cf6c4a027be04",
+    "wallet_address": "GCKQEMCAR6WFZ6Q2E7XI3ZQHBOKQX5SA4DBX24UHMYHS4DYFXSC3PUAV",
+    "role": "user",
+    "token_hash": "a24c123124f7471065108e984bbfd31acec27ccfe3d52dc47ae7db070302eea8",
+    "expires_at": "2026-10-25T18:51:01.402Z",
+    "revoked": false,
+    "ip_address": null,
+    "user_agent": null,
+    "created_at": "2026-10-24T18:51:01.402Z"
+  }
+]

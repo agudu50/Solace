@@ -7,14 +7,22 @@ import {
   detectWalletNetwork,
   checkFreighterInstalled,
   WatchWalletChanges,
+  authenticateWalletSession,
+  fetchCurrentUserSession,
+  logoutUserSession,
+  AuthUser,
 } from '../utils/solaceService';
 
 interface WalletContextType {
   walletKey: string;
+  user: AuthUser | null;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
   network: 'testnet' | 'mainnet';
   connecting: boolean;
   freighterReady: boolean | null;
   connect: () => Promise<string>;
+  authenticate: (action?: 'solace-auth-login' | 'solace-admin-login') => Promise<AuthUser>;
   disconnect: () => void;
   setNetwork: (network: 'testnet' | 'mainnet') => void;
   toggleNetwork: () => void;
@@ -54,6 +62,20 @@ export function WalletProvider({
   const [network, setNetworkState] = useState<'testnet' | 'mainnet'>('testnet');
   const [connecting, setConnecting] = useState<boolean>(false);
   const [freighterReady, setFreighterReady] = useState<boolean | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'super_admin'));
+  const isSuperAdmin = Boolean(user && user.role === 'super_admin');
+
+  // Load authenticated session on mount
+  useEffect(() => {
+    fetchCurrentUserSession().then((authenticatedUser) => {
+      if (authenticatedUser) {
+        setUser(authenticatedUser);
+        setWalletKeyState(authenticatedUser.address);
+      }
+    });
+  }, []);
 
   const syncWalletToStorageAndCookies = useCallback((key: string) => {
     if (typeof window === 'undefined') return;
@@ -183,6 +205,41 @@ export function WalletProvider({
     };
   }, [syncWalletToStorageAndCookies, syncNetworkToStorageAndCookies]);
 
+  /**
+   * Cryptographic challenge authentication workflow
+   */
+  const authenticate = async (
+    action: 'solace-auth-login' | 'solace-admin-login' = 'solace-auth-login'
+  ): Promise<AuthUser> => {
+    setConnecting(true);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('solace_wallet_disconnected');
+      }
+      // 1. Get wallet address
+      const key = await freighterConnect();
+      setWalletKeyState(key);
+      syncWalletToStorageAndCookies(key);
+
+      // 2. Perform cryptographic challenge authentication
+      const authRes = await authenticateWalletSession(key, action);
+      setUser(authRes.user);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('solace-wallet-updated', { detail: { walletKey: key, user: authRes.user } })
+        );
+      }
+
+      return authRes.user;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  /**
+   * Standard wallet connect (backward-compatible)
+   */
   const connect = async (): Promise<string> => {
     setConnecting(true);
     try {
@@ -195,6 +252,12 @@ export function WalletProvider({
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
       }
+
+      // Establish authenticated session on backend in background
+      authenticateWalletSession(key, 'solace-auth-login')
+        .then((authRes) => setUser(authRes.user))
+        .catch(() => {});
+
       // Automatically navigate to dashboard upon connection
       try {
         router.push('/dashboard');
@@ -207,14 +270,19 @@ export function WalletProvider({
 
   const disconnect = () => {
     setWalletKeyState('');
+    setUser(null);
+    logoutUserSession();
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('solace_connected_wallet');
+        localStorage.removeItem('solace_auth_token');
+        localStorage.removeItem('solace_user_role');
         localStorage.setItem('solace_wallet_disconnected', 'true');
         document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'solace_connected_wallet=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
       } catch (_) {}
-      window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: '' } }));
+      window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: '', user: null } }));
       window.location.href = '/';
     }
   };
@@ -223,10 +291,14 @@ export function WalletProvider({
     <WalletContext.Provider
       value={{
         walletKey,
+        user,
+        isAdmin,
+        isSuperAdmin,
         network,
         connecting,
         freighterReady,
         connect,
+        authenticate,
         disconnect,
         setNetwork,
         toggleNetwork,

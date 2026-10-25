@@ -36,7 +36,7 @@ import { useWallet } from '../../context/WalletContext';
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { walletKey, network, connecting, connect, disconnect, setNetwork, toggleNetwork } = useWallet();
+  const { walletKey, network, connecting, connect, disconnect, setNetwork, toggleNetwork, isAdmin } = useWallet();
   const [notice, setNotice] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
@@ -100,6 +100,7 @@ export default function Navbar() {
     { label: 'Audit Studio', href: '/audit', icon: ShieldCheck },
     { label: 'Reports', href: '/reports', icon: FileText },
     { label: 'Monitor', href: '/monitor', icon: Activity },
+    ...(isAdmin ? [{ label: 'Admin Console', href: '/admin', icon: Terminal }] : []),
   ];
 
   const publicNavItems = [
