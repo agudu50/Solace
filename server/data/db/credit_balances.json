@@ -82,5 +82,13 @@
     "total_purchased": 0,
     "total_consumed": 0,
     "updated_at": "2026-10-24T18:55:37.852Z"
+  },
+  {
+    "wallet_address": "usr_72f47478a2925f251cd5cf5f419acb39",
+    "user_id": "usr_72f47478a2925f251cd5cf5f419acb39",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-10-28T17:05:25.926Z"
   }
 ]

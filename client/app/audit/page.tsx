@@ -23,7 +23,7 @@ import {
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import WalletGate from '../../components/auth/WalletGate';
 import { useWallet } from '../../context/WalletContext';
-import { signAndPayAuditFee, fetchUserCreditBalance } from '../../utils/solaceService';
+import { signAndPayAuditFee, fetchUserCreditBalance, purchaseCreditPackage } from '../../utils/solaceService';
 import PricingModal from '../../components/pricing/PricingModal';
 
 interface Vulnerability {
@@ -192,7 +192,7 @@ function FormattedRecommendation({ text, index }: { text: string; index: number 
 }
 
 export default function AuditStudioPage() {
-  const { walletKey } = useWallet();
+  const { walletKey, user, connect, refreshUser } = useWallet();
   const [activeTab, setActiveTab] = useState<'STUDIO' | 'INVARIANTS'>('STUDIO');
   const [codeSnippet, setCodeSnippet] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
@@ -243,15 +243,58 @@ export default function AuditStudioPage() {
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
 
+  const handleQuickPurchase = async (pkgId: number) => {
+    setError('');
+    let activeWallet = walletKey;
+    if (!activeWallet) {
+      try {
+        setLoading(true);
+        setAuditStep('Connecting Freighter Wallet...');
+        activeWallet = await connect();
+      } catch (err: any) {
+        setError(err?.message || 'Wallet connection was cancelled.');
+        setLoading(false);
+        setAuditStep('');
+        return;
+      }
+    }
+    if (!activeWallet) {
+      setLoading(false);
+      setAuditStep('');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAuditStep('Authorizing package purchase via Freighter on Stellar Testnet...');
+      const receipt = await purchaseCreditPackage(activeWallet, pkgId, network);
+      if (receipt.creditBalance) {
+        setUserCredits(receipt.creditBalance);
+      }
+      const targetUser = activeWallet || user?.address || (user as any)?.id || (user as any)?.email;
+      if (targetUser) {
+        const bal = await fetchUserCreditBalance(targetUser);
+        setUserCredits(bal);
+      }
+      setError('');
+    } catch (err: any) {
+      setError(err?.message || 'Transaction was declined or failed on Stellar Testnet.');
+    } finally {
+      setLoading(false);
+      setAuditStep('');
+    }
+  };
+
   useEffect(() => {
-    if (walletKey) {
-      fetchUserCreditBalance(walletKey)
+    const target = walletKey || user?.address || (user as any)?.id || (user as any)?.email;
+    if (target) {
+      fetchUserCreditBalance(target)
         .then((bal) => setUserCredits(bal))
         .catch(() => setUserCredits(null));
     } else {
       setUserCredits(null);
     }
-  }, [walletKey]);
+  }, [walletKey, user]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/contract/fee`)
@@ -856,18 +899,19 @@ impl SolaceContract {
       }
       setContractHash(resolvedHash);
 
-      // 2. Check user's prepaid audit credit balance
+      // 2. Check user's prepaid audit credit balance (10 XML = 1 audit)
+      const targetUser = walletKey || user?.address || (user as any)?.id || (user as any)?.email;
       let currentBalance = userCredits;
-      if (!currentBalance && walletKey) {
+      if (!currentBalance && targetUser) {
         try {
-          currentBalance = await fetchUserCreditBalance(walletKey);
+          currentBalance = await fetchUserCreditBalance(targetUser);
           setUserCredits(currentBalance);
         } catch (_) {}
       }
 
       if (!currentBalance || currentBalance.availableCredits <= 0) {
         setError(
-          'Insufficient audit credits (0 available). Solace operates on prepaid non-expiring credit bundles: Starter (30 XLM / 3 audits), Growth (60 XLM / 6 audits), or Professional (90 XLM / 9 audits).'
+          'Your account does not have enough AI analysis credits to run this audit (>= 10 XML required). Purchase a credit package below to unlock instant AST analysis.'
         );
         setShowPricingModal(true);
         setLoading(false);
@@ -875,22 +919,29 @@ impl SolaceContract {
         return;
       }
 
-      // 3. Consume 1 credit & execute Solace Dual Flash AST AI analysis
-      setAuditStep(`Consuming 1 audit credit (${currentBalance.availableCredits} remaining in prepaid bundle)...`);
+      // 3. Deduct 10 XML credits (1 audit) & execute Solace Dual Flash AST AI analysis
+      setAuditStep(`Deducting 10 XML credits (${currentBalance.availableCredits} audits available)...`);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('solace_auth_token') : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/audit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({
           codeSnippet,
           isPostDeployment,
-          userWallet: walletKey,
+          userWallet: targetUser,
           contractHash: resolvedHash,
         }),
       });
 
       const data = await response.json();
-      if (response.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
-        setError(data.error || 'Insufficient audit credits. Please purchase an audit bundle to continue.');
+      if (response.status === 402 || data.code === 'INSUFFICIENT_CREDITS' || data.needsCredits) {
+        setError(data.error || 'Your account does not have enough AI analysis credits to run this audit. Purchase a credit package below to continue.');
         setShowPricingModal(true);
         setLoading(false);
         setAuditStep('');
@@ -1157,6 +1208,126 @@ impl SolaceContract {
           </div>
         </div>
 
+        {/* Insufficient Credits Banner / Unlock AI-Powered Smart Contract Analysis */}
+        {userCredits && userCredits.availableCredits === 0 && (
+          <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-white via-white to-rose-50/50 dark:from-[#111726] dark:via-[#111726] dark:to-accent/5 border border-accent/30 shadow-lg shadow-accent/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-72 h-72 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-accent text-white flex items-center justify-center shadow-md shadow-accent/25 shrink-0">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                      <span>Unlock AI-Powered Smart Contract Analysis</span>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent text-white uppercase tracking-wider">
+                        Prepaid Bundles
+                      </span>
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-0.5 leading-relaxed">
+                      Your account does not have enough AI analysis credits to run this audit. Purchase a credit package below to get instant access to full AST vulnerability analysis, automated invariant testing, and AI-generated Rust code remediation.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPricingModal(true)}
+                  className="px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shrink-0 cursor-pointer"
+                >
+                  View Full Breakdown
+                </button>
+              </div>
+
+              {/* 3 Package Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
+                {/* Starter: 30 XML for 3 audits */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">Starter</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        Popular for MVPs
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-2xl font-black font-mono text-accent">30 XLM</span>
+                      <span className="text-[11px] text-slate-500 font-mono">/ 30 XML Credits</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                      3 Complete AST Invariant Audits (10 XML / audit). Non-expiring.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickPurchase(1)}
+                    className="w-full py-2 px-3 rounded-full bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Coins className="w-3.5 h-3.5 text-accent" />
+                    <span>Purchase Starter (30 XLM)</span>
+                  </button>
+                </div>
+
+                {/* Growth: 60 XML for 6 audits */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#0d121f] border-2 border-accent shadow-md shadow-accent/10 transition flex flex-col justify-between relative">
+                  <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-wider">
+                    Best Value
+                  </span>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">Growth</span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-2xl font-black font-mono text-accent">60 XLM</span>
+                      <span className="text-[11px] text-slate-500 font-mono">/ 60 XML Credits</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                      6 Complete AST Invariant Audits. Priority Gemini Flash engine.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickPurchase(2)}
+                    className="w-full py-2 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Coins className="w-3.5 h-3.5 text-white" />
+                    <span>Purchase Growth (60 XLM)</span>
+                  </button>
+                </div>
+
+                {/* Professional: 90 XML for 9 audits */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">Professional</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20">
+                        Protocol Standard
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-2xl font-black font-mono text-accent">90 XLM</span>
+                      <span className="text-[11px] text-slate-500 font-mono">/ 90 XML Credits</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                      9 Complete AST Invariant Audits. Auditor multi-sig proof inscriptions.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickPurchase(3)}
+                    className="w-full py-2 px-3 rounded-full bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Coins className="w-3.5 h-3.5 text-accent" />
+                    <span>Purchase Pro (90 XLM)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab 1: Studio */}
         {activeTab === 'STUDIO' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
@@ -1422,7 +1593,7 @@ impl SolaceContract {
                     >
                       <Coins className="w-3.5 h-3.5 text-accent" />
                       <span>
-                        Balance: <strong className="font-mono">{userCredits ? userCredits.availableCredits : 0}</strong> Credits
+                        Balance: <strong className="font-mono">{userCredits ? userCredits.availableCredits * 10 : 0} XML</strong> ({userCredits ? userCredits.availableCredits : 0} Audits)
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-white font-mono font-bold">
                         + Buy Bundles
@@ -1430,11 +1601,11 @@ impl SolaceContract {
                     </button>
                     {userCredits && userCredits.availableCredits <= 1 && (
                       <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                        {userCredits.availableCredits === 0 ? '0 Credits Available' : 'Running Low: 1 Credit Left'}
+                        {userCredits.availableCredits === 0 ? '0 XML Available' : 'Running Low: 10 XML Left'}
                       </span>
                     )}
                     <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden lg:inline">
-                      1 credit per audit • Non-expiring
+                      10 XML (1 audit) • Non-expiring
                     </span>
                   </div>
 
@@ -1447,8 +1618,8 @@ impl SolaceContract {
                     <ShieldCheck className="w-4 h-4" />
                     <span>
                       {loading
-                        ? (auditStep || 'Deducting 1 credit & analyzing...')
-                        : 'Run AST Audit (1 Credit)'}
+                        ? (auditStep || 'Deducting 10 XML & analyzing...')
+                        : 'Run AST Audit (10 XML)'}
                     </span>
                   </button>
                 </div>

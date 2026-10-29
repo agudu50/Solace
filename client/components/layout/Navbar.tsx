@@ -30,17 +30,21 @@ import {
   Menu,
   Terminal,
   Sparkles,
+  Coins,
+  User,
 } from 'lucide-react';
 import { connectWallet, detectWalletNetwork, CONTRACT_ID } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
+import PricingModal from '../pricing/PricingModal';
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { walletKey, network, connecting, connect, disconnect, setNetwork, toggleNetwork, isAdmin } = useWallet();
+  const { walletKey, user, network, connecting, connect, disconnect, setNetwork, toggleNetwork, isAdmin } = useWallet();
   const [notice, setNotice] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
   const [showInvariantsModal, setShowInvariantsModal] = useState<boolean>(false);
+  const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<boolean>(false);
   const [copiedContract, setCopiedContract] = useState<boolean>(false);
@@ -53,8 +57,13 @@ export default function Navbar() {
     setTheme(isDark ? 'dark' : 'light');
 
     const handleOpenInvariants = () => setShowInvariantsModal(true);
+    const handleOpenPricing = () => setShowPricingModal(true);
     window.addEventListener('solace-open-invariants-modal', handleOpenInvariants);
-    return () => window.removeEventListener('solace-open-invariants-modal', handleOpenInvariants);
+    window.addEventListener('solace-open-pricing-modal', handleOpenPricing);
+    return () => {
+      window.removeEventListener('solace-open-invariants-modal', handleOpenInvariants);
+      window.removeEventListener('solace-open-pricing-modal', handleOpenPricing);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -73,7 +82,6 @@ export default function Navbar() {
     setNotice('');
     try {
       await connect();
-      router.push('/dashboard');
     } catch (err: any) {
       const msg = err?.message || 'Connection failed.';
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
@@ -250,8 +258,22 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Wallet Button - Clickable to open Wallet Details Modal (No naked X button) */}
-          <div suppressHydrationWarning className="shrink-0 flex items-center">
+          {/* Credit Balance Pill (Rendered when authenticated) */}
+          {(walletKey || user) && (
+            <button
+              type="button"
+              onClick={() => setShowPricingModal(true)}
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-accent/10 border border-accent/25 hover:bg-accent/20 text-accent font-bold text-[10px] sm:text-xs transition cursor-pointer shrink-0"
+              title="Available AI Analysis Credits • Click to purchase packages"
+            >
+              <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>{user?.availableCredits !== undefined ? `${user.availableCredits * 10} XML` : '0 XML'}</span>
+              <span className="opacity-75 hidden xl:inline">({user?.availableCredits || 0} audits)</span>
+            </button>
+          )}
+
+          {/* User Account / Wallet Button */}
+          <div suppressHydrationWarning className="shrink-0 flex items-center gap-1.5">
             {walletKey ? (
               <button
                 type="button"
@@ -263,17 +285,40 @@ export default function Navbar() {
                 <span className="font-bold">{walletKey.slice(0, 3)}...{walletKey.slice(-3)}</span>
                 <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform hidden sm:inline" />
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleConnect}
-                disabled={connecting}
-                className="px-2.5 sm:px-4 py-1 sm:py-1.5 bg-accent hover:bg-accent-hover text-white rounded-full text-[11px] sm:text-xs font-bold shadow-md shadow-accent/25 transition disabled:opacity-50 flex items-center gap-1 sm:gap-1.5 shrink-0"
+            ) : user ? (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs text-slate-800 dark:text-slate-200 shrink-0 transition"
+                title="User Account Dashboard"
               >
-                <Wallet className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{connecting ? 'Connecting...' : 'Connect Wallet'}</span>
-                <span className="sm:hidden">{connecting ? '...' : 'Connect'}</span>
-              </button>
+                <User className="w-3 h-3 text-accent" />
+                <span className="font-bold max-w-[100px] truncate">{user.name || user.email?.split('@')[0]}</span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-flex px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-accent transition shrink-0"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="hidden sm:inline-flex px-3 py-1 text-xs font-bold rounded-full border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-accent hover:text-accent transition shrink-0"
+                >
+                  Sign Up
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleConnect}
+                  disabled={connecting}
+                  className="px-2.5 sm:px-4 py-1 sm:py-1.5 bg-accent hover:bg-accent-hover text-white rounded-full text-[11px] sm:text-xs font-bold shadow-md shadow-accent/25 transition disabled:opacity-50 flex items-center gap-1 sm:gap-1.5 shrink-0"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{connecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                  <span className="sm:hidden">{connecting ? '...' : 'Connect'}</span>
+                </button>
+              </>
             )}
           </div>
 
@@ -935,6 +980,9 @@ export default function Navbar() {
         </div>,
         document.body
       )}
+
+      {/* Global Pricing & Audit Credit Purchase Modal */}
+      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
     </header>
   );
 }

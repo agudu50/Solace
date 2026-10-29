@@ -19,11 +19,13 @@ import {
   consumeCreditHandler,
 } from '../controllers/auditController.js';
 
+import { requireAuth, authenticate } from '../middleware/authMiddleware.js';
+
 const router = Router();
 
 // Health & Core Audit
 router.get('/health', healthCheck);
-router.post('/audit', auditContract);
+router.post('/audit', authenticate, auditContract);
 
 // Prepaid Credit-Based Subscription Packages (30, 60, 90 XLM)
 router.get('/credits/packages', getPackagesHandler);

@@ -1,5 +1,18 @@
 import { createChallenge, verifyAndConsumeChallenge } from '../services/challengeService.js';
-import { findUserByWallet, createUser, recordLogin, isValidStellarAddress, normalizeWallet } from '../services/userService.js';
+import {
+  findUserByWallet,
+  findUserById,
+  findUserByEmail,
+  createUser,
+  createEmailUser,
+  loginEmailUser,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  linkWalletToUser,
+  recordLogin,
+  isValidStellarAddress,
+  normalizeWallet,
+} from '../services/userService.js';
 import { createSession, revokeSession } from '../services/sessionService.js';
 import { getUserBalance } from '../services/creditStore.js';
 
@@ -160,6 +173,191 @@ export async function verifyChallengeHandler(req, res) {
  * Get current authenticated user session details
  * GET /api/auth/me
  */
+/**
+ * Register with Email and Password
+ * POST /api/auth/register
+ */
+export async function registerEmailHandler(req, res) {
+  try {
+    const { name, email, password } = req.body || {};
+
+    const user = await createEmailUser({ name, email, password });
+    const userCredits = getUserBalance(user.wallet_address || user.id);
+
+    const session = await createSession(user, {
+      ip: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.cookie('solace_session', session.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.status(201).json({
+      success: true,
+      token: session.token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        address: user.wallet_address || null,
+        role: user.role,
+        status: user.status,
+        authProvider: user.auth_provider,
+        createdAt: user.created_at,
+        availableCredits: userCredits.availableCredits,
+      },
+    });
+  } catch (err) {
+    console.error('[Auth] Registration error:', err.message);
+    res.status(400).json({
+      success: false,
+      error: err.message || 'Failed to register account.',
+    });
+  }
+}
+
+/**
+ * Log in with Email and Password
+ * POST /api/auth/login
+ */
+export async function loginEmailHandler(req, res) {
+  try {
+    const { email, password } = req.body || {};
+
+    const user = await loginEmailUser(email, password);
+    const userCredits = getUserBalance(user.wallet_address || user.id);
+
+    const session = await createSession(user, {
+      ip: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.cookie('solace_session', session.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      success: true,
+      token: session.token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        address: user.wallet_address || null,
+        role: user.role,
+        status: user.status,
+        authProvider: user.auth_provider,
+        createdAt: user.created_at,
+        lastLoginAt: user.last_login_at,
+        availableCredits: userCredits.availableCredits,
+      },
+    });
+  } catch (err) {
+    console.error('[Auth] Login error:', err.message);
+    res.status(401).json({
+      success: false,
+      error: err.message || 'Invalid email or password.',
+    });
+  }
+}
+
+/**
+ * Request Password Reset Token
+ * POST /api/auth/forgot-password
+ */
+export async function forgotPasswordHandler(req, res) {
+  try {
+    const { email } = req.body || {};
+    const result = await requestPasswordReset(email);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * Reset Password with Token
+ * POST /api/auth/reset-password
+ */
+export async function resetPasswordHandler(req, res) {
+  try {
+    const { token, newPassword } = req.body || {};
+    const result = await resetPasswordWithToken(token, newPassword);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * Link an authenticated Stellar wallet to the current user's account
+ * POST /api/auth/link-wallet
+ */
+export async function linkWalletHandler(req, res) {
+  try {
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required.' });
+    }
+
+    const { walletAddress, challengeId, signature } = req.body || {};
+    if (!walletAddress || !challengeId || !signature) {
+      return res.status(400).json({
+        success: false,
+        error: 'walletAddress, challengeId, and cryptographic signature are required.',
+      });
+    }
+
+    const normalized = normalizeWallet(walletAddress);
+
+    // 1. Verify cryptographic signature of the wallet being linked
+    await verifyAndConsumeChallenge({
+      challengeId,
+      address: normalized,
+      signature,
+      expectedAction: 'solace-link-wallet',
+    });
+
+    // 2. Link wallet to the user record
+    const linkResult = await linkWalletToUser({
+      userId: req.user.userId,
+      walletAddress: normalized,
+    });
+
+    // 3. Issue updated session
+    const updatedUser = await findUserById(req.user.userId);
+    const session = await createSession(updatedUser);
+
+    res.cookie('solace_session', session.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      success: true,
+      walletAddress: linkResult.walletAddress,
+      authProvider: linkResult.authProvider,
+      token: session.token,
+      message: 'Wallet linked successfully to your account.',
+    });
+  } catch (err) {
+    console.error('[Auth] Link wallet error:', err.message);
+    res.status(400).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * Get current authenticated user session details
+ * GET /api/auth/me
+ */
 export async function getMeHandler(req, res) {
   try {
     if (!req.user) {
@@ -170,7 +368,14 @@ export async function getMeHandler(req, res) {
       });
     }
 
-    const user = await findUserByWallet(req.user.address);
+    let user = null;
+    if (req.user.userId) {
+      user = await findUserById(req.user.userId);
+    }
+    if (!user && req.user.address) {
+      user = await findUserByWallet(req.user.address);
+    }
+
     if (!user || user.status !== 'active') {
       return res.status(401).json({
         success: false,
@@ -178,13 +383,17 @@ export async function getMeHandler(req, res) {
       });
     }
 
-    const userCredits = getUserBalance(user.wallet_address);
+    const creditKey = user.wallet_address || user.id;
+    const userCredits = getUserBalance(creditKey);
 
     res.json({
       success: true,
       user: {
         id: user.id,
-        address: user.wallet_address,
+        name: user.name || null,
+        email: user.email || null,
+        address: user.wallet_address || null,
+        authProvider: user.auth_provider || 'wallet',
         role: user.role,
         status: user.status,
         createdAt: user.created_at,

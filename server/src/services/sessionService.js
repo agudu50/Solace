@@ -16,7 +16,10 @@ export async function createSession(user, metadata = {}) {
   const payload = {
     sessionId,
     userId: user.id,
-    address: user.wallet_address,
+    address: user.wallet_address || null,
+    email: user.email || null,
+    name: user.name || null,
+    authProvider: user.auth_provider || 'wallet',
     role: user.role,
     status: user.status,
   };
@@ -35,7 +38,7 @@ export async function createSession(user, metadata = {}) {
       [
         sessionId,
         user.id,
-        user.wallet_address,
+        user.wallet_address || null,
         user.role,
         tokenHash,
         expiresAt.toISOString(),
@@ -49,7 +52,7 @@ export async function createSession(user, metadata = {}) {
     sessions.push({
       id: sessionId,
       user_id: user.id,
-      wallet_address: user.wallet_address,
+      wallet_address: user.wallet_address || null,
       role: user.role,
       token_hash: tokenHash,
       expires_at: expiresAt.toISOString(),
@@ -80,7 +83,7 @@ export async function verifySession(token) {
 
     if (usePostgres) {
       const res = await query(
-        `SELECT s.*, u.status as user_status, u.role as current_role
+        `SELECT s.*, u.status as user_status, u.role as current_role, u.name as user_name, u.email as user_email, u.auth_provider as user_provider
          FROM sessions s
          JOIN users u ON s.user_id = u.id
          WHERE s.token_hash = $1 AND s.revoked = false AND s.expires_at > NOW()
@@ -95,6 +98,9 @@ export async function verifySession(token) {
         sessionId: sessionRow.id,
         userId: sessionRow.user_id,
         address: sessionRow.wallet_address,
+        email: sessionRow.user_email,
+        name: sessionRow.user_name,
+        authProvider: sessionRow.user_provider || 'wallet',
         role: sessionRow.current_role,
         status: sessionRow.user_status,
       };
@@ -113,7 +119,10 @@ export async function verifySession(token) {
     return {
       sessionId: session.id,
       userId: user.id,
-      address: user.wallet_address,
+      address: user.wallet_address || null,
+      email: user.email || null,
+      name: user.name || null,
+      authProvider: user.auth_provider || 'wallet',
       role: user.role,
       status: user.status,
     };

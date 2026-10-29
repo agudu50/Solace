@@ -130,5 +130,29 @@
     "expires_at": "2026-10-25T23:55:42.088Z",
     "used": false,
     "created_at": "2026-10-25T23:50:42.088Z"
+  },
+  {
+    "id": "ch_10d7101d33dd43f9234d7a2459ec7146",
+    "wallet_address": "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT",
+    "nonce": "df1c17dc4eece4f7039c8b06afffe5ff3ddee65adba2308c3ce9076929eee772",
+    "domain": "localhost",
+    "action": "solace-auth-login",
+    "message": "Solace Security Auditor Authentication\n\nDomain: localhost\nAuditor Wallet: GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT\nAction: solace-auth-login\nNonce: df1c17dc4eece4f7039c8b06afffe5ff3ddee65adba2308c3ce9076929eee772\nIssued At: 2026-10-25T23:55:27.998Z\nExpires At: 2026-10-26T00:00:27.998Z\n\nNotice: Sign this message with your Stellar keypair to securely authenticate your auditor session. This cryptographic signature operates completely off-chain and will never cost any network fees.",
+    "issued_at": "2026-10-25T23:55:27.998Z",
+    "expires_at": "2026-10-26T00:00:27.998Z",
+    "used": false,
+    "created_at": "2026-10-25T23:55:27.998Z"
+  },
+  {
+    "id": "ch_721cf5005a0d749b142772cc3432d424",
+    "wallet_address": "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT",
+    "nonce": "05ecb65575ecfb40f6512af1b6e9da4473f9366ca3e74bb9ac8a1322e857cd44",
+    "domain": "localhost",
+    "action": "solace-auth-login",
+    "message": "Solace Security Auditor Authentication\n\nDomain: localhost\nAuditor Wallet: GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT\nAction: solace-auth-login\nNonce: 05ecb65575ecfb40f6512af1b6e9da4473f9366ca3e74bb9ac8a1322e857cd44\nIssued At: 2026-10-28T17:34:58.234Z\nExpires At: 2026-10-28T17:39:58.234Z\n\nNotice: Sign this message with your Stellar keypair to securely authenticate your auditor session. This cryptographic signature operates completely off-chain and will never cost any network fees.",
+    "issued_at": "2026-10-28T17:34:58.234Z",
+    "expires_at": "2026-10-28T17:39:58.234Z",
+    "used": false,
+    "created_at": "2026-10-28T17:34:58.234Z"
   }
 ]

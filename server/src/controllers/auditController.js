@@ -25,8 +25,21 @@ export async function auditContract(req, res, next) {
     const contractHash = clientHash || calculatedHash;
     const auditType = isPostDeployment ? 'POST_DEPLOYMENT' : 'PRE_DEPLOYMENT';
 
-    const userWallet = req.body.userWallet || req.body.auditor || req.body.walletAddress;
+    const userWallet =
+      req.body.userWallet ||
+      req.body.auditor ||
+      req.body.walletAddress ||
+      (req.user && req.user.address) ||
+      (req.user && req.user.userId);
     const clientFeeReceipt = req.body.feeReceipt;
+
+    if (!userWallet && !clientFeeReceipt) {
+      return res.status(401).json({
+        success: false,
+        needsAuth: true,
+        error: 'Authentication or wallet connection required to perform smart contract analysis.',
+      });
+    }
 
     // Credit-based verification: require user to have >= 1 credit (or verified receipt)
     let creditReceipt = null;
@@ -53,6 +66,46 @@ export async function auditContract(req, res, next) {
     console.log(`[*] [Audit] Incoming ${auditType} audit request (Hash: ${contractHash.slice(0, 12)}...)`);
 
     const report = await analyzeContractWithAI(code, Boolean(isPostDeployment));
+
+    // Record analysis job in database
+    try {
+      const { readTable, writeTable, usePostgres, query } = await import('../db/db.js');
+      const jobId = `job_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
+      if (usePostgres) {
+        await query(
+          `INSERT INTO ai_analysis_jobs (id, user_id, wallet_address, contract_name, contract_hash, credits_reserved, credits_deducted, status, risk_score, model_used, findings_count, completed_at)
+           VALUES ($1, $2, $3, $4, $5, 10, 10, 'COMPLETED', $6, $7, $8, NOW())`,
+          [
+            jobId,
+            req.user?.userId || null,
+            userWallet || null,
+            req.body.contractName || 'Soroban Contract',
+            contractHash,
+            report.riskScore,
+            report.modelUsed || 'Gemini Flash AST',
+            report.vulnerabilities?.length || 0,
+          ]
+        );
+      } else {
+        const jobs = readTable('ai_analysis_jobs');
+        jobs.unshift({
+          id: jobId,
+          user_id: req.user?.userId || null,
+          wallet_address: userWallet || null,
+          contract_name: req.body.contractName || 'Soroban Contract',
+          contract_hash: contractHash,
+          credits_reserved: 10,
+          credits_deducted: 10,
+          status: 'COMPLETED',
+          risk_score: report.riskScore,
+          model_used: report.modelUsed || 'Gemini Flash AST',
+          findings_count: report.vulnerabilities?.length || 0,
+          created_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+        });
+        writeTable('ai_analysis_jobs', jobs);
+      }
+    } catch (_) {}
 
     console.log(
       `[✓] [Audit] Analysis completed via ${report.modelUsed || 'Solace AI Engine'} | Risk: ${report.riskScore}/100 | Vulnerabilities: ${report.vulnerabilities?.length || 0}`

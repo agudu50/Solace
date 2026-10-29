@@ -25,6 +25,10 @@ import {
   Coins,
   PlusCircle,
   History,
+  User,
+  Mail,
+  Link2,
+  Sparkles,
 } from 'lucide-react';
 import { connectWallet, fetchUserCreditBalance, fetchUserCreditHistory } from '../../utils/solaceService';
 import WalletGate from '../../components/auth/WalletGate';
@@ -54,9 +58,12 @@ export default function DashboardPage() {
   const [selectedAuditMode, setSelectedAuditMode] = useState<'PRE' | 'POST'>('PRE');
   const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo | null>(null);
   const [auditHistory, setAuditHistory] = useState<any[]>([]);
-  const { walletKey: connectedWallet, network, connect } = useWallet();
+  const { walletKey: connectedWallet, network, connect, user, linkWallet, refreshUser } = useWallet();
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
+  const [linkingWallet, setLinkingWallet] = useState<boolean>(false);
+  const [linkError, setLinkError] = useState<string>('');
+  const [linkSuccess, setLinkSuccess] = useState<string>('');
   const [userCredits, setUserCredits] = useState<{
     availableCredits: number;
     totalPurchased: number;
@@ -67,7 +74,7 @@ export default function DashboardPage() {
   const [showHistoryView, setShowHistoryView] = useState<boolean>(false);
 
   const loadCredits = async (address?: string) => {
-    const target = address || connectedWallet;
+    const target = address || connectedWallet || user?.address || (user as any)?.id || (user as any)?.email;
     if (!target) {
       setUserCredits(null);
       setPurchaseHistory([]);
@@ -82,13 +89,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (connectedWallet) {
-      loadCredits(connectedWallet);
+    const target = connectedWallet || user?.address || (user as any)?.id || (user as any)?.email;
+    if (target) {
+      loadCredits(target);
     } else {
       setUserCredits(null);
       setPurchaseHistory([]);
     }
-  }, [connectedWallet]);
+  }, [connectedWallet, user]);
 
   useEffect(() => {
     const loadAuditData = () => {
@@ -181,6 +189,35 @@ export default function DashboardPage() {
       }
     } finally {
       setConnectingWallet(false);
+    }
+  };
+
+  const handleLinkWallet = async () => {
+    setLinkingWallet(true);
+    setLinkError('');
+    setLinkSuccess('');
+    try {
+      let key = connectedWallet;
+      if (!key) {
+        key = await connect();
+      }
+      if (!key) {
+        throw new Error('No Freighter wallet address detected.');
+      }
+      await linkWallet(key);
+      setLinkSuccess(`Wallet ${key.slice(0, 6)}...${key.slice(-6)} linked successfully!`);
+      await refreshUser();
+      await loadCredits(key);
+      setTimeout(() => setLinkSuccess(''), 5000);
+    } catch (err: any) {
+      if (err?.message === 'FREIGHTER_NOT_INSTALLED') {
+        window.open('https://www.freighter.app/', '_blank');
+      } else {
+        setLinkError(err?.message || 'Failed to link Stellar wallet.');
+        setTimeout(() => setLinkError(''), 6000);
+      }
+    } finally {
+      setLinkingWallet(false);
     }
   };
 
@@ -415,10 +452,18 @@ export default function DashboardPage() {
 
                 <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight flex items-center gap-2.5 flex-wrap">
                   <span>Welcome Back,</span>
-                  {connectedWallet ? (
+                  {user?.name ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-accent-subtle dark:bg-accent/15 border border-accent/25 text-accent font-bold text-base sm:text-2xl lg:text-3xl shadow-xs">
+                      <span>{user.name}</span>
+                    </span>
+                  ) : connectedWallet ? (
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-accent-subtle dark:bg-accent/15 border border-accent/25 text-accent font-mono text-base sm:text-2xl lg:text-3xl shadow-xs">
                       <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-accent shrink-0" />
                       <span>{connectedWallet.slice(0, 6)}...{connectedWallet.slice(-6)}</span>
+                    </span>
+                  ) : user?.email ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-accent-subtle dark:bg-accent/15 border border-accent/25 text-accent font-bold text-base sm:text-2xl lg:text-3xl shadow-xs">
+                      <span>{user.email}</span>
                     </span>
                   ) : (
                     <span className="text-slate-900 dark:text-white">Security Auditor</span>
@@ -455,24 +500,62 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
             {/* ================= COLUMN 1 (Left): Card 1 & Card 4 ================= */}
             <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
-              {/* Card 1: Connected Wallet & Target Score / Ledger State */}
+              {/* Card 1: Account Identity & Connected Wallet */}
               <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
                 <div className="flex justify-between items-center mb-3">
                   <div>
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {connectedWallet ? 'Connected Auditor Wallet' : 'Auditor Wallet & State'}
+                      Auditor Account &amp; Identity
                     </h2>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Target Score &amp; Ledger State</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Authentication &amp; Stellar Signer</p>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" title="Active on Stellar Testnet (Protocol 22)" />
                 </div>
 
-                {connectedWallet ? (
+                {/* Account Details & Auth Provider Badge */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 mb-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center shrink-0">
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {user?.name || (connectedWallet ? `Auditor ${connectedWallet.slice(0, 6)}` : 'Security Auditor')}
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                          <Mail className="w-2.5 h-2.5 shrink-0" />
+                          <span>{user?.email || (connectedWallet ? 'Wallet Signer Session' : 'Email Account')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 bg-accent-subtle text-accent border border-accent/25">
+                      {user?.authProvider === 'hybrid' || (user?.email && (connectedWallet || user?.address))
+                        ? 'Hybrid (Email + Freighter)'
+                        : user?.authProvider === 'wallet' || (connectedWallet && !user?.email)
+                        ? 'Stellar Wallet'
+                        : 'Email Account'}
+                    </span>
+                  </div>
+
+                  {/* Dual Architecture Explanation */}
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/80 text-[10px] text-slate-500 dark:text-slate-400 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">External Blockchain Wallet:</span>
+                      <span className="font-mono text-slate-600 dark:text-slate-300">Testnet XLM (Purchases &amp; Gas)</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Internal Audit Credits:</span>
+                      <span className="font-mono text-accent font-bold">10 XML = 1 Audit (Non-Expiring)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {connectedWallet || user?.address ? (
                   <>
-                    {/* Card Widget */}
-                    <div
-                      className="text-white rounded-2xl p-5 shadow-md relative overflow-hidden mb-3 bg-accent"
-                    >
+                    {/* Active Connected Signer Card */}
+                    <div className="text-white rounded-2xl p-5 shadow-md relative overflow-hidden mb-3 bg-accent">
                       <div className="flex justify-between items-center mb-3">
                         <span className="font-bold tracking-wider text-xs uppercase text-rose-100 flex items-center gap-1.5">
                           <Wallet className="w-4 h-4 text-rose-200" />
@@ -485,16 +568,20 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="text-[11px] font-semibold text-rose-200 uppercase tracking-wide">
-                        Active Connected Signer
+                        Active Stellar Signer
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1">
-                        <div className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono truncate" title={connectedWallet}>
-                          {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-6)}
+                        <div
+                          className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono truncate"
+                          title={connectedWallet || user?.address || ''}
+                        >
+                          {(connectedWallet || user?.address || '').slice(0, 6)}...
+                          {(connectedWallet || user?.address || '').slice(-6)}
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleCopyWallet(connectedWallet)}
-                          className="px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
+                          onClick={() => handleCopyWallet(connectedWallet || user?.address || '')}
+                          className="px-2 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition flex items-center gap-1 shrink-0 cursor-pointer"
                           title="Copy Wallet Key"
                         >
                           {copiedWallet ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
@@ -503,7 +590,9 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex justify-between items-center mt-4 pt-3 border-t border-rose-300/20 text-xs font-mono font-medium text-rose-100">
-                        <span className="truncate max-w-[170px]">ID: {connectedWallet.slice(0, 10)}...</span>
+                        <span className="truncate max-w-[170px]">
+                          ID: {(connectedWallet || user?.address || '').slice(0, 10)}...
+                        </span>
                         <span>ROLE: SIGNER ACTIVE</span>
                       </div>
                     </div>
@@ -521,7 +610,42 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   </>
-                ) : null}
+                ) : (
+                  <div className="p-4 rounded-2xl bg-accent-subtle border border-accent/25 flex flex-col justify-between mb-3 text-center space-y-3">
+                    <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent border border-accent/30 mx-auto flex items-center justify-center">
+                      <Link2 className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        No Stellar Wallet Linked
+                      </h4>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                        Link your Freighter wallet to authorize blockchain transactions, sign ledger proofs, and purchase credit bundles directly.
+                      </p>
+                    </div>
+
+                    {linkError && (
+                      <div className="text-[11px] text-red-600 dark:text-red-400 font-medium">
+                        {linkError}
+                      </div>
+                    )}
+                    {linkSuccess && (
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        {linkSuccess}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleLinkWallet}
+                      disabled={linkingWallet}
+                      className="w-full py-2 px-3 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
+                      <span>{linkingWallet ? 'Connecting Freighter...' : 'Link Stellar Wallet (Freighter)'}</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Card 1B: Prepaid Audit Credit Management */}
@@ -541,28 +665,34 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                {/* 3-Column Balance Statistics */}
+                {/* 3-Column Balance Statistics (10 XML = 1 Audit) */}
                 <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800 text-center mb-3">
                   <div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Available</div>
-                    <div className="text-xl sm:text-2xl font-black font-mono text-accent mt-0.5">
-                      {userCredits ? userCredits.availableCredits : 0}
+                    <div className="text-lg sm:text-xl font-black font-mono text-accent mt-0.5">
+                      {userCredits ? userCredits.availableCredits * 10 : 0} XML
                     </div>
-                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Credits</div>
+                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">
+                      {userCredits ? userCredits.availableCredits : 0} Audits
+                    </div>
                   </div>
                   <div className="border-x border-slate-200 dark:border-slate-800">
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Purchased</div>
-                    <div className="text-xl sm:text-2xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
-                      {userCredits ? userCredits.totalPurchased : 0}
+                    <div className="text-lg sm:text-xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
+                      {userCredits ? userCredits.totalPurchased * 10 : 0} XML
                     </div>
-                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Total</div>
+                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">
+                      {userCredits ? userCredits.totalPurchased : 0} Audits
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Consumed</div>
-                    <div className="text-xl sm:text-2xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
-                      {userCredits ? userCredits.totalConsumed : 0}
+                    <div className="text-lg sm:text-xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
+                      {userCredits ? userCredits.totalConsumed * 10 : 0} XML
                     </div>
-                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Audits</div>
+                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">
+                      {userCredits ? userCredits.totalConsumed : 0} Audits
+                    </div>
                   </div>
                 </div>
 
@@ -578,12 +708,12 @@ export default function DashboardPage() {
                     <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-current" />
                     <div>
                       <div className="font-bold">
-                        {userCredits.availableCredits === 0 ? 'No Audit Credits Available' : 'Credits Running Low'}
+                        {userCredits.availableCredits === 0 ? 'No Audit Credits Available (0 XML)' : 'Credits Running Low (10 XML Remaining)'}
                       </div>
                       <div className="text-[11px] opacity-90 mt-0.5 leading-relaxed">
                         {userCredits.availableCredits === 0
-                          ? 'Purchase an audit bundle below to inspect smart contracts on Stellar Soroban.'
-                          : 'You only have 1 credit remaining. Stock up on prepaid credits at any time.'}
+                          ? 'Purchase an audit bundle below to inspect smart contracts on Stellar Soroban (10 XML = 1 Audit).'
+                          : 'You only have 10 XML (1 audit) remaining. Stock up on prepaid non-expiring credits at any time.'}
                       </div>
                     </div>
                   </div>

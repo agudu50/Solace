@@ -59,7 +59,7 @@ export async function connectWallet(): Promise<string> {
 
   try {
     const accessPromise = (async () => {
-      // Primary: requestAccess() prompts the user and returns their address
+      // Primary: requestAccess() prompts the user to unlock Freighter and authorize
       const res: any = await requestAccess();
       if (res && !res.error) {
         const key = typeof res === 'string' ? res : res.address || res.publicKey;
@@ -68,30 +68,16 @@ export async function connectWallet(): Promise<string> {
         }
       }
 
-      // Fallback: If requestAccess returned error or alternative Freighter extension structure
-      try {
-        const allowedRes: any = await setAllowed();
-        if (allowedRes && !allowedRes.error) {
-          const addrRes: any = await getAddress();
-          if (addrRes && !addrRes.error) {
-            const key = typeof addrRes === 'string' ? addrRes : addrRes.address || addrRes.publicKey;
-            if (key && /^G[A-Z0-9]{55}$/.test(key)) {
-              return key;
-            }
-          }
-        }
-      } catch (_) {}
-
       if (res?.error) {
         const errObj = res.error;
         const msg = typeof errObj === 'string' ? errObj : errObj.message || 'Freighter access request was rejected.';
         throw new Error(msg);
       }
 
-      return '';
+      throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
     })();
 
-    // 60-second timeout guard so user has ample time to unlock their wallet or click Approve
+    // 60-second timeout guard so user has ample time to enter their password
     const timeoutPromise = new Promise<string>((_, reject) =>
       setTimeout(
         () =>
@@ -112,9 +98,10 @@ export async function connectWallet(): Promise<string> {
       rawMsg.includes('cancel') ||
       rawMsg.includes('decline') ||
       rawMsg.includes('denied') ||
-      rawMsg.includes('closed')
+      rawMsg.includes('closed') ||
+      rawMsg.includes('user declined')
     ) {
-      throw new Error('Wallet authorization was cancelled in Freighter. Please approve connection to authenticate.');
+      throw new Error('Wallet authorization was cancelled in Freighter. Please unlock and approve to authenticate.');
     }
 
     // Check if Freighter extension is truly not installed
@@ -634,7 +621,10 @@ export interface AuthChallengeResponse {
 
 export interface AuthUser {
   id: string;
-  address: string;
+  name?: string | null;
+  email?: string | null;
+  address?: string | null;
+  authProvider?: 'email' | 'wallet' | 'hybrid';
   role: 'user' | 'admin' | 'super_admin';
   status: 'active' | 'suspended' | 'revoked';
   createdAt: string;
@@ -655,6 +645,100 @@ export interface AuthVerifyResponse {
   token: string;
   expiresAt: string;
   error?: string;
+}
+
+export async function registerWithEmail(name: string, email: string, password: string): Promise<AuthVerifyResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ name, email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Registration failed.');
+  }
+  if (typeof window !== 'undefined' && data.token) {
+    localStorage.setItem('solace_auth_token', data.token);
+    localStorage.setItem('solace_user_role', data.user.role);
+  }
+  return data;
+}
+
+export async function loginWithEmail(email: string, password: string): Promise<AuthVerifyResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Login failed.');
+  }
+  if (typeof window !== 'undefined' && data.token) {
+    localStorage.setItem('solace_auth_token', data.token);
+    localStorage.setItem('solace_user_role', data.user.role);
+  }
+  return data;
+}
+
+export async function requestPasswordReset(email: string): Promise<{ success: boolean; message: string; resetToken?: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Password reset request failed.');
+  }
+  return data;
+}
+
+export async function resetPasswordWithToken(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Password reset failed.');
+  }
+  return data;
+}
+
+export async function linkWalletToAccount(address: string): Promise<{ success: boolean; walletAddress: string; authProvider: string }> {
+  const challenge = await requestAuthChallenge(address, 'solace-link-wallet' as any);
+  const signature = await signAuthChallengeWithWallet(challenge.message, address, challenge.challengeId);
+
+  let token = '';
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('solace_auth_token') || '';
+  }
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/auth/link-wallet`, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify({
+      walletAddress: address,
+      challengeId: challenge.challengeId,
+      signature,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Wallet linking failed.');
+  }
+  return data;
 }
 
 /**

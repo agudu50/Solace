@@ -70,5 +70,41 @@
     "ip_address": null,
     "user_agent": null,
     "created_at": "2026-10-24T18:51:01.402Z"
+  },
+  {
+    "id": "ses_f7a21c5c5214a1e232015802933002a0",
+    "user_id": "usr_72f47478a2925f251cd5cf5f419acb39",
+    "wallet_address": null,
+    "role": "user",
+    "token_hash": "a347d1ef7d501d3cf7dd1d0bbc50d5c59b4ba0be9f7b9181ae8278fbc3fba0aa",
+    "expires_at": "2026-10-29T17:05:25.930Z",
+    "revoked": false,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.9711",
+    "created_at": "2026-10-28T17:05:25.930Z"
+  },
+  {
+    "id": "ses_03e4ceb99425fb0707e6bf03d89d3721",
+    "user_id": "usr_72f47478a2925f251cd5cf5f419acb39",
+    "wallet_address": null,
+    "role": "user",
+    "token_hash": "ebca64b5df96cabe0871be2ec073d308caf5c457a8c4fc0569e0ec3024d17cdc",
+    "expires_at": "2026-10-29T17:05:52.575Z",
+    "revoked": false,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.9711",
+    "created_at": "2026-10-28T17:05:52.575Z"
+  },
+  {
+    "id": "ses_4ebcea86921be3f5685020ce0a0b0fd4",
+    "user_id": "usr_72f47478a2925f251cd5cf5f419acb39",
+    "wallet_address": null,
+    "role": "user",
+    "token_hash": "cd9fff9e517ae74bb460c3148fd177fbed4bad1e68a6293669eb3384f8886cc5",
+    "expires_at": "2026-10-29T17:09:23.648Z",
+    "revoked": false,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.9711",
+    "created_at": "2026-10-28T17:09:23.648Z"
   }
 ]

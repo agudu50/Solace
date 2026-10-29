@@ -10,6 +10,9 @@ import {
   authenticateWalletSession,
   fetchCurrentUserSession,
   logoutUserSession,
+  registerWithEmail as apiRegisterEmail,
+  loginWithEmail as apiLoginEmail,
+  linkWalletToAccount as apiLinkWallet,
   AuthUser,
 } from '../utils/solaceService';
 
@@ -23,6 +26,10 @@ interface WalletContextType {
   freighterReady: boolean | null;
   connect: () => Promise<string>;
   authenticate: (action?: 'solace-auth-login' | 'solace-admin-login') => Promise<AuthUser>;
+  loginWithEmail: (email: string, password: string) => Promise<AuthUser>;
+  registerWithEmail: (name: string, email: string, password: string) => Promise<AuthUser>;
+  linkWallet: (address: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
   disconnect: () => void;
   setNetwork: (network: 'testnet' | 'mainnet') => void;
   toggleNetwork: () => void;
@@ -42,21 +49,7 @@ export function WalletProvider({
 }) {
   const router = useRouter();
 
-  const [walletKey, setWalletKeyState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (localStorage.getItem('solace_wallet_disconnected') === 'true') {
-          return '';
-        }
-        const stored = localStorage.getItem('solace_connected_wallet');
-        if (stored && /^G[A-Z0-9]{55}$/.test(stored)) return stored;
-      } catch (_) {}
-    }
-    if (initialWallet && /^G[A-Z0-9]{55}$/.test(initialWallet)) {
-      return initialWallet;
-    }
-    return '';
-  });
+  const [walletKey, setWalletKeyState] = useState<string>('');
 
   // Solace is strictly in the Stellar Testnet (Protocol 22) phase
   const [network, setNetworkState] = useState<'testnet' | 'mainnet'>('testnet');
@@ -67,12 +60,20 @@ export function WalletProvider({
   const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'super_admin'));
   const isSuperAdmin = Boolean(user && user.role === 'super_admin');
 
-  // Load authenticated session on mount
+  // Load authenticated session on mount from verified backend token
   useEffect(() => {
     fetchCurrentUserSession().then((authenticatedUser) => {
       if (authenticatedUser) {
         setUser(authenticatedUser);
-        setWalletKeyState(authenticatedUser.address);
+        setWalletKeyState(authenticatedUser.address || '');
+      } else {
+        setUser(null);
+        setWalletKeyState('');
+        try {
+          localStorage.removeItem('solace_connected_wallet');
+          localStorage.removeItem('solace_auth_token');
+          localStorage.removeItem('solace_user_role');
+        } catch (_) {}
       }
     });
   }, []);
@@ -109,12 +110,7 @@ export function WalletProvider({
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
     }
-    if (key) {
-      try {
-        router.push('/dashboard');
-      } catch (_) {}
-    }
-  }, [syncWalletToStorageAndCookies, router]);
+  }, [syncWalletToStorageAndCookies]);
 
   const setNetwork = useCallback((net: 'testnet' | 'mainnet') => {
     setNetworkState('testnet');
@@ -132,19 +128,6 @@ export function WalletProvider({
   // Initial client hydration check and live wallet watcher
   useEffect(() => {
     try {
-      const isExplicitlyDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
-      if (isExplicitlyDisconnected) {
-        setWalletKeyState('');
-        syncWalletToStorageAndCookies('');
-      } else {
-        const stored = localStorage.getItem('solace_connected_wallet');
-        if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
-          setWalletKeyState(stored);
-          syncWalletToStorageAndCookies(stored);
-        } else {
-          setWalletKeyState('');
-        }
-      }
       localStorage.setItem('solace-network', 'testnet');
       document.cookie = `solace_network=testnet; path=/; max-age=31536000; SameSite=Lax`;
       setNetworkState('testnet');
@@ -155,7 +138,6 @@ export function WalletProvider({
     });
 
     // Real-time WatchWalletChanges from Freighter extension:
-    // CRITICAL: NEVER auto-connect an unauthenticated visitor!
     // Only update if the user has already explicitly authenticated and switches accounts in Freighter.
     let watcher: any = null;
     try {
@@ -163,7 +145,7 @@ export function WalletProvider({
         watcher = new WatchWalletChanges(2000);
         watcher.watch((params: any) => {
           setWalletKeyState((currentKey) => {
-            // If the user has not connected or has logged out, DO NOT auto-connect
+            // If the user has not authenticated or has logged out, DO NOT auto-connect
             if (!currentKey) return '';
             
             if (params && params.address && /^G[A-Z0-9]{55}$/.test(params.address)) {
@@ -182,7 +164,7 @@ export function WalletProvider({
     } catch (_) {}
 
     const handleWalletEvent = (e: any) => {
-      const key = e.detail?.walletKey ?? (typeof window !== 'undefined' ? localStorage.getItem('solace_connected_wallet') : '') ?? '';
+      const key = e.detail?.walletKey ?? '';
       setWalletKeyState(key);
       syncWalletToStorageAndCookies(key);
     };
@@ -206,23 +188,32 @@ export function WalletProvider({
   }, [syncWalletToStorageAndCookies, syncNetworkToStorageAndCookies]);
 
   /**
-   * Cryptographic challenge authentication workflow
+   * Cryptographic challenge authentication workflow.
+   * Prompts wallet to unlock and sign cryptographic challenge.
    */
   const authenticate = async (
     action: 'solace-auth-login' | 'solace-admin-login' = 'solace-auth-login'
   ): Promise<AuthUser> => {
     setConnecting(true);
     try {
+      // 1. Get wallet address after Freighter unlock & access approval
+      const key = await freighterConnect();
+      if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
+        throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
+      }
+
+      // 2. Perform cryptographic challenge signature verification
+      const authRes = await authenticateWalletSession(key, action);
+      if (!authRes || !authRes.success || !authRes.user) {
+        throw new Error(authRes?.error || 'Cryptographic signature verification failed.');
+      }
+
+      // 3. ONLY ONCE AUTHENTICATED: Set session state and storage
       if (typeof window !== 'undefined') {
         localStorage.removeItem('solace_wallet_disconnected');
       }
-      // 1. Get wallet address
-      const key = await freighterConnect();
       setWalletKeyState(key);
       syncWalletToStorageAndCookies(key);
-
-      // 2. Perform cryptographic challenge authentication
-      const authRes = await authenticateWalletSession(key, action);
       setUser(authRes.user);
 
       if (typeof window !== 'undefined') {
@@ -232,37 +223,112 @@ export function WalletProvider({
       }
 
       return authRes.user;
+    } catch (err: any) {
+      setUser(null);
+      setWalletKeyState('');
+      syncWalletToStorageAndCookies('');
+      throw err;
     } finally {
       setConnecting(false);
     }
   };
 
   /**
-   * Standard wallet connect (backward-compatible)
+   * Standard wallet connect:
+   * Prompts user to unlock Freighter, types password, signs challenge, verifies on backend,
+   * and ONLY THEN navigates to /dashboard.
    */
   const connect = async (): Promise<string> => {
     setConnecting(true);
     try {
+      // 1. Prompt Freighter to unlock and request access
+      const key = await freighterConnect();
+      if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
+        throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
+      }
+
+      // 2. Perform cryptographic challenge authentication - user MUST sign to authenticate!
+      const authRes = await authenticateWalletSession(key, 'solace-auth-login');
+      if (!authRes || !authRes.success || !authRes.user) {
+        throw new Error(authRes?.error || 'Cryptographic signature verification failed.');
+      }
+
+      // 3. ONLY ONCE AUTHENTICATED: Set session state and storage
       if (typeof window !== 'undefined') {
         localStorage.removeItem('solace_wallet_disconnected');
       }
-      const key = await freighterConnect();
       setWalletKeyState(key);
       syncWalletToStorageAndCookies(key);
+      setUser(authRes.user);
+
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('solace-wallet-updated', { detail: { walletKey: key } }));
+        window.dispatchEvent(
+          new CustomEvent('solace-wallet-updated', { detail: { walletKey: key, user: authRes.user } })
+        );
       }
 
-      // Establish authenticated session on backend in background
-      authenticateWalletSession(key, 'solace-auth-login')
-        .then((authRes) => setUser(authRes.user))
-        .catch(() => {});
-
-      // Automatically navigate to dashboard upon connection
+      // 4. Navigate to dashboard ONLY AFTER full cryptographic authentication is complete!
       try {
         router.push('/dashboard');
       } catch (_) {}
+
       return key;
+    } catch (err: any) {
+      setUser(null);
+      setWalletKeyState('');
+      syncWalletToStorageAndCookies('');
+      throw err;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const activeUser = await fetchCurrentUserSession();
+      if (activeUser) {
+        setUser(activeUser);
+        if (activeUser.address) {
+          setWalletKeyState(activeUser.address);
+          syncWalletToStorageAndCookies(activeUser.address);
+        }
+      }
+    } catch (_) {}
+  }, [syncWalletToStorageAndCookies]);
+
+  const loginWithEmail = async (email: string, pass: string): Promise<AuthUser> => {
+    setConnecting(true);
+    try {
+      const res = await apiLoginEmail(email, pass);
+      setUser(res.user);
+      if (res.user.address) {
+        setWalletKeyState(res.user.address);
+        syncWalletToStorageAndCookies(res.user.address);
+      }
+      return res.user;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const registerWithEmail = async (name: string, email: string, pass: string): Promise<AuthUser> => {
+    setConnecting(true);
+    try {
+      const res = await apiRegisterEmail(name, email, pass);
+      setUser(res.user);
+      return res.user;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const linkWallet = async (address: string): Promise<void> => {
+    setConnecting(true);
+    try {
+      const res = await apiLinkWallet(address);
+      setWalletKeyState(res.walletAddress);
+      syncWalletToStorageAndCookies(res.walletAddress);
+      await refreshUser();
     } finally {
       setConnecting(false);
     }
@@ -299,6 +365,10 @@ export function WalletProvider({
         freighterReady,
         connect,
         authenticate,
+        loginWithEmail,
+        registerWithEmail,
+        linkWallet,
+        refreshUser,
         disconnect,
         setNetwork,
         toggleNetwork,

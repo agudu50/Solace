@@ -36,29 +36,18 @@ type AuthStatus = 'idle' | 'requesting' | 'verifying' | 'authenticated';
 
 export default function WalletGate({ children, pageTitle, description }: WalletGateProps) {
   const router = useRouter();
-  const { walletKey, network, connecting, freighterReady, connect, setWalletKeyDirectly } = useWallet();
-  const [checking, setChecking] = useState<boolean>(!walletKey);
+  const { walletKey, user, network, connecting, freighterReady, connect, setWalletKeyDirectly } = useWallet();
+  const [checking, setChecking] = useState<boolean>(!walletKey && !user);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   useEffect(() => {
-    if (walletKey) {
-      setChecking(false);
-    } else {
-      try {
-        const stored = localStorage.getItem('solace_connected_wallet');
-        if (stored && /^G[A-Z0-9]{55}$/.test(stored)) {
-          setWalletKeyDirectly(stored);
-        }
-      } catch (_) {}
-      setChecking(false);
-    }
-  }, [walletKey, setWalletKeyDirectly]);
+    setChecking(false);
+  }, [walletKey, user]);
 
   const handleConnect = async () => {
     setErrorMsg('');
     try {
       await connect();
-      router.push('/dashboard');
     } catch (err: any) {
       const msg = err?.message || 'Connection failed.';
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
@@ -85,8 +74,8 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
     );
   }
 
-  // If wallet is connected, render the protected page content
-  if (walletKey) {
+  // If wallet is connected OR user is authenticated via session, render the protected page content
+  if (walletKey || user) {
     return <>{children}</>;
   }
 
@@ -200,6 +189,24 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
               <span>Get Freighter</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
+          </div>
+
+          {/* Email Authentication Options */}
+          <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-center gap-3 text-xs flex-wrap">
+            <Link
+              href="/login"
+              className="text-slate-700 dark:text-slate-200 hover:text-accent font-bold transition flex items-center gap-1"
+            >
+              <span>Sign in with Email &amp; Password</span>
+              <ArrowRight className="w-3.5 h-3.5 text-accent" />
+            </Link>
+            <span className="text-slate-400">•</span>
+            <Link
+              href="/signup"
+              className="text-accent hover:underline font-bold transition"
+            >
+              Create Account
+            </Link>
           </div>
 
           {/* Alternative Demo Signer for Quick Testing */}

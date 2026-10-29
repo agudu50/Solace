@@ -66,13 +66,35 @@ async function createTablesPostgres() {
   const schemaSql = `
     CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(64) PRIMARY KEY,
-      wallet_address VARCHAR(56) UNIQUE NOT NULL,
+      name VARCHAR(256),
+      email VARCHAR(256) UNIQUE,
+      password_hash VARCHAR(256),
+      password_salt VARCHAR(128),
+      reset_token VARCHAR(128),
+      reset_token_expires_at TIMESTAMPTZ,
+      auth_provider VARCHAR(32) NOT NULL DEFAULT 'wallet',
+      wallet_address VARCHAR(56) UNIQUE,
       role VARCHAR(32) NOT NULL DEFAULT 'user',
       status VARCHAR(32) NOT NULL DEFAULT 'active',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       last_login_at TIMESTAMPTZ
     );
+
+    -- Safe column additions for existing installations
+    DO $$ BEGIN
+      BEGIN
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(256);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(256) UNIQUE;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(256);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS password_salt VARCHAR(128);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(128);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMPTZ;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(32) DEFAULT 'wallet';
+        ALTER TABLE users ALTER COLUMN wallet_address DROP NOT NULL;
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END;
+    END $$;
 
     CREATE TABLE IF NOT EXISTS wallet_associations (
       id VARCHAR(64) PRIMARY KEY,
@@ -100,7 +122,7 @@ async function createTablesPostgres() {
     CREATE TABLE IF NOT EXISTS sessions (
       id VARCHAR(64) PRIMARY KEY,
       user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      wallet_address VARCHAR(56) NOT NULL,
+      wallet_address VARCHAR(56),
       role VARCHAR(32) NOT NULL,
       token_hash VARCHAR(128) NOT NULL UNIQUE,
       expires_at TIMESTAMPTZ NOT NULL,
@@ -112,7 +134,7 @@ async function createTablesPostgres() {
 
     CREATE TABLE IF NOT EXISTS audit_logs (
       id VARCHAR(64) PRIMARY KEY,
-      actor_wallet VARCHAR(56) NOT NULL,
+      actor_wallet VARCHAR(56),
       action VARCHAR(64) NOT NULL,
       target VARCHAR(128),
       details JSONB,
@@ -121,16 +143,19 @@ async function createTablesPostgres() {
     );
 
     CREATE TABLE IF NOT EXISTS credit_balances (
-      wallet_address VARCHAR(56) PRIMARY KEY,
+      wallet_address VARCHAR(56),
+      user_id VARCHAR(64),
       credit_balance INTEGER NOT NULL DEFAULT 0,
       total_purchased INTEGER NOT NULL DEFAULT 0,
       total_consumed INTEGER NOT NULL DEFAULT 0,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (wallet_address)
     );
 
     CREATE TABLE IF NOT EXISTS credit_transactions (
       id VARCHAR(64) PRIMARY KEY,
-      wallet_address VARCHAR(56) NOT NULL,
+      wallet_address VARCHAR(56),
+      user_id VARCHAR(64),
       type VARCHAR(32) NOT NULL,
       amount INTEGER NOT NULL,
       package_id INTEGER,
@@ -140,9 +165,39 @@ async function createTablesPostgres() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS payments (
+      id VARCHAR(64) PRIMARY KEY,
+      user_id VARCHAR(64),
+      wallet_address VARCHAR(56) NOT NULL,
+      package_id INTEGER NOT NULL,
+      amount_xlm NUMERIC(12, 4) NOT NULL,
+      credits_granted INTEGER NOT NULL,
+      network VARCHAR(32) NOT NULL DEFAULT 'testnet',
+      tx_hash VARCHAR(128) UNIQUE NOT NULL,
+      status VARCHAR(32) NOT NULL DEFAULT 'CONFIRMED',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_analysis_jobs (
+      id VARCHAR(64) PRIMARY KEY,
+      user_id VARCHAR(64),
+      wallet_address VARCHAR(56),
+      contract_name VARCHAR(256),
+      contract_hash VARCHAR(128) NOT NULL,
+      credits_reserved INTEGER NOT NULL DEFAULT 10,
+      credits_deducted INTEGER NOT NULL DEFAULT 10,
+      status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED',
+      risk_score INTEGER,
+      model_used VARCHAR(64),
+      findings_count INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ
+    );
+
     CREATE TABLE IF NOT EXISTS contract_audits (
       id VARCHAR(64) PRIMARY KEY,
-      wallet_address VARCHAR(56) NOT NULL,
+      wallet_address VARCHAR(56),
+      user_id VARCHAR(64),
       contract_name VARCHAR(256) NOT NULL,
       contract_hash VARCHAR(128) NOT NULL,
       risk_score INTEGER NOT NULL,
@@ -158,6 +213,7 @@ async function createTablesPostgres() {
 
     -- Create performance indexes
     CREATE INDEX IF NOT EXISTS idx_users_wallet ON users(wallet_address);
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_challenges_nonce ON auth_challenges(nonce);
     CREATE INDEX IF NOT EXISTS idx_challenges_wallet ON auth_challenges(wallet_address);
     CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
@@ -182,6 +238,8 @@ const TABLES = [
   'credit_balances',
   'credit_transactions',
   'contract_audits',
+  'payments',
+  'ai_analysis_jobs',
 ];
 
 function getTableFile(table) {
