@@ -1,5 +1,5 @@
 import { verifySession } from '../services/sessionService.js';
-import { findUserByWallet } from '../services/userService.js';
+import { findUserByWallet, findUserById } from '../services/userService.js';
 
 /**
  * Extract token from HTTP-only cookie or Authorization header
@@ -32,8 +32,15 @@ export async function authenticate(req, res, next) {
       return next();
     }
 
-    // Double-check real-time user status in DB
-    const user = await findUserByWallet(sessionData.address);
+    // Double-check real-time user status in DB (by wallet address or user ID)
+    let user = null;
+    if (sessionData.address) {
+      user = await findUserByWallet(sessionData.address);
+    }
+    if (!user && (sessionData.userId || sessionData.id)) {
+      user = await findUserById(sessionData.userId || sessionData.id);
+    }
+
     if (!user || user.status !== 'active') {
       req.user = null;
       return next();
@@ -41,7 +48,8 @@ export async function authenticate(req, res, next) {
 
     req.user = {
       id: user.id,
-      address: user.wallet_address,
+      address: user.wallet_address || null,
+      email: user.email || null,
       role: user.role,
       status: user.status,
       sessionId: sessionData.sessionId,

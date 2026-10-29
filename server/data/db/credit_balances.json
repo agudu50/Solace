@@ -90,5 +90,12 @@
     "total_purchased": 0,
     "total_consumed": 0,
     "updated_at": "2026-10-28T17:05:25.926Z"
+  },
+  {
+    "wallet_address": "GBVNNF7EUCIOKHEQV5BHQAILECKMWU3UY2IB5SL34XYPD67CBMDTQBZE",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-10-29T11:16:11.445Z"
   }
 ]

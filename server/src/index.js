@@ -52,7 +52,7 @@ app.use((req, res, next) => {
     let statusText = 'OK';
     if (statusCode >= 400 && statusCode < 500) {
       statusColor = yellow;
-      statusText = statusCode === 400 ? 'Bad Request' : statusCode === 404 ? 'Not Found' : statusCode === 403 ? 'Forbidden' : 'Client Error';
+      statusText = statusCode === 400 ? 'Bad Request' : statusCode === 401 ? 'Unauthorized (Guest Session Check)' : statusCode === 404 ? 'Not Found' : statusCode === 403 ? 'Forbidden' : 'Client Error';
     } else if (statusCode >= 500) {
       statusColor = red;
       statusText = 'Server Error';

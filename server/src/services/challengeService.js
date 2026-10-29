@@ -96,9 +96,10 @@ export function parseSignatureBuffer(rawSig) {
     if (/^[0-9a-fA-F]{128}$/.test(trimmed)) {
       return Buffer.from(trimmed, 'hex');
     }
-    // Attempt base64 decode
+    // Attempt standard base64 and url-safe base64 decode
     try {
-      const b = Buffer.from(trimmed, 'base64');
+      const normalizedBase64 = trimmed.replace(/-/g, '+').replace(/_/g, '/');
+      const b = Buffer.from(normalizedBase64, 'base64');
       if (b.length === 64) return b;
     } catch (_) {}
     return Buffer.from(trimmed, 'utf8');
@@ -184,13 +185,39 @@ export async function verifyAndConsumeChallenge({
   }
 
   // 7. Cryptographic Ed25519 Signature Verification
+  // Supports canonical SEP-0053 (Freighter standard), raw prefixed, direct sha256, and direct raw message
   let isValidSig = false;
   try {
     const keypair = Keypair.fromPublicKey(normalized);
     const messageBuffer = Buffer.from(challenge.message, 'utf8');
     const signatureBuffer = parseSignatureBuffer(signature);
 
-    isValidSig = keypair.verify(messageBuffer, signatureBuffer);
+    // Candidate 1: SEP-0053 Canonical (SHA-256 over "Stellar Signed Message:\n" + message)
+    // This is the official standard used by the Freighter browser extension
+    const sep53Payload = Buffer.concat([
+      Buffer.from('Stellar Signed Message:\n', 'utf8'),
+      messageBuffer,
+    ]);
+    const sep53Hash = crypto.createHash('sha256').update(sep53Payload).digest();
+    if (keypair.verify(sep53Hash, signatureBuffer)) {
+      isValidSig = true;
+    }
+
+    // Candidate 2: SEP-0053 unhashed payload
+    if (!isValidSig && keypair.verify(sep53Payload, signatureBuffer)) {
+      isValidSig = true;
+    }
+
+    // Candidate 3: Direct SHA-256 message hash
+    const rawHash = crypto.createHash('sha256').update(messageBuffer).digest();
+    if (!isValidSig && keypair.verify(rawHash, signatureBuffer)) {
+      isValidSig = true;
+    }
+
+    // Candidate 4: Direct raw message (used by server evaluator signer and raw Keypair.sign)
+    if (!isValidSig && keypair.verify(messageBuffer, signatureBuffer)) {
+      isValidSig = true;
+    }
   } catch (err) {
     console.error('[Auth] Cryptographic verification failed:', err.message);
     throw new Error(`Cryptographic signature verification failed: ${err.message}`);

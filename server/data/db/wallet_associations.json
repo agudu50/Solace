@@ -94,5 +94,13 @@
     "network": "testnet",
     "is_primary": true,
     "verified_at": "2026-10-24T18:55:37.852Z"
+  },
+  {
+    "id": "wa_b89d6708992bef398219a86b",
+    "user_id": "usr_f1e899f3b014f1ae37ac9c5961831294",
+    "wallet_address": "GBVNNF7EUCIOKHEQV5BHQAILECKMWU3UY2IB5SL34XYPD67CBMDTQBZE",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-10-29T11:16:11.445Z"
   }
 ]

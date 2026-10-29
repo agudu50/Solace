@@ -36,7 +36,7 @@ type AuthStatus = 'idle' | 'requesting' | 'verifying' | 'authenticated';
 
 export default function WalletGate({ children, pageTitle, description }: WalletGateProps) {
   const router = useRouter();
-  const { walletKey, user, network, connecting, freighterReady, connect, setWalletKeyDirectly } = useWallet();
+  const { walletKey, user, network, connecting, freighterReady, connect, authenticate, setWalletKeyDirectly } = useWallet();
   const [checking, setChecking] = useState<boolean>(!walletKey && !user);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
@@ -60,9 +60,14 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
     }
   };
 
-  const handleUseDemoKey = () => {
-    const demoSigner = 'GBWSB2OVP5Q4H4G2R7YTHNJMK6K6X3L2J3J7Y6X5B4V3C2X1Z7FDYPI';
-    setWalletKeyDirectly(demoSigner);
+  const handleUseDemoKey = async () => {
+    setErrorMsg('');
+    const demoSigner = 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI';
+    try {
+      await authenticate('solace-auth-login');
+    } catch (_) {
+      setWalletKeyDirectly(demoSigner);
+    }
     router.push('/dashboard');
   };
 

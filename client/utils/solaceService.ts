@@ -789,7 +789,10 @@ export async function signAuthChallengeWithWallet(
 
   // Freighter Extension signature prompt
   try {
-    const signResult = await signMessage(message, { address });
+    const signResult = await signMessage(message, {
+      address,
+      networkPassphrase: 'Test SDF Network ; September 2015',
+    });
 
     if ((signResult as any)?.error) {
       const err = (signResult as any).error;
@@ -874,8 +877,14 @@ export async function authenticateWalletSession(
 export async function fetchCurrentUserSession(): Promise<AuthUser | null> {
   try {
     let token = '';
+    let hasCookie = false;
     if (typeof window !== 'undefined') {
       token = localStorage.getItem('solace_auth_token') || '';
+      hasCookie = document.cookie.includes('solace_session=');
+      // If neither token nor session cookie exists, visitor is unauthenticated
+      if (!token && !hasCookie) {
+        return null;
+      }
     }
 
     const headers: Record<string, string> = {};
