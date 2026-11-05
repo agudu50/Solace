@@ -10,6 +10,7 @@ import {
   forgotPasswordHandler,
   resetPasswordHandler,
   linkWalletHandler,
+  walletLoginHandler,
 } from '../controllers/authController.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 
@@ -25,6 +26,7 @@ router.post('/reset-password', resetPasswordHandler);
 router.post('/challenge', getChallengeHandler);
 router.post('/verify', verifyChallengeHandler);
 router.post('/evaluator-sign', evaluatorSignHandler);
+router.post('/wallet-login', walletLoginHandler);
 
 // Authenticated Session Endpoints
 router.get('/me', requireAuth, getMeHandler);

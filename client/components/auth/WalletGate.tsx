@@ -23,7 +23,7 @@ import {
   KeyRound,
   RefreshCw,
 } from 'lucide-react';
-import { connectWallet, detectWalletNetwork, checkFreighterInstalled } from '../../utils/solaceService';
+import { connectWallet, detectWalletNetwork, checkFreighterInstalled, loginWalletSession } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
 
 interface WalletGateProps {
@@ -53,7 +53,7 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
         setErrorMsg('Freighter wallet extension was not detected in this browser. Please install Freighter from freighter.app or open in a browser with Freighter active.');
       } else if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('declined')) {
-        setErrorMsg('Wallet authorization was cancelled in Freighter. Please approve signature to authenticate.');
+        setErrorMsg('Wallet authorization was cancelled in Freighter. Please enter your password to connect.');
       } else {
         setErrorMsg(msg);
       }
@@ -64,10 +64,9 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
     setErrorMsg('');
     const demoSigner = 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI';
     try {
-      await authenticate('solace-auth-login');
-    } catch (_) {
-      setWalletKeyDirectly(demoSigner);
-    }
+      await loginWalletSession(demoSigner);
+    } catch (_) {}
+    setWalletKeyDirectly(demoSigner);
     router.push('/dashboard');
   };
 

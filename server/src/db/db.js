@@ -224,6 +224,88 @@ async function createTablesPostgres() {
 
   await pool.query(schemaSql);
   console.log(' [DB] Neon PostgreSQL schema verified and indexes created.');
+  await migrateLocalDataToPostgres();
+}
+
+/**
+ * Automatically migrate existing local records into Neon PostgreSQL
+ */
+async function migrateLocalDataToPostgres() {
+  try {
+    // 1. Migrate users
+    const users = readTable('users');
+    for (const u of users) {
+      if (!u || !u.id) continue;
+      await pool.query(
+        `INSERT INTO users (id, name, email, password_hash, password_salt, reset_token, reset_token_expires_at, auth_provider, wallet_address, role, status, created_at, updated_at, last_login_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          u.id,
+          u.name || null,
+          u.email || null,
+          u.password_hash || null,
+          u.password_salt || null,
+          u.reset_token || null,
+          u.reset_token_expires_at ? new Date(u.reset_token_expires_at) : null,
+          u.auth_provider || 'wallet',
+          u.wallet_address || null,
+          u.role || 'user',
+          u.status || 'active',
+          u.created_at ? new Date(u.created_at) : new Date(),
+          u.updated_at ? new Date(u.updated_at) : new Date(),
+          u.last_login_at ? new Date(u.last_login_at) : null,
+        ]
+      );
+    }
+
+    // 2. Migrate credit balances
+    const balances = readTable('credit_balances');
+    for (const b of balances) {
+      if (b && b.wallet_address) {
+        await pool.query(
+          `INSERT INTO credit_balances (wallet_address, user_id, credit_balance, total_purchased, total_consumed, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (wallet_address) DO UPDATE SET
+             credit_balance = EXCLUDED.credit_balance,
+             total_purchased = EXCLUDED.total_purchased,
+             total_consumed = EXCLUDED.total_consumed`,
+          [
+            b.wallet_address,
+            b.user_id || null,
+            b.credit_balance || 0,
+            b.total_purchased || 0,
+            b.total_consumed || 0,
+            b.updated_at ? new Date(b.updated_at) : new Date(),
+          ]
+        );
+      }
+    }
+
+    // 3. Migrate wallet associations
+    const associations = readTable('wallet_associations');
+    for (const a of associations) {
+      if (a && a.id && a.user_id && a.wallet_address) {
+        await pool.query(
+          `INSERT INTO wallet_associations (id, user_id, wallet_address, network, is_primary, verified_at)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            a.id,
+            a.user_id,
+            a.wallet_address,
+            a.network || 'testnet',
+            a.is_primary !== false,
+            a.verified_at ? new Date(a.verified_at) : new Date(),
+          ]
+        );
+      }
+    }
+
+    console.log(' [DB] Synchronized existing local records to Neon PostgreSQL.');
+  } catch (err) {
+    console.warn(' [DB] Data migration warning:', err.message);
+  }
 }
 
 /**

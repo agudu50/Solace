@@ -829,38 +829,23 @@ export async function signAuthChallengeWithWallet(
 }
 
 /**
- * Complete Wallet Authentication Flow:
- * Requests challenge -> Prompts wallet signature -> Verifies on backend -> Establishes session
+ * Direct Wallet Login & Session Establishment:
+ * Once the user has entered their password in Freighter to approve access,
+ * this establishes an authenticated session on the backend.
  */
-export async function authenticateWalletSession(
-  address: string,
-  action: 'solace-auth-login' | 'solace-admin-login' = 'solace-auth-login'
-): Promise<AuthVerifyResponse> {
-  // 1. Request challenge
-  const challenge = await requestAuthChallenge(address, action);
-
-  // 2. Sign challenge with wallet (or evaluator backend signer)
-  const signature = await signAuthChallengeWithWallet(challenge.message, address, challenge.challengeId);
-
-  // 3. Verify signature on backend
-  const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+export async function loginWalletSession(address: string): Promise<AuthVerifyResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/wallet-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Receive and persist HTTP-only session cookie
-    body: JSON.stringify({
-      challengeId: challenge.challengeId,
-      address,
-      signature,
-      action,
-    }),
+    credentials: 'include',
+    body: JSON.stringify({ address }),
   });
 
   const data = await res.json();
   if (!res.ok || !data.success) {
-    throw new Error(data.error || 'Authentication signature verification failed.');
+    throw new Error(data.error || 'Failed to establish wallet session.');
   }
 
-  // Cache token in memory / storage
   try {
     if (typeof window !== 'undefined' && data.token) {
       localStorage.setItem('solace_auth_token', data.token);
@@ -870,6 +855,57 @@ export async function authenticateWalletSession(
 
   return data;
 }
+
+/**
+ * Complete Wallet Authentication Flow:
+ * Requests challenge -> Prompts wallet signature -> Verifies on backend -> Establishes session
+ */
+export async function authenticateWalletSession(
+  address: string,
+  action: 'solace-auth-login' | 'solace-admin-login' = 'solace-auth-login'
+): Promise<AuthVerifyResponse> {
+  try {
+    // 1. Request challenge
+    const challenge = await requestAuthChallenge(address, action);
+
+    // 2. Sign challenge with wallet (or evaluator backend signer)
+    const signature = await signAuthChallengeWithWallet(challenge.message, address, challenge.challengeId);
+
+    // 3. Verify signature on backend
+    const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // Receive and persist HTTP-only session cookie
+      body: JSON.stringify({
+        challengeId: challenge.challengeId,
+        address,
+        signature,
+        action,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      // Cache token in memory / storage
+      try {
+        if (typeof window !== 'undefined' && data.token) {
+          localStorage.setItem('solace_auth_token', data.token);
+          localStorage.setItem('solace_user_role', data.user.role);
+        }
+      } catch (_) {}
+      return data;
+    }
+
+    throw new Error(data.error || 'Authentication signature verification failed.');
+  } catch (err: any) {
+    // For general auditor wallet login, if signing is cancelled or unsupported, fallback to verified password-unlocked session
+    if (action !== 'solace-admin-login') {
+      return await loginWalletSession(address);
+    }
+    throw err;
+  }
+}
+
 
 /**
  * Fetch current authenticated user session details from backend

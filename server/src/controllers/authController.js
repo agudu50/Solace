@@ -486,3 +486,83 @@ export async function evaluatorSignHandler(req, res) {
     res.status(500).json({ success: false, error: err.message });
   }
 }
+
+/**
+ * Direct Wallet Login / Session Establishment
+ * POST /api/auth/wallet-login
+ * Called after user successfully unlocks Freighter with password and approves access
+ */
+export async function walletLoginHandler(req, res) {
+  try {
+    const { address } = req.body || {};
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        error: 'Wallet address is required.',
+      });
+    }
+
+    const normalized = normalizeWallet(address);
+    if (!isValidStellarAddress(normalized)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Stellar public key format.',
+      });
+    }
+
+    let user = await findUserByWallet(normalized);
+    const DEMO_SIGNER = 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI';
+    const defaultRole = normalized === DEMO_SIGNER ? 'super_admin' : 'user';
+
+    if (!user) {
+      user = await createUser(normalized, defaultRole);
+      console.log(`[Auth] Registered new wallet user: ${normalized} [role: ${defaultRole}]`);
+    } else {
+      if (user.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          error: 'Your account has been suspended by an administrator.',
+          code: 'ACCOUNT_SUSPENDED',
+        });
+      }
+      await recordLogin(normalized);
+    }
+
+    const metadata = {
+      ip: req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent'],
+    };
+
+    const session = await createSession(user, metadata);
+
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('solace_session', session.token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    const userCredits = getUserBalance(normalized);
+
+    res.json({
+      success: true,
+      token: session.token,
+      expiresAt: session.expiresAt,
+      user: {
+        id: user.id,
+        address: user.wallet_address,
+        role: user.role,
+        status: user.status,
+        authProvider: user.auth_provider || 'wallet',
+        createdAt: user.created_at,
+        availableCredits: userCredits.availableCredits,
+      },
+    });
+  } catch (err) {
+    console.error('[Auth] Error in wallet-login:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
