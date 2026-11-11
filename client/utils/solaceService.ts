@@ -18,10 +18,62 @@ const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhos
 export const CONTRACT_ID: string =
   process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
+export interface FreighterNetworkResult {
+  network: string;
+  networkPassphrase: string;
+  isTestnet: boolean;
+  error?: string;
+}
+
 /**
- * Detect network automatically - strictly Testnet (Stellar Protocol 22)
+ * Retrieve current network details from Freighter extension
+ */
+export async function getFreighterNetworkDetails(): Promise<FreighterNetworkResult | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const details = await getNetworkDetails();
+    if (details && !details.error) {
+      const net = (details.network || '').toUpperCase();
+      const pass = details.networkPassphrase || '';
+      const isTestnet =
+        net.includes('TESTNET') ||
+        pass.toLowerCase().includes('test sdf network') ||
+        (details.sorobanRpcUrl || '').toLowerCase().includes('testnet') ||
+        (details.networkUrl || '').toLowerCase().includes('testnet');
+      return {
+        network: net || (isTestnet ? 'TESTNET' : 'PUBLIC'),
+        networkPassphrase: pass,
+        isTestnet,
+      };
+    }
+
+    const netRes = await getNetwork();
+    if (netRes && !netRes.error) {
+      const net = (netRes.network || '').toUpperCase();
+      const pass = netRes.networkPassphrase || '';
+      const isTestnet =
+        net.includes('TESTNET') ||
+        pass.toLowerCase().includes('test sdf network');
+      return {
+        network: net || (isTestnet ? 'TESTNET' : 'PUBLIC'),
+        networkPassphrase: pass,
+        isTestnet,
+      };
+    }
+  } catch (err: any) {
+    console.warn('Failed to retrieve Freighter network details:', err);
+  }
+  return null;
+}
+
+/**
+ * Detect network automatically - checks Freighter or defaults to Testnet (Stellar Protocol 22)
  */
 export async function detectWalletNetwork(): Promise<'testnet' | 'mainnet'> {
+  const details = await getFreighterNetworkDetails();
+  if (details && !details.isTestnet) {
+    return 'mainnet';
+  }
   return 'testnet';
 }
 

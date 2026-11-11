@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
   connectWallet as freighterConnect,
   detectWalletNetwork,
+  getFreighterNetworkDetails,
+  FreighterNetworkResult,
   checkFreighterInstalled,
   WatchWalletChanges,
   authenticateWalletSession,
@@ -16,6 +18,7 @@ import {
   linkWalletToAccount as apiLinkWallet,
   AuthUser,
 } from '../utils/solaceService';
+import NetworkSwitchModal from '../components/auth/NetworkSwitchModal';
 
 interface WalletContextType {
   walletKey: string;
@@ -23,6 +26,11 @@ interface WalletContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   network: 'testnet' | 'mainnet';
+  walletNetwork: string;
+  networkMismatch: boolean;
+  showNetworkModal: boolean;
+  setShowNetworkModal: (show: boolean) => void;
+  checkWalletNetwork: () => Promise<boolean>;
   connecting: boolean;
   freighterReady: boolean | null;
   connect: () => Promise<string>;
@@ -54,6 +62,9 @@ export function WalletProvider({
 
   // Solace is strictly in the Stellar Testnet (Protocol 22) phase
   const [network, setNetworkState] = useState<'testnet' | 'mainnet'>('testnet');
+  const [detectedWalletNetwork, setDetectedWalletNetwork] = useState<string>('TESTNET');
+  const [networkMismatch, setNetworkMismatch] = useState<boolean>(false);
+  const [showNetworkModal, setShowNetworkModal] = useState<boolean>(false);
   const [connecting, setConnecting] = useState<boolean>(false);
   const [freighterReady, setFreighterReady] = useState<boolean | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -145,6 +156,29 @@ export function WalletProvider({
       if (typeof window !== 'undefined' && WatchWalletChanges) {
         watcher = new WatchWalletChanges(2000);
         watcher.watch((params: any) => {
+          if (params && (params.network || params.networkPassphrase)) {
+            const net = (params.network || '').toUpperCase();
+            const pass = (params.networkPassphrase || '').toLowerCase();
+            const isTestnet =
+              net.includes('TESTNET') ||
+              pass.includes('test sdf network');
+
+            if (!isTestnet) {
+              setDetectedWalletNetwork(net || 'PUBLIC');
+              setNetworkMismatch(true);
+              setWalletKeyState((currentKey) => {
+                if (currentKey) {
+                  setShowNetworkModal(true);
+                }
+                return currentKey;
+              });
+            } else {
+              setDetectedWalletNetwork('TESTNET');
+              setNetworkMismatch(false);
+              setShowNetworkModal(false);
+            }
+          }
+
           setWalletKeyState((currentKey) => {
             // If the user has not authenticated or has logged out, DO NOT auto-connect
             if (!currentKey) return '';
@@ -188,6 +222,24 @@ export function WalletProvider({
     };
   }, [syncWalletToStorageAndCookies, syncNetworkToStorageAndCookies]);
 
+  const checkWalletNetwork = useCallback(async (): Promise<boolean> => {
+    try {
+      const netInfo = await getFreighterNetworkDetails();
+      if (netInfo && !netInfo.isTestnet) {
+        setDetectedWalletNetwork(netInfo.network);
+        setNetworkMismatch(true);
+        setShowNetworkModal(true);
+        return false;
+      }
+      setDetectedWalletNetwork('TESTNET');
+      setNetworkMismatch(false);
+      setShowNetworkModal(false);
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }, []);
+
   /**
    * Cryptographic challenge authentication workflow.
    * Prompts wallet to unlock with password and sign cryptographic challenge.
@@ -202,6 +254,18 @@ export function WalletProvider({
       if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
         throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
       }
+
+      // Network Guard: Verify wallet is connected to Stellar Testnet (Protocol 22)
+      const netInfo = await getFreighterNetworkDetails();
+      if (netInfo && !netInfo.isTestnet) {
+        setDetectedWalletNetwork(netInfo.network);
+        setNetworkMismatch(true);
+        setShowNetworkModal(true);
+        throw new Error(`NETWORK_MISMATCH: Freighter is connected to ${netInfo.network}. Please switch to Stellar Testnet (Protocol 22).`);
+      }
+      setDetectedWalletNetwork('TESTNET');
+      setNetworkMismatch(false);
+      setShowNetworkModal(false);
 
       // 2. Perform authentication and session verification
       let authUser: AuthUser | null = null;
@@ -270,6 +334,18 @@ export function WalletProvider({
       if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
         throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
       }
+
+      // Network Guard: Verify wallet is connected to Stellar Testnet (Protocol 22)
+      const netInfo = await getFreighterNetworkDetails();
+      if (netInfo && !netInfo.isTestnet) {
+        setDetectedWalletNetwork(netInfo.network);
+        setNetworkMismatch(true);
+        setShowNetworkModal(true);
+        throw new Error(`NETWORK_MISMATCH: Freighter is connected to ${netInfo.network}. Please switch to Stellar Testnet (Protocol 22).`);
+      }
+      setDetectedWalletNetwork('TESTNET');
+      setNetworkMismatch(false);
+      setShowNetworkModal(false);
 
       // 2. Establish verified session on backend
       let authUser: AuthUser | null = null;
@@ -381,6 +457,8 @@ export function WalletProvider({
   const disconnect = () => {
     setWalletKeyState('');
     setUser(null);
+    setNetworkMismatch(false);
+    setShowNetworkModal(false);
     logoutUserSession();
     if (typeof window !== 'undefined') {
       try {
@@ -397,6 +475,27 @@ export function WalletProvider({
     }
   };
 
+  const handleRecheckAndConnect = async (): Promise<boolean> => {
+    try {
+      const netInfo = await getFreighterNetworkDetails();
+      if (!netInfo || netInfo.isTestnet) {
+        setDetectedWalletNetwork('TESTNET');
+        setNetworkMismatch(false);
+        setShowNetworkModal(false);
+        await connect();
+        return true;
+      }
+      setDetectedWalletNetwork(netInfo.network);
+      setNetworkMismatch(true);
+      return false;
+    } catch (err: any) {
+      if (err?.message?.includes('NETWORK_MISMATCH')) {
+        return false;
+      }
+      throw err;
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -405,6 +504,11 @@ export function WalletProvider({
         isAdmin,
         isSuperAdmin,
         network,
+        walletNetwork: detectedWalletNetwork,
+        networkMismatch,
+        showNetworkModal,
+        setShowNetworkModal,
+        checkWalletNetwork,
         connecting,
         freighterReady,
         connect,
@@ -420,6 +524,13 @@ export function WalletProvider({
       }}
     >
       {children}
+      <NetworkSwitchModal
+        isOpen={showNetworkModal}
+        onClose={() => setShowNetworkModal(false)}
+        currentNetwork={detectedWalletNetwork}
+        requiredNetwork="Stellar Testnet (Protocol 22)"
+        onRecheckAndConnect={handleRecheckAndConnect}
+      />
     </WalletContext.Provider>
   );
 }

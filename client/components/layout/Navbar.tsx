@@ -84,6 +84,10 @@ export default function Navbar() {
       await connect();
     } catch (err: any) {
       const msg = err?.message || 'Connection failed.';
+      if (msg.includes('NETWORK_MISMATCH')) {
+        // Prompt is handled cleanly by NetworkSwitchModal
+        return;
+      }
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
         window.open('https://www.freighter.app/', '_blank');
       } else if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('cancel')) {

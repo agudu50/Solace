@@ -301,7 +301,9 @@ export default function AuditStudioPage() {
         setAuditStep('Connecting Freighter Wallet...');
         activeWallet = await connect();
       } catch (err: any) {
-        setError(err?.message || 'Wallet connection was cancelled.');
+        if (!err?.message?.includes('NETWORK_MISMATCH')) {
+          setError(err?.message || 'Wallet connection was cancelled.');
+        }
         setLoading(false);
         setAuditStep('');
         return;
