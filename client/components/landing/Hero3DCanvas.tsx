@@ -395,12 +395,12 @@ export default function Hero3DCanvas({ mode = 'guard', onModeChange }: Hero3DCan
 
     // Animation Loop
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - startTime) * 0.001;
 
       // Smooth mouse lerp
       currentMouse.x += (targetMouse.x - currentMouse.x) * 0.06;

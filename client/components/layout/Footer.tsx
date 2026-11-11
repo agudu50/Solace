@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import {
   ShieldCheck,
   ExternalLink,
@@ -16,6 +17,7 @@ import {
 import { useWallet } from '../../context/WalletContext';
 
 export default function Footer() {
+  const pathname = usePathname();
   const { network, walletKey } = useWallet();
   const [copied, setCopied] = useState<boolean>(false);
   const contractId = 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
@@ -25,6 +27,83 @@ export default function Footer() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Dedicated minimal dashboard utility footer
+  if (pathname === '/dashboard') {
+    return (
+      <footer className="w-full border-t border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-[#0c101b]/80 backdrop-blur-xl py-4 px-4 sm:px-8 text-xs text-slate-500 dark:text-slate-400 transition-colors z-20 relative">
+        <div className="w-full max-w-[1700px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Left: Branding & Status */}
+          <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-6 h-6 rounded-lg overflow-hidden bg-accent shadow-xs flex items-center justify-center shrink-0">
+                <Image
+                  src="/solace-logo.jpg"
+                  alt="Solace Logo"
+                  width={24}
+                  height={24}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="font-extrabold text-sm text-slate-900 dark:text-white">
+                Solace Security Core
+              </span>
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-[11px] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              <span>Stellar Testnet (Protocol 22)</span>
+            </div>
+            <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              <Activity className="w-3 h-3 text-emerald-500" />
+              <span>Consensus Engine Active (3 Models)</span>
+            </span>
+          </div>
+
+          {/* Center: Deployed Contract quick info */}
+          <div className="flex items-center gap-2 font-mono text-[11px]">
+            <span className="text-slate-400">Contract:</span>
+            <a
+              href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline flex items-center gap-1 font-semibold"
+              title="View on Stellar Expert"
+            >
+              <span>{contractId.slice(0, 8)}...{contractId.slice(-6)}</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+              title="Copy Contract ID"
+            >
+              {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+            </button>
+          </div>
+
+          {/* Right: Copyright & Quick Links */}
+          <div className="flex items-center gap-3 text-[11px] font-medium">
+            <span>&copy; {new Date().getFullYear()} Solace Protocol</span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <Link href="/audit" className="hover:text-accent transition">
+              Audit Studio
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <Link href="/reports" className="hover:text-accent transition">
+              Reports
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <Link href="/monitor" className="hover:text-accent transition">
+              Monitor
+            </Link>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="border-t border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-[#0c101b]/80 backdrop-blur-md pt-12 pb-16 sm:pb-12 text-xs text-slate-600 dark:text-slate-400 transition-colors">

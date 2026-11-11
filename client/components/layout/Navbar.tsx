@@ -986,7 +986,9 @@ export default function Navbar() {
       )}
 
       {/* Global Pricing & Audit Credit Purchase Modal */}
-      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+      {showPricingModal && (
+        <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+      )}
     </header>
   );
 }

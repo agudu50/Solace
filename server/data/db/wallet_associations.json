@@ -134,5 +134,53 @@
     "network": "testnet",
     "is_primary": true,
     "verified_at": "2026-11-11T20:48:55.390Z"
+  },
+  {
+    "id": "wa_e6921acc493902301cec2495",
+    "user_id": "usr_78c12e4653c4c34d06e5be26de7343e9",
+    "wallet_address": "GCDYPI4YJBAYS6DEBUA462WVYX2WO5KGRBMWKM5RLFQZLN4YEXOFTTAB",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-11T21:01:36.331Z"
+  },
+  {
+    "id": "wa_b68d13058b43040e9507a945",
+    "user_id": "usr_679755edb31a0d7ec02c926041d15683",
+    "wallet_address": "GC6DOXGRYIAEREDJSIIF4VVGUXVOS2VRKIF7GPVPGL575DYX4XQZYUU3",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-11T21:01:36.342Z"
+  },
+  {
+    "id": "wa_b08d4c30dc1b301b5d7a08c9",
+    "user_id": "usr_a8eac165bd5d17814e9bcbb920da776e",
+    "wallet_address": "GBKGY3IMJITKAKQUFULWJQWTZDJBRW6IQVUAVCLI3YGMI65RVHVTOQWR",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-11T21:01:36.382Z"
+  },
+  {
+    "id": "wa_e2b1c027fcc54b59d40d4441",
+    "user_id": "usr_34ae5c057d0d3f63d2d2a8eacf2dd15b",
+    "wallet_address": "GANWWVDIFJJIWPFEPAVMQ4SX62DWUCSEZUG4VA4I3PBN7DMG7FIROGHL",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-11T21:35:04.891Z"
+  },
+  {
+    "id": "wa_059f4e94ba70f0ecc434e30b",
+    "user_id": "usr_8f7be466385b058ddeb1e9ec6b4c1f71",
+    "wallet_address": "GDUDCMYH34TZ2JWCAAVVFQJPLK4I4WDXGS2RATLNXQ4JHEJG5ZWIOX77",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-11T21:35:04.904Z"
+  },
+  {
+    "id": "wa_76b925b5508f34bb9f23bac5",
+    "user_id": "usr_076e4511d46385a62aafe640a303f4a7",
+    "wallet_address": "GBBDA2K3C62QEB6SLJCWGWJPBKFSDJE767GROEH35O6GT3PFAXYXRQBT",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-11T21:35:04.947Z"
   }
 ]

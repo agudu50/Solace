@@ -82,17 +82,7 @@ export async function detectWalletNetwork(): Promise<'testnet' | 'mainnet'> {
  */
 export async function checkFreighterInstalled(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
-  if (Boolean((window as any).freighter)) return true;
-  try {
-    const connPromise = isConnected();
-    const timeoutPromise = new Promise<{ isConnected: boolean }>((resolve) =>
-      setTimeout(() => resolve({ isConnected: false }), 1500)
-    );
-    const connResult = await Promise.race([connPromise, timeoutPromise]);
-    return connResult?.isConnected === true;
-  } catch {
-    return false;
-  }
+  return Boolean((window as any).freighter || (window as any).stellar);
 }
 
 /**
@@ -430,19 +420,39 @@ export interface CreditHistory {
 }
 
 /**
- * Fetch available audit packages from backend / contract definitions
+ * Fetch available audit packages from backend / contract definitions (with request deduplication & memory caching)
  */
+let cachedAuditPackages: AuditPackage[] | null = null;
+let auditPackagesPromise: Promise<AuditPackage[]> | null = null;
+
 export async function fetchAuditPackages(): Promise<AuditPackage[]> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/credits/packages`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.packages && Array.isArray(data.packages)) {
-        return data.packages;
+  if (cachedAuditPackages && cachedAuditPackages.length > 0) {
+    return cachedAuditPackages;
+  }
+  if (auditPackagesPromise) {
+    return auditPackagesPromise;
+  }
+
+  auditPackagesPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/credits/packages`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.packages && Array.isArray(data.packages) && data.packages.length > 0) {
+          cachedAuditPackages = data.packages;
+          return data.packages;
+        }
       }
-    }
-  } catch (_) {}
-  return PREPAID_PACKAGES;
+    } catch (_) {}
+    return PREPAID_PACKAGES;
+  })();
+
+  try {
+    const result = await auditPackagesPromise;
+    return result;
+  } finally {
+    auditPackagesPromise = null;
+  }
 }
 
 /**
@@ -916,46 +926,47 @@ export async function authenticateWalletSession(
   address: string,
   action: 'solace-auth-login' | 'solace-admin-login' = 'solace-auth-login'
 ): Promise<AuthVerifyResponse> {
-  try {
-    // 1. Request challenge
-    const challenge = await requestAuthChallenge(address, action);
-
-    // 2. Sign challenge with wallet (or evaluator backend signer)
-    const signature = await signAuthChallengeWithWallet(challenge.message, address, challenge.challengeId);
-
-    // 3. Verify signature on backend
-    const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // Receive and persist HTTP-only session cookie
-      body: JSON.stringify({
-        challengeId: challenge.challengeId,
-        address,
-        signature,
-        action,
-      }),
-    });
-
-    const data = await res.json();
-    if (res.ok && data.success) {
-      // Cache token in memory / storage
-      try {
-        if (typeof window !== 'undefined' && data.token) {
-          localStorage.setItem('solace_auth_token', data.token);
-          localStorage.setItem('solace_user_role', data.user.role);
-        }
-      } catch (_) {}
-      return data;
-    }
-
-    throw new Error(data.error || 'Authentication signature verification failed.');
-  } catch (err: any) {
-    // For general auditor wallet login, if signing is cancelled or unsupported, fallback to verified password-unlocked session
-    if (action !== 'solace-admin-login') {
-      return await loginWalletSession(address);
-    }
-    throw err;
+  // 0. Network Check: Ensure Freighter is on Stellar Testnet BEFORE requesting signature
+  const netDetails = await getFreighterNetworkDetails();
+  if (netDetails && !netDetails.isTestnet) {
+    throw new Error(
+      `NETWORK_MISMATCH: Freighter is currently set to ${netDetails.network}. Please switch to Stellar Testnet (Protocol 22) in your Freighter extension.`
+    );
   }
+
+  // 1. Request challenge
+  const challenge = await requestAuthChallenge(address, action);
+
+  // 2. Sign challenge with wallet (or evaluator backend signer)
+  const signature = await signAuthChallengeWithWallet(challenge.message, address, challenge.challengeId);
+
+  // 3. Verify signature on backend
+  const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // Receive and persist HTTP-only session cookie
+    body: JSON.stringify({
+      challengeId: challenge.challengeId,
+      address,
+      signature,
+      action,
+    }),
+  });
+
+  const data = await res.json();
+  if (res.ok && data.success) {
+    // Cache token in memory / storage
+    try {
+      if (typeof window !== 'undefined' && data.token) {
+        localStorage.setItem('solace_auth_token', data.token);
+        localStorage.setItem('solace_user_role', data.user.role);
+        localStorage.removeItem('solace_wallet_disconnected');
+      }
+    } catch (_) {}
+    return data;
+  }
+
+  throw new Error(data.error || 'Authentication signature verification failed.');
 }
 
 
@@ -967,6 +978,10 @@ export async function fetchCurrentUserSession(): Promise<AuthUser | null> {
     let token = '';
     let hasCookie = false;
     if (typeof window !== 'undefined') {
+      const isDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
+      if (isDisconnected) {
+        return null;
+      }
       token = localStorage.getItem('solace_auth_token') || '';
       hasCookie = document.cookie.includes('solace_session=');
       // If neither token nor session cookie exists, visitor is unauthenticated
@@ -986,7 +1001,20 @@ export async function fetchCurrentUserSession(): Promise<AuthUser | null> {
       credentials: 'include',
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // If 401 Unauthorized or invalid session, purge stored credentials immediately
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('solace_auth_token');
+          localStorage.removeItem('solace_connected_wallet');
+          localStorage.removeItem('solace_user_role');
+          localStorage.setItem('solace_wallet_disconnected', 'true');
+          document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
+          document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+        } catch (_) {}
+      }
+      return null;
+    }
     const data = await res.json();
     if (data.success && data.user) {
       return data.user;

@@ -120,5 +120,29 @@
     },
     "ip_address": "127.0.0.1",
     "created_at": "2026-11-11T20:48:55.401Z"
+  },
+  {
+    "id": "log_6ada91e0d2c23c3cfe78933eae813e45",
+    "actor_wallet": "GC6DOXGRYIAEREDJSIIF4VVGUXVOS2VRKIF7GPVPGL575DYX4XQZYUU3",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GCDYPI4YJBAYS6DEBUA462WVYX2WO5KGRBMWKM5RLFQZLN4YEXOFTTAB",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-11T21:01:36.407Z"
+  },
+  {
+    "id": "log_9c34f2f1acefc9f1881b446b0ad88ad8",
+    "actor_wallet": "GDUDCMYH34TZ2JWCAAVVFQJPLK4I4WDXGS2RATLNXQ4JHEJG5ZWIOX77",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GANWWVDIFJJIWPFEPAVMQ4SX62DWUCSEZUG4VA4I3PBN7DMG7FIROGHL",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-11T21:35:04.972Z"
   }
 ]

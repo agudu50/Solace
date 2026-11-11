@@ -211,12 +211,12 @@ export default function AmbientBackground3D() {
 
     // Animation Loop
     let animId: number;
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
 
-      const elapsed = clock.getElapsedTime();
+      const elapsed = (performance.now() - startTime) * 0.001;
 
       // Smooth scroll lerp
       scrollY += (targetScrollY - scrollY) * 0.05;

@@ -40,14 +40,14 @@ export default function PricingModal({ isOpen, onClose, onPurchaseSuccess }: Pri
   const [creditBalance, setCreditBalance] = useState<UserCreditBalance | null>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     fetchAuditPackages().then(setPackages);
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
-    if (walletKey) {
-      fetchUserCreditBalance(walletKey).then(setCreditBalance);
-    }
-  }, [walletKey]);
+    if (!isOpen || !walletKey) return;
+    fetchUserCreditBalance(walletKey).then(setCreditBalance);
+  }, [isOpen, walletKey]);
 
   if (!isOpen) return null;
 

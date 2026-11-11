@@ -6,7 +6,7 @@ import {
   connectWallet as freighterConnect,
   detectWalletNetwork,
   getFreighterNetworkDetails,
-  FreighterNetworkResult,
+  type FreighterNetworkResult,
   checkFreighterInstalled,
   WatchWalletChanges,
   authenticateWalletSession,
@@ -16,7 +16,7 @@ import {
   registerWithEmail as apiRegisterEmail,
   loginWithEmail as apiLoginEmail,
   linkWalletToAccount as apiLinkWallet,
-  AuthUser,
+  type AuthUser,
 } from '../utils/solaceService';
 import NetworkSwitchModal from '../components/auth/NetworkSwitchModal';
 
@@ -72,8 +72,26 @@ export function WalletProvider({
   const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'super_admin'));
   const isSuperAdmin = Boolean(user && user.role === 'super_admin');
 
-  // Load authenticated session on mount from verified backend token
+  // Load authenticated session on mount ONLY if active verified token or session cookie exists
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
+      const token = localStorage.getItem('solace_auth_token');
+      const hasCookie = document.cookie.includes('solace_session=');
+      if (isDisconnected || (!token && !hasCookie)) {
+        setUser(null);
+        setWalletKeyState('');
+        try {
+          localStorage.removeItem('solace_connected_wallet');
+          localStorage.removeItem('solace_auth_token');
+          localStorage.removeItem('solace_user_role');
+          document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+          document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
+        } catch (_) {}
+        return;
+      }
+    }
+
     fetchCurrentUserSession().then((authenticatedUser) => {
       if (authenticatedUser) {
         setUser(authenticatedUser);
@@ -85,6 +103,9 @@ export function WalletProvider({
           localStorage.removeItem('solace_connected_wallet');
           localStorage.removeItem('solace_auth_token');
           localStorage.removeItem('solace_user_role');
+          localStorage.setItem('solace_wallet_disconnected', 'true');
+          document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+          document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
         } catch (_) {}
       }
     });
@@ -149,55 +170,6 @@ export function WalletProvider({
       setFreighterReady(installed);
     });
 
-    // Real-time WatchWalletChanges from Freighter extension:
-    // Only update if the user has already explicitly authenticated and switches accounts in Freighter.
-    let watcher: any = null;
-    try {
-      if (typeof window !== 'undefined' && WatchWalletChanges) {
-        watcher = new WatchWalletChanges(2000);
-        watcher.watch((params: any) => {
-          if (params && (params.network || params.networkPassphrase)) {
-            const net = (params.network || '').toUpperCase();
-            const pass = (params.networkPassphrase || '').toLowerCase();
-            const isTestnet =
-              net.includes('TESTNET') ||
-              pass.includes('test sdf network');
-
-            if (!isTestnet) {
-              setDetectedWalletNetwork(net || 'PUBLIC');
-              setNetworkMismatch(true);
-              setWalletKeyState((currentKey) => {
-                if (currentKey) {
-                  setShowNetworkModal(true);
-                }
-                return currentKey;
-              });
-            } else {
-              setDetectedWalletNetwork('TESTNET');
-              setNetworkMismatch(false);
-              setShowNetworkModal(false);
-            }
-          }
-
-          setWalletKeyState((currentKey) => {
-            // If the user has not authenticated or has logged out, DO NOT auto-connect
-            if (!currentKey) return '';
-            
-            if (params && params.address && /^G[A-Z0-9]{55}$/.test(params.address)) {
-              if (params.address !== currentKey) {
-                syncWalletToStorageAndCookies(params.address);
-                return params.address;
-              }
-            } else if (!params || !params.address) {
-              syncWalletToStorageAndCookies('');
-              return '';
-            }
-            return currentKey;
-          });
-        });
-      }
-    } catch (_) {}
-
     const handleWalletEvent = (e: any) => {
       const key = e.detail?.walletKey ?? '';
       setWalletKeyState(key);
@@ -212,11 +184,6 @@ export function WalletProvider({
     window.addEventListener('solace-network-updated', handleNetworkEvent);
 
     return () => {
-      if (watcher && typeof watcher.stop === 'function') {
-        try {
-          watcher.stop();
-        } catch (_) {}
-      }
       window.removeEventListener('solace-wallet-updated', handleWalletEvent);
       window.removeEventListener('solace-network-updated', handleNetworkEvent);
     };
@@ -240,6 +207,22 @@ export function WalletProvider({
     }
   }, []);
 
+  // Listen for window focus to check wallet network changes without continuous polling loops (prevents EventEmitter memory leaks)
+  useEffect(() => {
+    if (!walletKey || typeof window === 'undefined') {
+      return;
+    }
+
+    const handleWindowFocus = () => {
+      checkWalletNetwork();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [walletKey, checkWalletNetwork]);
+
   /**
    * Cryptographic challenge authentication workflow.
    * Prompts wallet to unlock with password and sign cryptographic challenge.
@@ -249,60 +232,38 @@ export function WalletProvider({
   ): Promise<AuthUser> => {
     setConnecting(true);
     try {
-      // 1. Get wallet address after Freighter unlock & access approval (requires password)
-      const key = await freighterConnect();
-      if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
-        throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
-      }
-
-      // Network Guard: Verify wallet is connected to Stellar Testnet (Protocol 22)
+      // 1. Network Guard: Check network FIRST before requesting signature
       const netInfo = await getFreighterNetworkDetails();
       if (netInfo && !netInfo.isTestnet) {
         setDetectedWalletNetwork(netInfo.network);
         setNetworkMismatch(true);
         setShowNetworkModal(true);
-        throw new Error(`NETWORK_MISMATCH: Freighter is connected to ${netInfo.network}. Please switch to Stellar Testnet (Protocol 22).`);
-      }
-      setDetectedWalletNetwork('TESTNET');
-      setNetworkMismatch(false);
-      setShowNetworkModal(false);
-
-      // 2. Perform authentication and session verification
-      let authUser: AuthUser | null = null;
-      try {
-        const authRes = await authenticateWalletSession(key, action);
-        if (authRes && authRes.success && authRes.user) {
-          authUser = authRes.user;
-        }
-      } catch (authErr: any) {
-        if (action === 'solace-admin-login') {
-          throw authErr;
-        }
-        const fallbackRes = await loginWalletSession(key);
-        if (fallbackRes && fallbackRes.success && fallbackRes.user) {
-          authUser = fallbackRes.user;
-        }
+        throw new Error(`NETWORK_MISMATCH: Freighter is currently connected to ${netInfo.network}. Please switch to Stellar Testnet (Protocol 22) in your Freighter extension.`);
       }
 
-      if (!authUser) {
-        authUser = {
-          id: `usr_${key.slice(-8)}`,
-          address: key,
-          role: key === 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI' ? 'super_admin' : 'user',
-          status: 'active',
-          authProvider: 'wallet',
-          availableCredits: 0,
-          createdAt: new Date().toISOString(),
-        };
+      // 2. Prompt Freighter to unlock and approve access (requires password)
+      const key = await freighterConnect();
+      if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
+        throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
       }
 
-      // 3. ONLY ONCE AUTHENTICATED: Set session state and storage
+      // 3. Cryptographically authenticate via challenge signature
+      const authRes = await authenticateWalletSession(key, action);
+      if (!authRes || !authRes.success || !authRes.user) {
+        throw new Error('Authentication signature verification failed.');
+      }
+
+      const authUser = authRes.user;
+
+      // 4. ONLY ONCE AUTHENTICATED: Set session state and storage
       if (typeof window !== 'undefined') {
         localStorage.removeItem('solace_wallet_disconnected');
       }
       setWalletKeyState(key);
       syncWalletToStorageAndCookies(key);
       setUser(authUser);
+      setNetworkMismatch(false);
+      setShowNetworkModal(false);
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
@@ -312,9 +273,18 @@ export function WalletProvider({
 
       return authUser;
     } catch (err: any) {
+      // On ANY cancellation or failure: strictly wipe state and DO NOT allow system access
       setUser(null);
       setWalletKeyState('');
       syncWalletToStorageAndCookies('');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('solace_wallet_disconnected', 'true');
+        localStorage.removeItem('solace_connected_wallet');
+        localStorage.removeItem('solace_auth_token');
+        localStorage.removeItem('solace_user_role');
+        document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
+      }
       throw err;
     } finally {
       setConnecting(false);
@@ -324,62 +294,43 @@ export function WalletProvider({
   /**
    * Standard wallet connect:
    * Prompts user to unlock Freighter with their password, verifies session on backend,
-   * and navigates to /dashboard.
+   * without auto-redirecting or falling back on cancellation.
    */
   const connect = async (): Promise<string> => {
     setConnecting(true);
     try {
-      // 1. Prompt Freighter to unlock and request access (user MUST type password in Freighter)
-      const key = await freighterConnect();
-      if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
-        throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
-      }
-
-      // Network Guard: Verify wallet is connected to Stellar Testnet (Protocol 22)
+      // 1. Network Guard: Check network FIRST
       const netInfo = await getFreighterNetworkDetails();
       if (netInfo && !netInfo.isTestnet) {
         setDetectedWalletNetwork(netInfo.network);
         setNetworkMismatch(true);
         setShowNetworkModal(true);
-        throw new Error(`NETWORK_MISMATCH: Freighter is connected to ${netInfo.network}. Please switch to Stellar Testnet (Protocol 22).`);
-      }
-      setDetectedWalletNetwork('TESTNET');
-      setNetworkMismatch(false);
-      setShowNetworkModal(false);
-
-      // 2. Establish verified session on backend
-      let authUser: AuthUser | null = null;
-      try {
-        const authRes = await authenticateWalletSession(key, 'solace-auth-login');
-        if (authRes && authRes.success && authRes.user) {
-          authUser = authRes.user;
-        }
-      } catch (authErr: any) {
-        const fallbackRes = await loginWalletSession(key);
-        if (fallbackRes && fallbackRes.success && fallbackRes.user) {
-          authUser = fallbackRes.user;
-        }
+        throw new Error(`NETWORK_MISMATCH: Freighter is currently connected to ${netInfo.network}. Please switch to Stellar Testnet (Protocol 22) in your Freighter extension.`);
       }
 
-      if (!authUser) {
-        authUser = {
-          id: `usr_${key.slice(-8)}`,
-          address: key,
-          role: key === 'GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI' ? 'super_admin' : 'user',
-          status: 'active',
-          authProvider: 'wallet',
-          availableCredits: 0,
-          createdAt: new Date().toISOString(),
-        };
+      // 2. Prompt Freighter to unlock and request access (user MUST type password in Freighter)
+      const key = await freighterConnect();
+      if (!key || !/^G[A-Z0-9]{55}$/.test(key)) {
+        throw new Error('Wallet authorization was cancelled. Please unlock Freighter and approve access.');
       }
 
-      // 3. Set session state and storage
+      // 3. Establish cryptographically verified session on backend
+      const authRes = await authenticateWalletSession(key, 'solace-auth-login');
+      if (!authRes || !authRes.success || !authRes.user) {
+        throw new Error('Wallet authentication failed.');
+      }
+
+      const authUser = authRes.user;
+
+      // 4. Set session state and storage ONLY on successful verification
       if (typeof window !== 'undefined') {
         localStorage.removeItem('solace_wallet_disconnected');
       }
       setWalletKeyState(key);
       syncWalletToStorageAndCookies(key);
       setUser(authUser);
+      setNetworkMismatch(false);
+      setShowNetworkModal(false);
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
@@ -387,16 +338,20 @@ export function WalletProvider({
         );
       }
 
-      // 4. Navigate to dashboard once authenticated!
-      try {
-        router.push('/dashboard');
-      } catch (_) {}
-
       return key;
     } catch (err: any) {
+      // On ANY cancellation or failure: strictly wipe state and DO NOT auto-connect
       setUser(null);
       setWalletKeyState('');
       syncWalletToStorageAndCookies('');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('solace_wallet_disconnected', 'true');
+        localStorage.removeItem('solace_connected_wallet');
+        localStorage.removeItem('solace_auth_token');
+        localStorage.removeItem('solace_user_role');
+        document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
+      }
       throw err;
     } finally {
       setConnecting(false);

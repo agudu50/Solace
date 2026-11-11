@@ -283,7 +283,7 @@ export default function HeroSection() {
       </div>
 
       {/* Pricing & Credit Bundles Modal */}
-      <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
+      {showPricing && <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />}
     </section>
   );
 }

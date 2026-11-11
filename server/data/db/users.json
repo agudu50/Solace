@@ -167,5 +167,59 @@
     "created_at": "2026-11-11T20:48:55.390Z",
     "updated_at": "2026-11-11T20:48:55.394Z",
     "last_login_at": "2026-11-11T20:48:55.390Z"
+  },
+  {
+    "id": "usr_78c12e4653c4c34d06e5be26de7343e9",
+    "wallet_address": "GCDYPI4YJBAYS6DEBUA462WVYX2WO5KGRBMWKM5RLFQZLN4YEXOFTTAB",
+    "role": "user",
+    "status": "active",
+    "created_at": "2026-11-11T21:01:36.331Z",
+    "updated_at": "2026-11-11T21:01:36.379Z",
+    "last_login_at": "2026-11-11T21:01:36.331Z"
+  },
+  {
+    "id": "usr_679755edb31a0d7ec02c926041d15683",
+    "wallet_address": "GC6DOXGRYIAEREDJSIIF4VVGUXVOS2VRKIF7GPVPGL575DYX4XQZYUU3",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2026-11-11T21:01:36.342Z",
+    "updated_at": "2026-11-11T21:01:36.342Z",
+    "last_login_at": "2026-11-11T21:01:36.342Z"
+  },
+  {
+    "id": "usr_a8eac165bd5d17814e9bcbb920da776e",
+    "wallet_address": "GBKGY3IMJITKAKQUFULWJQWTZDJBRW6IQVUAVCLI3YGMI65RVHVTOQWR",
+    "role": "user",
+    "status": "suspended",
+    "created_at": "2026-11-11T21:01:36.382Z",
+    "updated_at": "2026-11-11T21:01:36.392Z",
+    "last_login_at": "2026-11-11T21:01:36.382Z"
+  },
+  {
+    "id": "usr_34ae5c057d0d3f63d2d2a8eacf2dd15b",
+    "wallet_address": "GANWWVDIFJJIWPFEPAVMQ4SX62DWUCSEZUG4VA4I3PBN7DMG7FIROGHL",
+    "role": "user",
+    "status": "active",
+    "created_at": "2026-11-11T21:35:04.891Z",
+    "updated_at": "2026-11-11T21:35:04.943Z",
+    "last_login_at": "2026-11-11T21:35:04.891Z"
+  },
+  {
+    "id": "usr_8f7be466385b058ddeb1e9ec6b4c1f71",
+    "wallet_address": "GDUDCMYH34TZ2JWCAAVVFQJPLK4I4WDXGS2RATLNXQ4JHEJG5ZWIOX77",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2026-11-11T21:35:04.904Z",
+    "updated_at": "2026-11-11T21:35:04.904Z",
+    "last_login_at": "2026-11-11T21:35:04.904Z"
+  },
+  {
+    "id": "usr_076e4511d46385a62aafe640a303f4a7",
+    "wallet_address": "GBBDA2K3C62QEB6SLJCWGWJPBKFSDJE767GROEH35O6GT3PFAXYXRQBT",
+    "role": "user",
+    "status": "suspended",
+    "created_at": "2026-11-11T21:35:04.947Z",
+    "updated_at": "2026-11-11T21:35:04.957Z",
+    "last_login_at": "2026-11-11T21:35:04.947Z"
   }
 ]

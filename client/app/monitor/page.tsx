@@ -19,7 +19,6 @@ import {
   Wifi,
   Zap,
 } from 'lucide-react';
-import WalletGate from '../../components/auth/WalletGate';
 
 interface LiveTelemetry {
   contractId: string;
@@ -205,11 +204,7 @@ export default function MonitorPage() {
 
   return (
     <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
-      <WalletGate
-        pageTitle="Live Contract Monitor"
-        description="Connect your authorized Stellar / Soroban auditor wallet to stream real-time TTL rent telemetry and invariant checks for live Soroban contracts."
-      >
-        <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Top Header Card */}
         <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
@@ -561,7 +556,6 @@ export default function MonitorPage() {
           </div>
         )}
       </main>
-      </WalletGate>
     </div>
   );
 }

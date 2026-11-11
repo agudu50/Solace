@@ -40,11 +40,11 @@ export default function RootLayout({
                   document.documentElement.classList.remove('dark');
                 }
                 const isDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
-                const storedWallet = localStorage.getItem('solace_connected_wallet');
-                if (isDisconnected) {
+                const authToken = localStorage.getItem('solace_auth_token');
+                if (isDisconnected || !authToken) {
                   document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
-                } else if (storedWallet && !document.cookie.includes('solace_connected_wallet=')) {
-                  document.cookie = 'solace_connected_wallet=' + storedWallet + '; path=/; max-age=31536000; SameSite=Lax';
+                  document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
+                  localStorage.removeItem('solace_connected_wallet');
                 }
                 const storedNet = localStorage.getItem('solace-network');
                 if (storedNet && !document.cookie.includes('solace_network=')) {

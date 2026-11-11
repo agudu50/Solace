@@ -538,17 +538,19 @@ to.require_auth();`}</pre>
         </div>
       </div>
 
-      <PricingModal
-        isOpen={showPricingModal}
-        onClose={() => {
-          setShowPricingModal(false);
-          if (walletKey) {
-            fetchUserCreditBalance(walletKey)
-              .then((b) => setAvailableCredits(b.availableCredits))
-              .catch(() => {});
-          }
-        }}
-      />
+      {showPricingModal && (
+        <PricingModal
+          isOpen={showPricingModal}
+          onClose={() => {
+            setShowPricingModal(false);
+            if (walletKey) {
+              fetchUserCreditBalance(walletKey)
+                .then((b) => setAvailableCredits(b.availableCredits))
+                .catch(() => {});
+            }
+          }}
+        />
+      )}
     </section>
   );
 }
