@@ -19,7 +19,7 @@ export const CANDIDATE_MODELS = (process.env.GEMINI_MODELS?.split(',').map((m) =
 // In-memory cache to make repeated audits instantaneous (0ms)
 const auditCache = new Map();
 
-export async function analyzeContractWithAI(codeSnippet, isPostDeployment = false) {
+export async function analyzeContractWithGemini(codeSnippet, isPostDeployment = false) {
   // Check cache first for exact matches
   const cacheKey = crypto
     .createHash('sha256')
@@ -116,5 +116,15 @@ Do not include any conversational filler outside of the JSON block. Ensure valid
   console.error('All Gemini AI Audit Candidates Failed:', lastError);
   throw new Error(`Failed to complete AI security analysis: ${lastError?.message || 'AI service unavailable'}`);
 }
+
+/**
+ * High-level Multi-Model Audit Entry Point
+ * Executes multi-model consensus across Google Gemini, OpenAI GPT-4o, and Anthropic Claude
+ */
+export async function analyzeContractWithAI(codeSnippet, isPostDeployment = false) {
+  const { analyzeContractWithMultiModel } = await import('./multiModelAuditor.js');
+  return analyzeContractWithMultiModel(codeSnippet, isPostDeployment);
+}
+
 
 

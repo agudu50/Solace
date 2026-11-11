@@ -118,5 +118,17 @@
     "ip_address": "127.0.0.1",
     "user_agent": "node",
     "created_at": "2026-10-29T11:16:11.456Z"
+  },
+  {
+    "id": "ses_5324968b07059444e0a865b956191946",
+    "user_id": "usr_0fe9b658767b68dee0486223a5c88d8f",
+    "wallet_address": "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT",
+    "role": "user",
+    "token_hash": "6e4e9db6836256845c30f00134ae3b487bfdc2cc986ba36548d2252150f46a7b",
+    "expires_at": "2026-11-12T20:18:49.113Z",
+    "revoked": false,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "created_at": "2026-11-11T20:18:49.113Z"
   }
 ]

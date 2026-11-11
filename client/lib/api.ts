@@ -10,6 +10,47 @@ export interface Vulnerability {
   title: string;
   description: string;
   recommendation: string;
+  conceptKey?: string;
+  consensusTag?: string;
+  isMultiModelVerified?: boolean;
+  confirmedBy?: string[];
+  providers?: string[];
+  hallucinationRisk?: string;
+}
+
+export interface ModelAuditResult {
+  modelId: string;
+  provider: 'Google' | 'OpenAI' | 'Anthropic' | string;
+  modelName: string;
+  status: 'LIVE_API' | 'MOCK_PREVIEW' | 'FAILED' | string;
+  isSimulated?: boolean;
+  statusNote?: string;
+  riskScore: number;
+  isSecure: boolean;
+  summary: string;
+  vulnerabilities: Vulnerability[];
+  postDeploymentRecommendations?: string[];
+  executionTimeMs?: number;
+  confidenceScore?: number;
+  latencyLabel?: string;
+}
+
+export interface ConsensusAnalysis {
+  consensusScore: number;
+  agreementPercentage: number;
+  agreementLevel: 'UNANIMOUS' | 'HIGH' | 'MODERATE' | 'DIVERGENT' | string;
+  hallucinationShield: string;
+  totalModelsAudited: number;
+  modelBreakdown: Array<{
+    provider: string;
+    modelName: string;
+    status: string;
+    isSimulated: boolean;
+    riskScore: number;
+    latencyLabel?: string;
+    confidenceScore?: number;
+  }>;
+  unanimousVulnerabilitiesCount: number;
 }
 
 export interface AuditReportData {
@@ -19,6 +60,8 @@ export interface AuditReportData {
   vulnerabilities: Vulnerability[];
   postDeploymentRecommendations: string[];
   modelUsed?: string;
+  consensus?: ConsensusAnalysis;
+  models?: ModelAuditResult[];
 }
 
 export interface AuditApiResponse {
