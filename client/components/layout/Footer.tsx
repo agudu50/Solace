@@ -113,14 +113,16 @@ export default function Footer() {
           {/* Brand Info (Cols 1-4) */}
           <div className="lg:col-span-4 flex flex-col items-start">
             <Link href="/" className="flex items-center gap-2.5 mb-4 group">
-              <div className="w-9 h-9 rounded-2xl overflow-hidden bg-accent shadow-xs border border-accent/30 flex items-center justify-center shrink-0">
-                <Image
-                  src="/solace-logo.jpg"
-                  alt="Solace Logo"
-                  width={36}
-                  height={36}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
+              <div className="w-9 h-9 rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-sm shadow-accent/20 dark:shadow-accent/30 group-hover:scale-105 transition-all duration-300 shrink-0">
+                <div className="w-full h-full rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
+                  <Image
+                    src="/solace-logo.jpg"
+                    alt="Solace Logo"
+                    width={36}
+                    height={36}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
               </div>
               <div>
                 <span className="font-black text-lg text-slate-900 dark:text-white block leading-tight">

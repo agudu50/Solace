@@ -107,71 +107,58 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white">
+    <div className="min-h-[calc(100vh-65px)] bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/15 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
-
-      {/* Top Navbar Brand */}
-      <header className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-2xl overflow-hidden bg-accent shadow-lg shadow-accent/30 flex items-center justify-center p-1 border border-accent/40 group-hover:scale-105 transition-transform">
-            <Image src="/solace-logo.jpg" alt="Solace Logo" width={36} height={36} className="w-full h-full object-cover" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-black text-lg text-white tracking-tight">SOLACE</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-accent/20 text-accent font-bold border border-accent/30">
-                ADMIN GATE
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 font-mono tracking-wider">CRYPTOGRAPHIC ROLE VERIFICATION</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/"
-          className="text-xs text-slate-400 hover:text-white transition flex items-center gap-1.5 font-semibold px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Back to Solace</span>
-        </Link>
-      </header>
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 dark:bg-accent/15 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Main Administrative Gate Card */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full bg-[#101522]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-800/90 shadow-2xl shadow-black/80 text-center relative overflow-hidden">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-md mb-3 flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition font-medium"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Back to Solace</span>
+          </Link>
+          <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+            Admin Auth Gate
+          </span>
+        </div>
+
+        <div className="max-w-md w-full bg-white/95 dark:bg-[#101522]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 text-center relative overflow-hidden transition-colors duration-200">
           {/* Top accent highlight bar */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-accent" />
 
           {/* Icon Badge */}
           <div className="relative mx-auto w-16 h-16 mb-5 flex items-center justify-center">
             <div className="absolute inset-0 rounded-2xl border border-accent/30 animate-[spin_10s_linear_infinite]" />
-            <div className="relative w-12 h-12 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent shadow-lg shadow-accent/25">
+            <div className="relative w-12 h-12 rounded-xl bg-accent/15 dark:bg-accent/20 border border-accent/30 dark:border-accent/40 flex items-center justify-center text-accent shadow-md shadow-accent/20">
               <KeyRound className="w-6 h-6 text-accent" />
             </div>
           </div>
 
           <div className="flex items-center justify-center gap-1.5 mb-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-accent/20 text-accent border border-accent/30 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-accent/10 dark:bg-accent/20 text-accent border border-accent/20 dark:border-accent/30 flex items-center gap-1">
               <Lock className="w-3 h-3" />
               <span>Restricted Platform Console</span>
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
             Administrator Authentication
           </h1>
 
-          <p className="text-xs text-slate-400 leading-relaxed mb-6 font-medium">
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6 font-medium">
             Connect your authorized Stellar administrator wallet and cryptographically sign the challenge to access
             platform management, ledger reconciliation, and user controls.
           </p>
 
           {/* Error Notice */}
           {errorMessage && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-red-950/60 border border-red-800/80 text-xs text-red-200 font-medium flex items-start gap-2.5 text-left shadow-lg">
-              <AlertOctagon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800/80 text-xs text-red-700 dark:text-red-200 font-medium flex items-start gap-2.5 text-left shadow-lg">
+              <AlertOctagon className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <span className="font-bold block">Authorization Rejected</span>
                 <span className="text-[11px] opacity-90 block leading-relaxed">{errorMessage}</span>
@@ -180,10 +167,10 @@ export default function AdminLoginPage() {
           )}
 
           {/* Extension Detection Indicator */}
-          <div className="mb-6 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300">
+          <div className="mb-6 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-300">
             <span className={`w-2 h-2 rounded-full ${freighterReady ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <span>{freighterReady ? 'Freighter: Detected' : 'Freighter: Standby / Checking'}</span>
-            <span className="text-slate-500">|</span>
+            <span className="text-slate-400 dark:text-slate-500">|</span>
             <span className="text-accent">Testnet Protocol 22</span>
           </div>
 
@@ -210,12 +197,12 @@ export default function AdminLoginPage() {
             </button>
 
             {/* Evaluator Fast-Track Signer */}
-            <div className="pt-3 border-t border-slate-800/80">
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80">
               <button
                 type="button"
                 onClick={handleUseProvisionedAdminSigner}
                 disabled={loading}
-                className="w-full py-2.5 px-4 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-mono font-medium transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/90 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 text-xs font-mono font-medium transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Cpu className="w-3.5 h-3.5 text-accent" />
                 <span>Evaluate with Provisioned Super-Admin Signer</span>
@@ -227,15 +214,15 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Provisioning Notice */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-left">
-            <div className="flex items-center gap-1.5 text-slate-400 text-xs font-bold mb-1">
-              <Database className="w-3.5 h-3.5 text-slate-400" />
+          <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800/80 text-left">
+            <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-400 text-xs font-bold mb-1">
+              <Database className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>How to Provision New Administrators:</span>
             </div>
             <p className="text-[11px] text-slate-500 font-mono leading-relaxed mb-2">
               Execute the secure bootstrap command in the server environment:
             </p>
-            <div className="p-2.5 rounded-xl bg-[#090d16] border border-slate-800/80 text-[11px] font-mono text-emerald-400 overflow-x-auto">
+            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#090d16] border border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 overflow-x-auto">
               npm run provision-admin -- &lt;STELLAR_WALLET&gt;
             </div>
           </div>
@@ -243,7 +230,7 @@ export default function AdminLoginPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full text-center py-4 text-xs text-slate-600 font-mono">
+      <footer className="relative z-10 w-full text-center py-4 text-xs text-slate-500 dark:text-slate-600 font-mono">
         Solace Cryptographic Role-Based Authorization • Zero Key Exposure • Ed25519 Verified
       </footer>
     </div>

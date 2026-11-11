@@ -101,15 +101,17 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
           <div className="absolute inset-1 rounded-xl sm:rounded-2xl border border-dashed border-accent/20 dark:border-accent/30" />
           
           {/* Central Solace Logo Box */}
-          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-accent/40 flex items-center justify-center shadow-xl shadow-accent/25 group bg-accent">
-            <Image
-              src="/solace-logo.jpg"
-              alt="Solace Logo"
-              width={56}
-              height={56}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              priority
-            />
+          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-xl shadow-accent/25 group">
+            <div className="w-full h-full rounded-[10px] sm:rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
+              <Image
+                src="/solace-logo.jpg"
+                alt="Solace Logo"
+                width={56}
+                height={56}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                priority
+              />
+            </div>
             <div className="absolute bottom-0 right-0 p-1 bg-[#111726]/90 rounded-tl-lg border-t border-l border-accent/40">
               <Lock className="w-2 h-2 text-accent" />
             </div>

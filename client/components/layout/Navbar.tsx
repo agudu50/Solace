@@ -130,15 +130,17 @@ export default function Navbar() {
       <div className="w-full max-w-[1700px] mx-auto flex items-center justify-between gap-1.5 sm:gap-4">
         {/* Brand (Mobile Responsive: hides subtitle on tiny screens) */}
         <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden bg-accent shadow-sm transition group-hover:scale-105 border border-accent/30 flex items-center justify-center shrink-0">
-            <Image
-              src="/solace-logo.jpg"
-              alt="Solace Logo"
-              width={36}
-              height={36}
-              className="w-full h-full object-cover"
-              priority
-            />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-md shadow-accent/20 dark:shadow-accent/30 group-hover:shadow-accent/40 group-hover:scale-105 transition-all duration-300 shrink-0">
+            <div className="w-full h-full rounded-[10px] sm:rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
+              <Image
+                src="/solace-logo.jpg"
+                alt="Solace Logo"
+                width={36}
+                height={36}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                priority
+              />
+            </div>
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-base sm:text-xl tracking-tight text-slate-900 dark:text-white leading-none">
@@ -174,15 +176,18 @@ export default function Navbar() {
           </nav>
         ) : (
           <nav className="hidden lg:flex items-center bg-white/80 dark:bg-[#111726]/80 rounded-full px-3 py-1 shadow-sm border border-slate-200/80 dark:border-slate-800 gap-1 text-xs font-bold text-slate-700 dark:text-slate-300">
-            {publicNavItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="px-3 py-1.5 rounded-full hover:text-accent hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              >
-                {item.label}
-              </a>
-            ))}
+            {publicNavItems.map((item) => {
+              const targetHref = pathname === '/' ? item.href : `/${item.href}`;
+              return (
+                <a
+                  key={item.label}
+                  href={targetHref}
+                  className="px-3 py-1.5 rounded-full hover:text-accent hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  {item.label}
+                </a>
+              );
+            })}
           </nav>
         )}
 
