@@ -4,6 +4,7 @@
 
 :root {
   --e-global-color-accent: #C80552;
+  --e-global-color-accent-rgb: 200 5 82; /* channels for Tailwind opacity modifiers (bg-accent/10) */
   --e-global-color-accent-hover: #A00441;
   --e-global-color-accent-subtle: rgba(200, 5, 82, 0.12);
   --e-global-color-accent-border: rgba(200, 5, 82, 0.35);

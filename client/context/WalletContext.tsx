@@ -480,6 +480,7 @@ export function WalletProvider({
         setShowNetworkModal,
         checkWalletNetwork,
         connecting,
+        sessionLoading,
         freighterReady,
         connect,
         authenticate,

@@ -28,8 +28,8 @@ export default function Footer() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Dedicated minimal dashboard utility footer
-  if (pathname === '/dashboard') {
+  // Dedicated minimal app utility footer for all internal pages (/audit, /dashboard, /reports, /monitor, etc.)
+  if (pathname !== '/') {
     return (
       <footer className="w-full border-t border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-[#121212]/80 backdrop-blur-xl py-4 px-4 sm:px-8 text-xs text-slate-500 dark:text-slate-400 transition-colors z-20 relative">
         <div className="w-full max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">

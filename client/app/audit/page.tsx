@@ -26,7 +26,6 @@ import {
   Bot,
 } from 'lucide-react';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
-import WalletGate from '../../components/auth/WalletGate';
 import { useWallet } from '../../context/WalletContext';
 import { signAndPayAuditFee, fetchUserCreditBalance, purchaseCreditPackage } from '../../utils/solaceService';
 import PricingModal from '../../components/pricing/PricingModal';
@@ -1189,12 +1188,8 @@ impl SolaceContract {
 
   return (
     <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
-      <WalletGate
-        pageTitle="Audit Studio"
-        description="Connect your authorized Stellar / Soroban auditor wallet to run pre-deploy AST static analysis, compile contracts, and anchor audit seals to the ledger."
-      >
-        {/* Main Studio Canvas */}
-        <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+      {/* Main Studio Canvas */}
+      <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         {/* Top Header Card (Enhanced Hero) */}
         <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
 
@@ -2484,8 +2479,7 @@ impl SolaceContract {
             </div>
           </div>
         )}
-        </main>
-      </WalletGate>
+      </main>
 
       <PricingModal
         isOpen={showPricingModal}

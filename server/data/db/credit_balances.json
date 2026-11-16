@@ -188,5 +188,40 @@
     "total_purchased": 0,
     "total_consumed": 0,
     "updated_at": "2026-11-11T21:46:10.582Z"
+  },
+  {
+    "wallet_address": "users",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T21:10:38.539Z"
+  },
+  {
+    "wallet_address": "processedTxHashes",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T21:10:38.541Z"
+  },
+  {
+    "wallet_address": "GDA6I7GDBW3U2RFJN2FRFTI5665VQT2WGHZNBOS3FEIAFYNSYELJFFBH",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T21:10:38.610Z"
+  },
+  {
+    "wallet_address": "GBPUSEY3UNV5N4OJW7IJLJT44ZCE75W7JHM6DFDYLXDFTSJCFVAYPK6O",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T21:10:38.625Z"
+  },
+  {
+    "wallet_address": "GCLHVU4DZI6YFKNE2PAQNWIZDMCNM2IMU6R7Q7WJRHFB5H76D6AD5BXS",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T21:10:38.705Z"
   }
 ]

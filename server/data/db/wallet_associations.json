@@ -206,5 +206,29 @@
     "network": "testnet",
     "is_primary": true,
     "verified_at": "2026-11-11T21:46:10.582Z"
+  },
+  {
+    "id": "wa_8b50dd488f40fe9376b8e660",
+    "user_id": "usr_0f250daee34c80a2e44ae523671b5d70",
+    "wallet_address": "GDA6I7GDBW3U2RFJN2FRFTI5665VQT2WGHZNBOS3FEIAFYNSYELJFFBH",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-16T21:10:38.610Z"
+  },
+  {
+    "id": "wa_8978687ba0aaee845b67e9d6",
+    "user_id": "usr_3d6e738a26e1db407d4444d31ab068c0",
+    "wallet_address": "GBPUSEY3UNV5N4OJW7IJLJT44ZCE75W7JHM6DFDYLXDFTSJCFVAYPK6O",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-16T21:10:38.625Z"
+  },
+  {
+    "id": "wa_eb273e56f648365fbeda47ef",
+    "user_id": "usr_2053106ae996cfa715a1f1d4e707fecd",
+    "wallet_address": "GCLHVU4DZI6YFKNE2PAQNWIZDMCNM2IMU6R7Q7WJRHFB5H76D6AD5BXS",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-16T21:10:38.705Z"
   }
 ]
