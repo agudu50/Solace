@@ -39,7 +39,7 @@ export default function SidebarDock({ onOpenAudit }: SidebarDockProps) {
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
-      className="fixed bottom-3 left-3 right-3 sm:left-8 sm:right-8 z-50 bg-white/95 dark:bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl p-1.5 flex md:hidden items-center justify-between gap-1"
+      className="fixed bottom-3 left-3 right-3 sm:left-8 sm:right-8 z-50 bg-white/95 dark:bg-[#161616]/95 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl p-1.5 flex md:hidden items-center justify-between gap-1"
     >
       {navItems.map((item) => {
         const isActive = pathname === item.href;

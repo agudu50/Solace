@@ -203,11 +203,10 @@ export default function MonitorPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
       <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Top Header Card */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
-          <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
             <div className="max-w-2xl">
@@ -261,7 +260,7 @@ export default function MonitorPage() {
               className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
                 contractId === DEFAULT_CONTRACT_ID
                   ? 'bg-accent text-white border-accent'
-                  : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border-slate-200/80 dark:border-slate-800'
+                  : 'bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border-slate-200/80 dark:border-slate-800'
               }`}
             >
               # Solace Core (CAC2TV...NPN2)
@@ -277,7 +276,7 @@ export default function MonitorPage() {
                 className={`text-xs px-3 py-1 rounded-full border shadow-sm transition font-bold flex items-center gap-1.5 ${
                   contractId === item.contractId && contractId !== DEFAULT_CONTRACT_ID
                     ? 'bg-accent text-white border-accent'
-                    : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
+                    : 'bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
                 }`}
                 title={`Monitor ${item.name} (${item.hash})`}
               >
@@ -307,7 +306,7 @@ export default function MonitorPage() {
               type="button"
               onClick={() => fetchLiveTelemetry(contractId)}
               disabled={monitoring}
-              className="p-1.5 sm:px-3 sm:py-1 rounded-full bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+              className="p-1.5 sm:px-3 sm:py-1 rounded-full bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
               title="Refresh telemetry"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${monitoring ? 'animate-spin text-accent' : ''}`} />
@@ -326,7 +325,7 @@ export default function MonitorPage() {
                 value={contractId}
                 onChange={(e) => setContractId(e.target.value)}
                 placeholder="Enter Deployed Soroban Contract ID (e.g. CBXV73FFYM...)..."
-                className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
+                className="w-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
               />
             </div>
             <button
@@ -380,7 +379,7 @@ export default function MonitorPage() {
             {/* Top 3 Live Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Network Status Card */}
-              <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
+              <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                     Network Status
@@ -404,7 +403,7 @@ export default function MonitorPage() {
               </div>
 
               {/* Live Storage Rent TTL Card */}
-              <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
+              <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                     Live Storage Rent TTL
@@ -438,7 +437,7 @@ export default function MonitorPage() {
               </div>
 
               {/* Current Ledger Sequence Card */}
-              <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
+              <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                     Current Testnet Ledger
@@ -460,7 +459,7 @@ export default function MonitorPage() {
             </div>
 
             {/* Live On-Chain Parameters Table */}
-            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-sm transition-colors">
+            <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-sm transition-colors">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -545,7 +544,7 @@ export default function MonitorPage() {
         )}
 
         {!metrics && !monitoring && (
-          <div className="p-12 text-center bg-white dark:bg-[#111726] border border-dashed border-slate-200/80 dark:border-slate-800 rounded-3xl text-slate-400 dark:text-slate-500 shadow-sm">
+          <div className="p-12 text-center bg-white dark:bg-[#161616] border border-dashed border-slate-200/80 dark:border-slate-800 rounded-3xl text-slate-400 dark:text-slate-500 shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 mx-auto mb-3">
               <Activity className="w-6 h-6 text-accent" />
             </div>

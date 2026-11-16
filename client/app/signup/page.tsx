@@ -116,10 +116,8 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-65px)] bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
+    <div className="min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 dark:bg-accent/15 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Main Registration Card */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
@@ -136,7 +134,7 @@ export default function SignupPage() {
           </span>
         </div>
 
-        <div className="max-w-md w-full bg-white/95 dark:bg-[#101522]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 relative overflow-hidden transition-colors duration-200">
+        <div className="max-w-md w-full bg-white/95 dark:bg-[#161616]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 relative overflow-hidden transition-colors duration-200">
           {/* Top highlight bar */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-accent" />
 
@@ -181,7 +179,7 @@ export default function SignupPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Alex Rivera"
-                  className="w-full bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0a0d16] transition"
+                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
                 />
               </div>
             </div>
@@ -198,7 +196,7 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="developer@example.com"
-                  className="w-full bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0a0d16] transition"
+                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
                 />
               </div>
             </div>
@@ -215,7 +213,7 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
-                  className="w-full bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0a0d16] transition"
+                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
                 />
                 <button
                   type="button"
@@ -255,7 +253,7 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your password"
-                  className="w-full bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0a0d16] transition"
+                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
                 />
               </div>
             </div>

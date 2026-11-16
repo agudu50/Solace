@@ -31,8 +31,8 @@ export default function Footer() {
   // Dedicated minimal dashboard utility footer
   if (pathname === '/dashboard') {
     return (
-      <footer className="w-full border-t border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-[#0c101b]/80 backdrop-blur-xl py-4 px-4 sm:px-8 text-xs text-slate-500 dark:text-slate-400 transition-colors z-20 relative">
-        <div className="w-full max-w-[1700px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="w-full border-t border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-[#121212]/80 backdrop-blur-xl py-4 px-4 sm:px-8 text-xs text-slate-500 dark:text-slate-400 transition-colors z-20 relative">
+        <div className="w-full max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left: Branding & Status */}
           <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
             <Link href="/" className="flex items-center gap-2 group">
@@ -106,15 +106,15 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-[#0c101b]/80 backdrop-blur-md pt-12 pb-16 sm:pb-12 text-xs text-slate-600 dark:text-slate-400 transition-colors">
-      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="border-t border-slate-200/80 dark:border-slate-800 bg-[#f7f7f6] dark:bg-[#0e0e0e] pt-16 pb-16 sm:pb-12 text-xs text-slate-600 dark:text-slate-400 transition-colors">
+      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 mb-12">
           {/* Brand Info (Cols 1-4) */}
           <div className="lg:col-span-4 flex flex-col items-start">
             <Link href="/" className="flex items-center gap-2.5 mb-4 group">
-              <div className="w-9 h-9 rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-sm shadow-accent/20 dark:shadow-accent/30 group-hover:scale-105 transition-all duration-300 shrink-0">
-                <div className="w-full h-full rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] shrink-0">
+                <div className="w-full h-full overflow-hidden flex items-center justify-center">
                   <Image
                     src="/solace-logo.jpg"
                     alt="Solace Logo"
@@ -128,7 +128,7 @@ export default function Footer() {
                 <span className="font-black text-lg text-slate-900 dark:text-white block leading-tight">
                   Solace
                 </span>
-                <span className="text-[10px] uppercase font-bold text-accent tracking-wider block">
+                <span className="font-mono text-[10px] uppercase text-slate-500 tracking-wider block">
                   Soroban Security Core
                 </span>
               </div>

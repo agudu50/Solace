@@ -21,6 +21,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import { SectionHeading, container } from './primitives';
 
 interface ContractSample {
   id: string;
@@ -337,24 +338,16 @@ export default function InteractiveScanner() {
   };
 
   return (
-    <section id="scanner" className="relative w-full py-16 sm:py-24 bg-slate-50/50 dark:bg-[#0c101b]/60 border-y border-slate-200/70 dark:border-slate-800/80">
-      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold mb-3 shadow-xs">
-            <Terminal className="w-3.5 h-3.5" />
-            <span>Interactive Simulator</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
-            Test the Solace AST Engine Live
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-            Select a real Soroban smart contract pattern below. Run the instant AST inspection to observe how Solace detects vulnerabilities and generates cryptographic on-chain proofs.
-          </p>
-        </div>
+    <section id="scanner" className="relative w-full py-20 sm:py-28 border-b border-slate-200 dark:border-white/10">
+      <div className={container}>
+        <SectionHeading
+          eyebrow="Simulator"
+          title="Watch the engine work on real patterns"
+          description="Pick a Soroban contract pattern and run the scan. See exactly what Solace flags, why, and the patch it proposes."
+        />
 
         {/* Contract Sample Selector Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        <div className="flex flex-wrap items-center gap-2 mb-8">
           {SAMPLES.map((sample) => {
             const isSelected = selectedSample.id === sample.id;
             return (
@@ -365,7 +358,7 @@ export default function InteractiveScanner() {
                 className={`px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 border shadow-xs cursor-pointer ${
                   isSelected
                     ? 'bg-accent text-white border-accent shadow-md shadow-accent/20 scale-[1.02]'
-                    : 'bg-white dark:bg-[#111726] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-accent/40 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    : 'bg-white dark:bg-[#161616] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-accent/40 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <Code2 className="w-4 h-4 shrink-0" />
@@ -391,9 +384,9 @@ export default function InteractiveScanner() {
         {/* Live Simulator Workspace Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Left: Code Editor Terminal Window */}
-          <div className="lg:col-span-7 bg-white dark:bg-[#111726] rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-full justify-between">
+          <div className="lg:col-span-7 bg-white dark:bg-[#161616] rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-full justify-between">
             {/* Terminal Window Header Bar */}
-            <div className="flex items-center justify-between px-4 py-3 bg-slate-100/80 dark:bg-[#0a0d14]/80 border-b border-slate-200/80 dark:border-slate-800 text-xs font-mono">
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-100/80 dark:bg-[#0e0e0e]/80 border-b border-slate-200/80 dark:border-slate-800 text-xs font-mono">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
@@ -434,7 +427,7 @@ export default function InteractiveScanner() {
             )}
 
             {/* Code Content with Line Numbers & Laser Scan Overlay */}
-            <div className="relative p-4 sm:p-6 font-mono text-xs sm:text-[13px] leading-relaxed overflow-y-auto flex-1 bg-[#0a0d14] text-slate-200 modern-code-scrollbar min-h-[460px]">
+            <div className="relative p-4 sm:p-6 font-mono text-xs sm:text-[13px] leading-relaxed overflow-y-auto flex-1 bg-[#0e0e0e] text-slate-200 modern-code-scrollbar min-h-[460px]">
               {/* Animated Laser Scanning Beam in Dominant Color */}
               {isScanning && (
                 <div className="absolute left-0 right-0 h-1 bg-accent border-b border-accent pointer-events-none shadow-sm shadow-accent animate-[bounce_1.5s_infinite]" />
@@ -473,7 +466,7 @@ export default function InteractiveScanner() {
             </div>
 
             {/* Terminal Status Footer */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/60 dark:bg-[#0a0d14]/60 border-t border-slate-200/80 dark:border-slate-800 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/60 dark:bg-[#0e0e0e]/60 border-t border-slate-200/80 dark:border-slate-800 text-[11px] font-mono text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
                 <span
                   className={`w-2 h-2 rounded-full ${
@@ -495,7 +488,7 @@ export default function InteractiveScanner() {
           {/* Right: Real-Time Findings & Cryptographic Inscription Panel */}
           <div className="lg:col-span-5 flex flex-col h-full">
             {/* Finding Card */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xl flex flex-col h-full justify-between">
+            <div className="bg-white dark:bg-[#161616] rounded-3xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xl flex flex-col h-full justify-between">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   AST Invariant Report
@@ -544,7 +537,7 @@ export default function InteractiveScanner() {
                   <Cpu className="w-3.5 h-3.5 text-accent" />
                   <span>Solace AI Remediation Patch</span>
                 </span>
-                <div className="p-3.5 rounded-2xl bg-[#090c15] border border-emerald-500/40 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner remediation-code-scrollbar">
+                <div className="p-3.5 rounded-2xl bg-[#0e0e0e] border border-emerald-500/40 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner remediation-code-scrollbar">
                   <pre>
                     {selectedSample.fixedSnippet.split('\n').map((snipLine, sIdx) => (
                       <div key={sIdx} className="leading-relaxed whitespace-pre">

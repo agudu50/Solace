@@ -94,7 +94,7 @@ export default function PricingModal({ isOpen, onClose, onPurchaseSuccess }: Pri
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50">
           <div className="flex items-center gap-2.5">
@@ -193,7 +193,7 @@ export default function PricingModal({ isOpen, onClose, onPurchaseSuccess }: Pri
                   className={`relative p-5 sm:p-6 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between ${
                     isSelected
                       ? 'border-accent shadow-xl shadow-accent/10 bg-accent/5 dark:bg-accent/10 ring-2 ring-accent'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a0d14] hover:border-slate-300 dark:hover:border-slate-700'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0e0e0e] hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   {isPopular && (

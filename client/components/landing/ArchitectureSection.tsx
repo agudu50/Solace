@@ -1,188 +1,140 @@
 'use client';
 import React, { useState } from 'react';
-import {
-  ShieldCheck,
-  Cpu,
-  Layers,
-  Lock,
-  ExternalLink,
-  Copy,
-  Check,
-  CheckCircle2,
-  ArrowUpRight,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useWallet } from '../../context/WalletContext';
+import { Check, Copy, ExternalLink } from 'lucide-react';
+import { SectionHeading, btn, container, panel } from './primitives';
 
 const LAYERS = [
   {
-    layer: 'Layer 1 · Auth Client',
-    title: 'Freighter Keypair',
-    description:
-      'Decentralized auditor signature with zero private key disclosure. Signs payload anchors directly via the Freighter browser extension.',
-    tech: '@stellar/freighter-api',
-    icon: Lock,
+    tag: 'Auth',
+    title: 'Freighter keypair',
+    body: 'Auditors sign in non-custodially. Keys never leave the wallet and every inscription carries the auditor signature.',
   },
   {
-    layer: 'Layer 2 · Analysis Engine',
-    title: 'AST + Gemini Multi-Model',
-    description:
-      'Dual-pass engine evaluating Soroban authorization invariants, storage rent boundaries, and generating syntactic remediation code.',
-    tech: 'SHA-256 Digest & JSON Schema',
-    icon: Cpu,
+    tag: 'Engine',
+    title: 'AST + multi-model',
+    body: 'A dual-pass engine evaluates auth invariants and storage rent, then drafts remediations validated against the rules.',
   },
   {
-    layer: 'Layer 3 · On-Chain Core',
-    title: 'solace_core Contract',
-    description:
-      'Deployed Rust contract on Stellar Testnet and Mainnet. Inscribes audit records in persistent storage powered by prepaid non-expiring credit bundles.',
-    tech: 'Prepaid Bundles (30-90 XLM)',
-    icon: Layers,
+    tag: 'Core',
+    title: 'solace_core contract',
+    body: 'A deployed Rust contract stores audit records in persistent storage, funded by prepaid credit bundles.',
   },
   {
-    layer: 'Layer 4 · Verification',
-    title: 'Public Ledger Explorer',
-    description:
-      'Anyone can query the Stellar RPC to inspect cryptographic audit proofs, verified bytecode hashes, and risk scores without centralized trust.',
-    tech: 'Stellar Expert & RPC Live',
-    icon: CheckCircle2,
+    tag: 'Verify',
+    title: 'Public ledger',
+    body: 'Anyone can query Stellar RPC to inspect proofs, bytecode hashes and scores. No central party to trust.',
   },
 ];
 
+const LOG = [
+  { time: '14:02:11', event: 'audit.anchored', subject: 'CBQ7…K2LM', score: 95, ok: true },
+  { time: '13:58:40', event: 'audit.anchored', subject: 'CDX4…9PQA', score: 71, ok: true },
+  { time: '13:51:02', event: 'audit.flagged', subject: 'CA3N…TT8E', score: 38, ok: false },
+  { time: '13:47:26', event: 'credits.purchased', subject: 'GBWS…DYPI', score: null, ok: true },
+  { time: '13:40:55', event: 'audit.anchored', subject: 'CCJ2…W0RS', score: 88, ok: true },
+];
+
 export default function ArchitectureSection() {
-  const { network } = useWallet();
-  const [copiedContract, setCopiedContract] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
   const contractId = 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
-  const handleCopyContract = () => {
+  const handleCopy = () => {
     navigator.clipboard.writeText(contractId);
-    setCopiedContract(true);
-    setTimeout(() => setCopiedContract(false), 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <section id="architecture" className="relative w-full py-16 sm:py-24 overflow-hidden">
-      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Heading */}
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold mb-3 shadow-xs"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>Cryptographic Architecture</span>
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4"
-          >
-            On-Chain Ledger Provenance Model
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed"
-          >
-            Most security tools generate transient off-chain reports. Solace permanently seals verified audit findings into Soroban persistent storage, allowing users, dApps, and indexers to verify contract integrity directly on Stellar.
-          </motion.p>
+    <section id="architecture" className="w-full py-20 sm:py-28 border-b border-slate-200 dark:border-white/10">
+      <div className={container}>
+        <SectionHeading
+          eyebrow="Architecture"
+          title="Provenance you can verify, not just read"
+          description="Most security tools hand you a PDF. Solace seals findings into Soroban persistent storage so wallets, launchpads and indexers can check a contract before they touch it."
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
+          {/* Layers */}
+          <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10 content-start">
+            {LAYERS.map((l) => (
+              <div key={l.tag} className="border-t border-slate-200 dark:border-white/10 pt-5">
+                <span className="eyebrow">{l.tag}</span>
+                <h3 className="mt-3 text-base font-medium text-slate-900 dark:text-white">{l.title}</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{l.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Ledger log mockup */}
+          <div className={`lg:col-span-7 ${panel} overflow-hidden`}>
+            <div className="flex items-center justify-between px-4 sm:px-5 h-11 border-b border-slate-200 dark:border-white/10">
+              <span className="text-sm font-medium text-slate-900 dark:text-white">Ledger activity</span>
+              <span className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                live · testnet
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] text-left font-mono text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-200 dark:border-white/10">
+                    <th className="font-normal px-4 sm:px-5 py-2.5">Time</th>
+                    <th className="font-normal px-4 py-2.5">Event</th>
+                    <th className="font-normal px-4 py-2.5">Subject</th>
+                    <th className="font-normal px-4 sm:px-5 py-2.5 text-right">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {LOG.map((row) => (
+                    <tr
+                      key={row.time}
+                      className="border-b last:border-b-0 border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-300"
+                    >
+                      <td className="px-4 sm:px-5 py-3 text-slate-500">{row.time}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-[1px] ${row.ok ? 'bg-emerald-500' : 'bg-accent'}`} />
+                          {row.event}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">{row.subject}</td>
+                      <td className="px-4 sm:px-5 py-3 text-right">
+                        {row.score === null ? (
+                          <span className="text-slate-400">—</span>
+                        ) : (
+                          <span className={row.score < 50 ? 'text-accent' : ''}>{row.score}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        {/* Architecture Flow Visual Container with Dribbble Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="relative bg-white/80 dark:bg-[#111726]/60 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-white/10 p-6 sm:p-10 shadow-2xl overflow-hidden"
-        >
-          {/* Subtle background glow in dominant color #C80552 */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* 4-Stage Architecture Diagram */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-            {LAYERS.map((layer, idx) => {
-              const Icon = layer.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  className="p-5 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 shadow-sm flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-accent" />
-                      </div>
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2 py-0.5 rounded-md border border-accent/20">
-                        {layer.layer}
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-black text-slate-900 dark:text-white mb-2">
-                      {layer.title}
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                      {layer.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-slate-100 dark:border-white/5 text-[11px] font-mono text-accent font-semibold flex items-center justify-between">
-                    <span>{layer.tech}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                </motion.div>
-              );
-            })}
+        {/* Contract bar */}
+        <div className={`mt-10 ${panel} p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4`}>
+          <div className="min-w-0">
+            <span className="eyebrow">Deployed contract · Stellar testnet</span>
+            <p className="mt-1.5 font-mono text-xs sm:text-sm text-slate-900 dark:text-white break-all">{contractId}</p>
           </div>
-
-          {/* Live Deployed Contract Address Banner */}
-          <div className="mt-8 pt-8 border-t border-slate-200/80 dark:border-white/10 flex flex-col lg:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse shrink-0" />
-              <div className="text-left">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-bold block">
-                  Deployed On-Chain Contract (Stellar Testnet Protocol 22)
-                </span>
-                <span className="font-mono text-xs sm:text-sm font-bold text-accent break-all">
-                  {contractId}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleCopyContract}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-white/20 transition flex items-center gap-1.5 cursor-pointer"
-              >
-                {copiedContract ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedContract ? 'Copied Contract ID' : 'Copy ID'}</span>
-              </button>
-
-              <a
-                href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-white/20 transition flex items-center gap-1.5"
-              >
-                <span>Stellar Expert (Testnet)</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button type="button" onClick={handleCopy} className={`${btn.secondary} h-9`}>
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'Copied' : 'Copy ID'}
+            </button>
+            <a
+              href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${btn.secondary} h-9`}
+            >
+              Stellar Expert
+              <ExternalLink className="w-4 h-4" />
+            </a>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

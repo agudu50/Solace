@@ -1188,7 +1188,7 @@ impl SolaceContract {
   const lineCount = codeSnippet ? codeSnippet.split('\n').length : 0;
 
   return (
-    <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
+    <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
       <WalletGate
         pageTitle="Audit Studio"
         description="Connect your authorized Stellar / Soroban auditor wallet to run pre-deploy AST static analysis, compile contracts, and anchor audit seals to the ledger."
@@ -1196,8 +1196,7 @@ impl SolaceContract {
         {/* Main Studio Canvas */}
         <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         {/* Top Header Card (Enhanced Hero) */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
-          <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
             <div className="max-w-2xl">
@@ -1250,7 +1249,7 @@ impl SolaceContract {
 
               <Link
                 href="/"
-                className="px-4 py-2 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5"
+                className="px-4 py-2 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span className="hidden xs:inline">Dashboard</span>
@@ -1261,8 +1260,7 @@ impl SolaceContract {
 
         {/* Insufficient Credits Banner / Unlock AI-Powered Smart Contract Analysis */}
         {userCredits && userCredits.availableCredits === 0 && (
-          <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-white via-white to-rose-50/50 dark:from-[#111726] dark:via-[#111726] dark:to-accent/5 border border-accent/30 shadow-lg shadow-accent/5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-72 h-72 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-white/10 relative overflow-hidden">
 
             <div className="relative z-10">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
@@ -1295,7 +1293,7 @@ impl SolaceContract {
               {/* 3 Package Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
                 {/* Starter: 30 XML for 3 audits */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-slate-900 dark:text-white">Starter</span>
@@ -1322,7 +1320,7 @@ impl SolaceContract {
                 </div>
 
                 {/* Growth: 60 XML for 6 audits */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#0d121f] border-2 border-accent shadow-md shadow-accent/10 transition flex flex-col justify-between relative">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#161616] border-2 border-accent shadow-md shadow-accent/10 transition flex flex-col justify-between relative">
                   <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-wider">
                     Best Value
                   </span>
@@ -1349,7 +1347,7 @@ impl SolaceContract {
                 </div>
 
                 {/* Professional: 90 XML for 9 audits */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-slate-900 dark:text-white">Professional</span>
@@ -1384,7 +1382,7 @@ impl SolaceContract {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             {/* Left 7 Columns: Code Editor & Audit Action */}
             <div className="lg:col-span-7 flex flex-col gap-4">
-              <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
+              <div className="bg-white dark:bg-[#161616] rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
                 <div>
                   {/* Top Control Bar */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -1686,7 +1684,7 @@ impl SolaceContract {
 
             {/* Right 5 Columns: Findings & On-Chain Verification */}
             <div className="lg:col-span-5 flex flex-col gap-4">
-              <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col h-full min-h-[380px] sm:min-h-[500px] transition-colors">
+              <div className="bg-white dark:bg-[#161616] rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col h-full min-h-[380px] sm:min-h-[500px] transition-colors">
                 <div className="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                     Audit Findings & Ledger Receipt
@@ -1750,7 +1748,7 @@ impl SolaceContract {
                   return (
                     <div className="space-y-4 overflow-y-auto max-h-[620px] pr-1 modern-code-scrollbar">
                       {/* Multi-Model Consensus & Anti-Hallucination Banner */}
-                      <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-accent/10 via-purple-500/10 to-blue-500/10 border border-accent/25 text-xs shadow-xs">
+                      <div className="p-3 sm:p-3.5 rounded-2xl bg-accent-subtle border border-accent/25 text-xs shadow-xs">
                         <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                           <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
                             <ShieldCheck className="w-4 h-4 text-accent animate-pulse" />
@@ -1991,7 +1989,6 @@ impl SolaceContract {
                     {anchorResult ? (
                       <div className="p-4 sm:p-4.5 rounded-2xl bg-white dark:bg-slate-900 border border-accent/30 shadow-md text-xs relative overflow-hidden transition-all">
                         {/* Decorative background glow */}
-                        <div className="absolute -top-12 -right-12 w-36 h-36 bg-accent/15 rounded-full blur-2xl pointer-events-none" />
 
                         {/* Status Header */}
                         <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
@@ -2409,7 +2406,7 @@ impl SolaceContract {
 
         {/* Tab 2: Invariants */}
         {activeTab === 'INVARIANTS' && (
-          <div className="bg-white dark:bg-[#111726] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
+          <div className="bg-white dark:bg-[#161616] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Audit Pass Rate</h2>

@@ -107,10 +107,8 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-65px)] bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
+    <div className="min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 dark:bg-accent/15 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Main Administrative Gate Card */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
@@ -127,7 +125,7 @@ export default function AdminLoginPage() {
           </span>
         </div>
 
-        <div className="max-w-md w-full bg-white/95 dark:bg-[#101522]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 text-center relative overflow-hidden transition-colors duration-200">
+        <div className="max-w-md w-full bg-white/95 dark:bg-[#161616]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 text-center relative overflow-hidden transition-colors duration-200">
           {/* Top accent highlight bar */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-accent" />
 
@@ -222,7 +220,7 @@ export default function AdminLoginPage() {
             <p className="text-[11px] text-slate-500 font-mono leading-relaxed mb-2">
               Execute the secure bootstrap command in the server environment:
             </p>
-            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#090d16] border border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 overflow-x-auto">
+            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 overflow-x-auto">
               npm run provision-admin -- &lt;STELLAR_WALLET&gt;
             </div>
           </div>

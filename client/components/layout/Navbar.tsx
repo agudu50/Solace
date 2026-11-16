@@ -116,22 +116,21 @@ export default function Navbar() {
   ];
 
   const publicNavItems = [
-    { label: 'Features', href: '#features' },
+    { label: 'Platform', href: '#features' },
+    { label: 'How it works', href: '#how-it-works' },
     { label: 'Simulator', href: '#scanner' },
-    { label: 'How It Works', href: '#how-it-works' },
     { label: 'Architecture', href: '#architecture' },
-    { label: 'Audit Studio', href: '#audit' },
     { label: 'Reports', href: '#reports' },
     { label: 'FAQ', href: '#faq' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#f4f5f8]/90 dark:bg-[#0a0d14]/90 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/80 py-2 sm:py-2.5 px-3 sm:px-6 lg:px-8 shadow-xs">
-      <div className="w-full max-w-[1700px] mx-auto flex items-center justify-between gap-1.5 sm:gap-4">
+    <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#f7f7f6]/85 dark:bg-[#0e0e0e]/85 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-2 sm:py-2.5 px-3 sm:px-6 lg:px-8">
+      <div className={`w-full ${pathname === '/' ? 'max-w-[1280px]' : 'max-w-[1700px]'} mx-auto flex items-center justify-between gap-1.5 sm:gap-4`}>
         {/* Brand (Mobile Responsive: hides subtitle on tiny screens) */}
         <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-md shadow-accent/20 dark:shadow-accent/30 group-hover:shadow-accent/40 group-hover:scale-105 transition-all duration-300 shrink-0">
-            <div className="w-full h-full rounded-[10px] sm:rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] shrink-0">
+            <div className="w-full h-full overflow-hidden flex items-center justify-center">
               <Image
                 src="/solace-logo.jpg"
                 alt="Solace Logo"
@@ -143,10 +142,10 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-base sm:text-xl tracking-tight text-slate-900 dark:text-white leading-none">
+            <span className="font-semibold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white leading-none">
               Solace
             </span>
-            <span className="text-[9px] sm:text-[10px] text-accent font-bold tracking-wider uppercase mt-0.5 hidden sm:block">
+            <span className="font-mono text-[9px] sm:text-[10px] text-slate-500 tracking-wider uppercase mt-0.5 hidden sm:block">
               Soroban Security
             </span>
           </div>
@@ -154,7 +153,7 @@ export default function Navbar() {
 
         {/* Center Pill Navigation */}
         {walletKey ? (
-          <nav className="hidden md:flex items-center bg-white dark:bg-[#111726] rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-slate-800">
+          <nav className="hidden md:flex items-center bg-white dark:bg-[#161616] rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-slate-800">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const IconComponent = item.icon;
@@ -175,14 +174,14 @@ export default function Navbar() {
             })}
           </nav>
         ) : (
-          <nav className="hidden lg:flex items-center bg-white/80 dark:bg-[#111726]/80 rounded-full px-3 py-1 shadow-sm border border-slate-200/80 dark:border-slate-800 gap-1 text-xs font-bold text-slate-700 dark:text-slate-300">
+          <nav className="hidden lg:flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400">
             {publicNavItems.map((item) => {
               const targetHref = pathname === '/' ? item.href : `/${item.href}`;
               return (
                 <a
                   key={item.label}
                   href={targetHref}
-                  className="px-3 py-1.5 rounded-full hover:text-accent hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="px-3 py-1.5 rounded-md hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   {item.label}
                 </a>
@@ -214,7 +213,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition shrink-0"
+            className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition shrink-0"
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             aria-label="Toggle theme"
           >
@@ -235,7 +234,7 @@ export default function Navbar() {
                   const hash = prompt('Search contract audit hash:');
                   if (hash) window.location.href = `/reports?hash=${encodeURIComponent(hash)}`;
                 }}
-                className="hidden md:flex w-9 h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm items-center justify-center transition shrink-0"
+                className="hidden md:flex w-9 h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm items-center justify-center transition shrink-0"
                 title="Search audit by hash"
               >
                 <Search className="w-4 h-4" />
@@ -246,7 +245,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setShowInvariantsModal(true)}
-                  className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition shrink-0 cursor-pointer"
+                  className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition shrink-0 cursor-pointer"
                   title="System Security Invariants Status (All Soroban security invariants passing on Stellar Testnet)"
                   aria-label="System Security Invariants"
                 >
@@ -259,7 +258,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setShowSettings(!showSettings)}
-                className="hidden sm:flex w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm items-center justify-center transition shrink-0"
+                className="hidden sm:flex w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm items-center justify-center transition shrink-0"
                 title="Security Settings & Network Config"
               >
                 <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -287,7 +286,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setShowWalletModal(true)}
-                className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs font-mono text-slate-800 dark:text-slate-200 shrink-0 transition cursor-pointer group"
+                className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs font-mono text-slate-800 dark:text-slate-200 shrink-0 transition cursor-pointer group"
                 title="Auditor Keypair Details & Session"
               >
                 <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -297,7 +296,7 @@ export default function Navbar() {
             ) : user ? (
               <Link
                 href="/dashboard"
-                className="flex items-center gap-1.5 bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs text-slate-800 dark:text-slate-200 shrink-0 transition"
+                className="flex items-center gap-1.5 bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs text-slate-800 dark:text-slate-200 shrink-0 transition"
                 title="User Account Dashboard"
               >
                 <User className="w-3 h-3 text-accent" />
@@ -332,7 +331,7 @@ export default function Navbar() {
           </div>
 
           {notice && (
-            <span className="hidden md:inline-block text-xs text-slate-500 bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm">
+            <span className="hidden md:inline-block text-xs text-slate-500 bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm">
               {notice}
             </span>
           )}
@@ -341,7 +340,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="flex lg:hidden w-8 h-8 rounded-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 items-center justify-center transition hover:text-accent shadow-xs shrink-0"
+            className="flex lg:hidden w-8 h-8 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 items-center justify-center transition hover:text-accent shadow-xs shrink-0"
             aria-label="Toggle navigation menu"
           >
             {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -351,7 +350,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Dropdown Drawer */}
       {showMobileMenu && (
-        <div className="lg:hidden border-t border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#111726]/95 backdrop-blur-xl px-4 py-4 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-xl">
+        <div className="lg:hidden border-t border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#161616]/95 backdrop-blur-xl px-4 py-4 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-xl">
           <div className="flex flex-col gap-1">
             <a
               href="#features"
@@ -439,7 +438,7 @@ export default function Navbar() {
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="bg-white dark:bg-[#111726] rounded-3xl max-w-md w-full p-6 shadow-2xl border-t-4 border-t-accent border-x border-b border-slate-300 dark:border-slate-700 relative text-slate-900 dark:text-slate-100 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 my-auto"
+            className="bg-white dark:bg-[#161616] rounded-3xl max-w-md w-full p-6 shadow-2xl border-t-4 border-t-accent border-x border-b border-slate-300 dark:border-slate-700 relative text-slate-900 dark:text-slate-100 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top solid accent line (No gradient) */}
@@ -542,7 +541,7 @@ export default function Navbar() {
           onClick={() => setShowInvariantsModal(false)}
         >
           <div
-            className="bg-white dark:bg-[#0c101c] rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative text-slate-900 dark:text-slate-100 my-auto transition-colors max-h-[90vh] overflow-y-auto modern-code-scrollbar"
+            className="bg-white dark:bg-[#121212] rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative text-slate-900 dark:text-slate-100 my-auto transition-colors max-h-[90vh] overflow-y-auto modern-code-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -579,7 +578,7 @@ export default function Navbar() {
 
             {/* Real-time Consensus & Telemetry Metric Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800">
                 <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block tracking-wider">
                   System Health
                 </span>
@@ -589,7 +588,7 @@ export default function Navbar() {
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block">0 Violations</span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800">
                 <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block tracking-wider">
                   Consensus
                 </span>
@@ -599,7 +598,7 @@ export default function Navbar() {
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Enforced Rules</span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800">
                 <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block tracking-wider">
                   Host Panics
                 </span>
@@ -609,7 +608,7 @@ export default function Navbar() {
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Zero Unhandled</span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800">
                 <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block tracking-wider">
                   RPC Status
                 </span>
@@ -623,7 +622,7 @@ export default function Navbar() {
             {/* Invariant Vector Cards */}
             <div className="space-y-2 mb-4">
               {/* 1. Authorization Guard */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20">
                     <Lock className="w-3.5 h-3.5" />
@@ -648,7 +647,7 @@ export default function Navbar() {
               </div>
 
               {/* 2. Storage Rent Guardian */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 border border-cyan-500/20">
                     <Layers className="w-3.5 h-3.5" />
@@ -673,7 +672,7 @@ export default function Navbar() {
               </div>
 
               {/* 3. Panic Crash Shield */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 mt-0.5 border border-purple-500/20">
                     <Cpu className="w-3.5 h-3.5" />
@@ -698,7 +697,7 @@ export default function Navbar() {
               </div>
 
               {/* 4. Admin Access Control & Multi-Sig */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center shrink-0 mt-0.5 border border-accent/20">
                     <ShieldCheck className="w-3.5 h-3.5 text-accent" />
@@ -723,7 +722,7 @@ export default function Navbar() {
               </div>
 
               {/* 5. Arithmetic Safety & Boundary Guard */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/20">
                     <Zap className="w-3.5 h-3.5" />
@@ -748,7 +747,7 @@ export default function Navbar() {
               </div>
 
               {/* 6. Instruction Meter & Gas Limit Safety */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 transition">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5 border border-indigo-500/20">
                     <Activity className="w-3.5 h-3.5" />
@@ -774,7 +773,7 @@ export default function Navbar() {
             </div>
 
             {/* Testnet Inscription Proof Card */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 mb-4 flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#161616] border border-slate-200 dark:border-slate-800 mb-4 flex items-center justify-between flex-wrap gap-2 text-xs">
               <div className="min-w-0">
                 <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block tracking-wider">
                   Deployed Solace Core Contract
@@ -840,12 +839,10 @@ export default function Navbar() {
         >
           {/* Main Modal Card */}
           <div
-            className="bg-white dark:bg-[#0f1422] rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border-t-4 border-t-accent border-x border-b border-slate-200/90 dark:border-slate-800/90 relative text-slate-900 dark:text-slate-100 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 my-auto transition-colors"
+            className="bg-white dark:bg-[#161616] rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border-t-4 border-t-accent border-x border-b border-slate-200/90 dark:border-slate-800/90 relative text-slate-900 dark:text-slate-100 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 my-auto transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Ambient Background Decorative Glows */}
-            <div className="absolute -top-20 -right-20 w-44 h-44 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
             {/* Top solid accent line (No gradient) */}
             <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-accent opacity-90 pointer-events-none" />
 
@@ -879,7 +876,7 @@ export default function Navbar() {
 
             {/* Adaptive Hardware Signer Card (Light & Dark Theme Optimized - explicitly light in light mode) */}
             <div
-              className="rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-xl relative overflow-hidden mb-4 border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#151a27] text-slate-900 dark:text-white transition-colors"
+              className="rounded-2xl p-4 sm:p-5 shadow-sm dark:shadow-xl relative overflow-hidden mb-4 border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#161616] text-slate-900 dark:text-white transition-colors"
             >
               {/* Subtle background container without gradients */}
               <div className="absolute inset-0 bg-slate-100/50 dark:bg-slate-900/50 pointer-events-none" />
@@ -905,7 +902,7 @@ export default function Navbar() {
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
                   Public Signer Keypair
                 </span>
-                <div className="font-mono text-xs sm:text-[13px] font-bold text-slate-900 dark:text-slate-100 break-all bg-white dark:bg-[#0c0f18] p-3 rounded-xl border border-slate-200/90 dark:border-white/10 select-all leading-relaxed shadow-2xs">
+                <div className="font-mono text-xs sm:text-[13px] font-bold text-slate-900 dark:text-slate-100 break-all bg-white dark:bg-[#121212] p-3 rounded-xl border border-slate-200/90 dark:border-white/10 select-all leading-relaxed shadow-2xs">
                   {walletKey}
                 </div>
               </div>

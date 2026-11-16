@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SectionHeading, container } from './primitives';
 
 interface LedgerReport {
   id: string;
@@ -274,48 +275,24 @@ export default function ReportsSection() {
   });
 
   return (
-    <section id="reports" className="relative w-full py-16 sm:py-24 bg-slate-50/50 dark:bg-[#0c101b]/60 border-t border-slate-200/80 dark:border-slate-800/80">
-      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="reports" className="relative w-full py-20 sm:py-28 border-b border-slate-200 dark:border-white/10">
+      <div className={container}>
         {/* Section Header */}
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12">
-          {/* Active Network Switcher Badge */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-            <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-accent/25 bg-accent/10 text-accent text-xs font-semibold shadow-xs"
-              title="Active Network: Stellar Testnet (Protocol 22)"
-            >
-              <span className="w-2 h-2 rounded-full inline-block bg-accent animate-pulse" />
-              <span className="font-bold">
-                Stellar Testnet (Protocol 22)
-              </span>
-              <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 opacity-75">
-                Live
-              </span>
-            </div>
-
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold shadow-xs">
-              <FileText className="w-3.5 h-3.5 text-accent" />
-              <span>On-Chain Provenance Ledger</span>
-            </div>
-          </div>
-
+        <SectionHeading
+          eyebrow="Reports · Stellar testnet"
+          title="Verified ledger reports"
+          description="Every audit is anchored with a SHA-256 contract fingerprint, the auditor signature and its invariant status."
+        >
           {liveNotice && (
-            <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold animate-in fade-in duration-200 shadow-xs">
+            <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
               <span>{liveNotice}</span>
             </div>
           )}
-
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
-            Verified Ledger Reports
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-            Every audit conducted through Solace is anchored onto the Stellar Soroban ledger with a unique SHA-256 contract fingerprint, cryptographic auditor signature, and AST invariant status.
-          </p>
-        </div>
+        </SectionHeading>
 
         {/* Filter and Search Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-white dark:bg-[#161616] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
           {/* Search Input */}
           <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -371,7 +348,7 @@ export default function ReportsSection() {
         {/* Reports List */}
         <div className="space-y-4">
           {filteredReports.length === 0 ? (
-            <div className="p-12 text-center bg-white dark:bg-[#111726] rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div className="p-12 text-center bg-white dark:bg-[#161616] rounded-2xl border border-slate-200 dark:border-slate-800">
               <FileText className="w-12 h-12 text-slate-400 mx-auto mb-3 opacity-60" />
               <p className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
                 No matching reports found
@@ -386,7 +363,7 @@ export default function ReportsSection() {
               return (
                 <div
                   key={report.id}
-                  className="bg-white dark:bg-[#111726] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition"
+                  className="bg-white dark:bg-[#161616] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition"
                 >
                   {/* Card Summary Header */}
                   <div className="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -486,7 +463,7 @@ export default function ReportsSection() {
                           {report.invariants.map((inv, i) => (
                             <div
                               key={i}
-                              className="p-2.5 rounded-xl bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                              className="p-2.5 rounded-xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"
                             >
                               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                               <span className="truncate">{inv}</span>
@@ -506,7 +483,7 @@ export default function ReportsSection() {
                             {report.vulnerabilities.map((vuln, i) => (
                               <div
                                 key={i}
-                                className="p-4 rounded-xl bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 text-xs space-y-2"
+                                className="p-4 rounded-xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 text-xs space-y-2"
                               >
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
                                   <span className="font-bold text-slate-900 dark:text-white text-sm">

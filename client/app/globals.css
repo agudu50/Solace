@@ -9,6 +9,48 @@
   --e-global-color-accent-border: rgba(200, 5, 82, 0.35);
 }
 
+html {
+  font-feature-settings: 'ss01', 'cv11';
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- Marketing primitives (flat, hairline, mono labels) ---------- */
+
+/* Mono uppercase eyebrow label used above section headings */
+.eyebrow {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #767674;
+}
+.dark .eyebrow {
+  color: #a3a3a1;
+}
+
+/* Faint square grid used as section backdrop (SVG hairlines, no gradients) */
+.grid-lines {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cpath d='M64 0H0V64' fill='none' stroke='%230e0e0e' stroke-opacity='0.05'/%3E%3C/svg%3E");
+  background-size: 64px 64px;
+}
+.dark .grid-lines {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cpath d='M64 0H0V64' fill='none' stroke='%23ffffff' stroke-opacity='0.045'/%3E%3C/svg%3E");
+}
+
+/* Blinking terminal caret */
+@keyframes caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.caret {
+  animation: caret-blink 1.1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret { animation: none; }
+}
+
 /* Global custom selection styling */
 ::selection {
   background-color: var(--e-global-color-accent);
@@ -47,14 +89,14 @@
 }
 
 .modern-code-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(22, 22, 22, 0.7);
   border-radius: 6px;
 }
 
 .modern-code-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(200, 5, 82, 0.45);
   border-radius: 6px;
-  border: 1.5px solid rgba(15, 23, 42, 0.7);
+  border: 1.5px solid rgba(22, 22, 22, 0.7);
   transition: background-color 0.2s ease;
 }
 
@@ -69,7 +111,7 @@
 /* Firefox standard scrollbar support */
 .modern-code-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(200, 5, 82, 0.45) rgba(15, 23, 42, 0.7);
+  scrollbar-color: rgba(200, 5, 82, 0.45) rgba(22, 22, 22, 0.7);
 }
 
 /* Sleek Remediation Code Horizontal Scrollbar */
@@ -78,7 +120,7 @@
 }
 
 .remediation-code-scrollbar::-webkit-scrollbar-track {
-  background: rgba(9, 12, 21, 0.95);
+  background: rgba(14, 14, 14, 0.95);
   border-radius: 9999px;
   margin: 0 4px;
 }
@@ -96,5 +138,5 @@
 
 .remediation-code-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--e-global-color-accent) rgba(9, 12, 21, 0.95);
+  scrollbar-color: var(--e-global-color-accent) rgba(14, 14, 14, 0.95);
 }

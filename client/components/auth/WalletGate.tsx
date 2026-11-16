@@ -87,11 +87,9 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
   return (
     <div className="w-full min-h-[85vh] flex items-center justify-center px-3 sm:px-6 py-6 sm:py-12 relative overflow-hidden">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-accent/10 rounded-full blur-[100px] sm:blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-[200px] sm:w-[350px] h-[200px] sm:h-[350px] bg-blue-500/5 rounded-full blur-[80px] pointer-events-none" />
 
       {/* Main Glassmorphic Card (Optimized for Mobile & Desktop) */}
-      <div className="max-w-2xl w-full bg-white/95 dark:bg-[#111726]/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-9 shadow-2xl shadow-slate-900/10 dark:shadow-black/50 border border-slate-200/90 dark:border-slate-800/90 text-center relative overflow-hidden transition-all duration-300">
+      <div className="max-w-2xl w-full bg-white/95 dark:bg-[#161616]/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-9 shadow-2xl shadow-slate-900/10 dark:shadow-black/50 border border-slate-200/90 dark:border-slate-800/90 text-center relative overflow-hidden transition-all duration-300">
         {/* Top solid accent line (No gradient) */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-accent opacity-90" />
 
@@ -101,8 +99,8 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
           <div className="absolute inset-1 rounded-xl sm:rounded-2xl border border-dashed border-accent/20 dark:border-accent/30" />
           
           {/* Central Solace Logo Box */}
-          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-xl shadow-accent/25 group">
-            <div className="w-full h-full rounded-[10px] sm:rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
+          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] shrink-0">
+            <div className="w-full h-full overflow-hidden flex items-center justify-center">
               <Image
                 src="/solace-logo.jpg"
                 alt="Solace Logo"
@@ -112,7 +110,7 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
                 priority
               />
             </div>
-            <div className="absolute bottom-0 right-0 p-1 bg-[#111726]/90 rounded-tl-lg border-t border-l border-accent/40">
+            <div className="absolute bottom-0 right-0 p-1 bg-[#161616]/90 rounded-tl-lg border-t border-l border-accent/40">
               <Lock className="w-2 h-2 text-accent" />
             </div>
           </div>

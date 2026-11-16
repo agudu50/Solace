@@ -66,11 +66,10 @@ export default function NetworkSwitchModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
       {/* Background radial glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[350px] bg-accent/15 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="relative w-full max-w-lg rounded-3xl bg-white/95 dark:bg-[#111726]/95 backdrop-blur-xl border border-amber-500/30 dark:border-amber-400/20 shadow-2xl shadow-amber-500/10 overflow-hidden text-slate-900 dark:text-white transition-all">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white/95 dark:bg-[#161616]/95 backdrop-blur-xl border border-amber-500/30 dark:border-amber-400/20 shadow-2xl shadow-amber-500/10 overflow-hidden text-slate-900 dark:text-white transition-all">
         {/* Top Warning Banner Stripe */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-rose-500 to-accent" />
+        <div className="h-1 w-full bg-accent" />
 
         {/* Modal Header */}
         <div className="p-6 sm:p-7 pb-4">
@@ -111,7 +110,7 @@ export default function NetworkSwitchModal({
         <div className="px-6 sm:px-7 py-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10">
             {/* Current Wallet Network */}
-            <div className="p-3 rounded-xl bg-white dark:bg-[#182032] border border-rose-300/60 dark:border-rose-900/60 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-white dark:bg-[#1f1f1f] border border-rose-300/60 dark:border-rose-900/60 flex flex-col justify-between">
               <div className="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                 <span>Wallet Network</span>
@@ -125,7 +124,7 @@ export default function NetworkSwitchModal({
             </div>
 
             {/* Target System Network */}
-            <div className="p-3 rounded-xl bg-white dark:bg-[#182032] border border-emerald-300/60 dark:border-emerald-900/60 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-white dark:bg-[#1f1f1f] border border-emerald-300/60 dark:border-emerald-900/60 flex flex-col justify-between">
               <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>Required System</span>

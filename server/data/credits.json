@@ -1,0 +1,32 @@
+{
+  "users": {
+    "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT": {
+      "userAddress": "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT",
+      "availableCredits": 3,
+      "totalPurchased": 3,
+      "totalConsumed": 0,
+      "lastPurchaseTimestamp": "2026-11-16T07:46:22.684Z",
+      "purchases": [
+        {
+          "id": "purch_1794815182684_pxkgh",
+          "packageId": 1,
+          "packageName": "Starter",
+          "creditsGranted": 3,
+          "priceXLM": 30,
+          "txHash": "0204ef7b676855ecf4ea809fd056cc3797c2dc543ac1c172131fcb211a19e84a",
+          "explorerUrl": "https://stellar.expert/explorer/testnet/tx/0204ef7b676855ecf4ea809fd056cc3797c2dc543ac1c172131fcb211a19e84a",
+          "timestamp": "2026-11-16T07:46:22.684Z",
+          "status": "CONFIRMED"
+        }
+      ],
+      "consumptions": []
+    }
+  },
+  "processedTxHashes": {
+    "0204ef7b676855ecf4ea809fd056cc3797c2dc543ac1c172131fcb211a19e84a": {
+      "userAddress": "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT",
+      "packageId": 1,
+      "timestamp": "2026-11-16T07:46:22.684Z"
+    }
+  }
+}

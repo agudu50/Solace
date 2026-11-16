@@ -378,11 +378,10 @@ function ReportsContent() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
       <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Top Header Card */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#111726] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
-          <div className="absolute -top-16 -right-16 w-64 h-64 bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
             <div className="max-w-2xl">
@@ -437,7 +436,7 @@ function ReportsContent() {
                 className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
                   searchHash === rep.hash
                     ? 'bg-accent text-white border-accent'
-                    : 'bg-white dark:bg-[#111726] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
+                    : 'bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
                 }`}
               >
                 #{rep.contract}
@@ -456,7 +455,7 @@ function ReportsContent() {
                 value={searchHash}
                 onChange={(e) => setSearchHash(e.target.value)}
                 placeholder="Search by contract SHA-256 hash (e.g. 07c390518ca81e3...)..."
-                className="w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
+                className="w-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
               />
               {searchHash && (
                 <button
@@ -487,7 +486,7 @@ function ReportsContent() {
         {searchResult && (
           <div className="mb-8 transition-all duration-300">
             {searchResult.notFound ? (
-              <div className="p-6 bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-3xl text-sm text-slate-700 dark:text-slate-300 font-medium shadow-sm flex items-center justify-between gap-3">
+              <div className="p-6 bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-3xl text-sm text-slate-700 dark:text-slate-300 font-medium shadow-sm flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                   <span>
@@ -503,7 +502,7 @@ function ReportsContent() {
                 </button>
               </div>
             ) : (
-              <div className="p-5 sm:p-7 bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm transition-colors">
+              <div className="p-5 sm:p-7 bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm transition-colors">
                 {/* Header Info */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
                   <div className="min-w-0 flex-1">
@@ -747,7 +746,7 @@ function ReportsContent() {
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end flex-wrap">
             {/* Sort Controls */}
-            <div className="flex items-center gap-1.5 bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-1 rounded-full shadow-xs text-xs">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-1 rounded-full shadow-xs text-xs">
               <span className="text-[11px] font-bold text-slate-500 pl-2 hidden sm:inline">Sort:</span>
               <button
                 type="button"
@@ -792,7 +791,7 @@ function ReportsContent() {
 
         {/* Contract History List */}
         {displayList.length === 0 ? (
-          <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 rounded-3xl shadow-sm text-center flex flex-col items-center justify-center">
+          <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 rounded-3xl shadow-sm text-center flex flex-col items-center justify-center">
             <div className="w-14 h-14 rounded-2xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center mb-4 shadow-xs">
               <FileCode className="w-7 h-7" />
             </div>
@@ -821,7 +820,7 @@ function ReportsContent() {
               return (
                 <div
                   key={idx}
-                  className={`bg-white dark:bg-[#111726] border p-5 rounded-3xl shadow-sm transition-all duration-200 group ${
+                  className={`bg-white dark:bg-[#161616] border p-5 rounded-3xl shadow-sm transition-all duration-200 group ${
                     isExpanded
                       ? 'border-accent ring-2 ring-accent/20 shadow-md'
                       : 'border-slate-200/80 dark:border-slate-800 hover:border-accent/40 dark:hover:border-accent/40 hover:shadow-md'

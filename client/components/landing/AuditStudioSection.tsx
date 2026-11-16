@@ -17,6 +17,7 @@ import {
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import { useWallet } from '../../context/WalletContext';
 import { motion } from 'framer-motion';
+import { SectionHeading, container } from './primitives';
 import PricingModal from '../pricing/PricingModal';
 import { fetchUserCreditBalance, consumeAuditCredit } from '../../utils/solaceService';
 
@@ -220,39 +221,13 @@ export default function AuditStudioSection() {
   };
 
   return (
-    <section id="audit" className="relative w-full py-16 sm:py-24 bg-white/40 dark:bg-[#090b10]/40 border-t border-slate-200/80 dark:border-white/10 backdrop-blur-md">
-      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12">
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-xs font-bold mb-3 shadow-xs"
-          >
-            <ShieldCheck className="w-4 h-4 text-accent" />
-            <span>On-Page Security Studio</span>
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4"
-          >
-            Solace Audit Studio
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed"
-          >
-            Run complete static AST invariant audits on your Soroban smart contracts directly on this page. Inspect risk scores, review Solace AI remediations, and inscribe audit proofs onto the Stellar ledger.
-          </motion.p>
-        </div>
+    <section id="audit" className="relative w-full py-20 sm:py-28 bg-white dark:bg-[#121212] border-b border-slate-200 dark:border-white/10">
+      <div className={container}>
+        <SectionHeading
+          eyebrow="Audit Studio"
+          title="Run a full audit without leaving the page"
+          description="Paste source or a contract ID, review the risk score and remediations, then anchor the result to the Stellar ledger."
+        />
 
         {/* Studio Controls Header */}
         <motion.div
@@ -260,7 +235,7 @@ export default function AuditStudioSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.25 }}
-          className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-2xl bg-white/80 dark:bg-[#111726]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-sm"
+          className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-2xl bg-white/80 dark:bg-[#161616]/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-sm"
         >
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -321,7 +296,7 @@ export default function AuditStudioSection() {
         {/* Main 2-Column Studio Canvas with Equal-Height Stretch */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Left: Code Editor Terminal Window */}
-          <div className="lg:col-span-7 bg-[#0a0d14] rounded-3xl border border-slate-800 shadow-xl overflow-hidden flex flex-col h-full justify-between text-left">
+          <div className="lg:col-span-7 bg-[#0e0e0e] rounded-3xl border border-slate-800 shadow-xl overflow-hidden flex flex-col h-full justify-between text-left">
             {/* Window title bar */}
             <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-800 text-xs font-mono text-slate-400">
               <div className="flex items-center gap-2">
@@ -404,7 +379,7 @@ export default function AuditStudioSection() {
           {/* Right: Live Audit Telemetry & On-Chain Anchor */}
           <div className="lg:col-span-5 flex flex-col h-full justify-between gap-5 text-left">
             {/* Risk Score & Status Banner */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl shrink-0">
+            <div className="bg-white dark:bg-[#161616] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Audit Verdict &amp; Risk Rating
@@ -458,7 +433,7 @@ export default function AuditStudioSection() {
             </div>
 
             {/* Vulnerabilities & Remediation Box (flex-1 to match height) */}
-            <div className="bg-white dark:bg-[#111726] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl flex-1 flex flex-col justify-between">
+            <div className="bg-white dark:bg-[#161616] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl flex-1 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">

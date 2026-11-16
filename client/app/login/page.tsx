@@ -87,10 +87,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-65px)] bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
+    <div className="min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 dark:bg-accent/15 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Main Authentication Card */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
@@ -107,7 +105,7 @@ export default function LoginPage() {
           </span>
         </div>
 
-        <div className="max-w-md w-full bg-white/95 dark:bg-[#101522]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 relative overflow-hidden transition-colors duration-200">
+        <div className="max-w-md w-full bg-white/95 dark:bg-[#161616]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 relative overflow-hidden transition-colors duration-200">
           {/* Top highlight bar */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-accent" />
 
@@ -120,7 +118,7 @@ export default function LoginPage() {
           </p>
 
           {/* Dual Method Tabs */}
-          <div className="flex bg-slate-100 dark:bg-[#0a0d16] p-1 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 transition-colors">
+          <div className="flex bg-slate-100 dark:bg-[#0e0e0e] p-1 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 transition-colors">
             <button
               type="button"
               onClick={() => {
@@ -183,7 +181,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="developer@example.com"
-                    className="w-full bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0a0d16] transition"
+                    className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
                   />
                 </div>
               </div>
@@ -208,7 +206,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0a0d16] transition"
+                    className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
                   />
                   <button
                     type="button"
@@ -255,7 +253,7 @@ export default function LoginPage() {
           {/* TAB 2: BLOCKCHAIN WALLET */}
           {activeTab === 'wallet' && (
             <div className="space-y-4 text-center">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0a0d16] border border-slate-200 dark:border-slate-800/80 text-left space-y-2.5 transition-colors">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800/80 text-left space-y-2.5 transition-colors">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-slate-500 dark:text-slate-400">Supported Network:</span>
                   <span className="text-accent font-bold">Stellar Testnet (Protocol 22)</span>

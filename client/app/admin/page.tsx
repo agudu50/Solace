@@ -187,7 +187,7 @@ export default function AdminDashboardPage() {
   // Guard: Not Authenticated or Non-Admin
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080b11] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0e0e0e] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           <span className="text-xs font-mono text-slate-400">Verifying Server-Side Administrator Credentials...</span>
@@ -198,8 +198,8 @@ export default function AdminDashboardPage() {
 
   if (!authorized) {
     return (
-      <div className="min-h-screen bg-[#080b11] text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#101522] rounded-3xl p-8 border border-red-900/60 text-center shadow-2xl">
+      <div className="min-h-screen bg-[#0e0e0e] text-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#161616] rounded-3xl p-8 border border-red-900/60 text-center shadow-2xl">
           <div className="w-14 h-14 rounded-2xl bg-red-950/60 border border-red-800 text-red-400 flex items-center justify-center mx-auto mb-4">
             <Lock className="w-7 h-7" />
           </div>
@@ -232,9 +232,9 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080b11] text-slate-100 flex flex-col selection:bg-accent selection:text-white">
+    <div className="min-h-screen bg-[#0e0e0e] text-slate-100 flex flex-col selection:bg-accent selection:text-white">
       {/* Top Admin Header */}
-      <header className="sticky top-0 z-40 bg-[#0d121d]/90 backdrop-blur-xl border-b border-slate-800 px-4 sm:px-8 py-3.5">
+      <header className="sticky top-0 z-40 bg-[#161616]/90 backdrop-blur-xl border-b border-slate-800 px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
@@ -313,7 +313,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0f1420] border border-slate-800/80 overflow-x-auto">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#161616] border border-slate-800/80 overflow-x-auto">
           {[
             { id: 'overview', label: 'Platform Analytics', icon: Activity },
             { id: 'users', label: `Users (${usersList.length})`, icon: Users },
@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-2xl bg-[#101522] border border-slate-800 relative overflow-hidden">
+              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
                 <div className="flex items-center justify-between text-slate-400 mb-2">
                   <span className="text-xs font-mono uppercase font-bold tracking-wider">Registered Wallets</span>
                   <Users className="w-4 h-4 text-accent" />
@@ -359,7 +359,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-[#101522] border border-slate-800 relative overflow-hidden">
+              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
                 <div className="flex items-center justify-between text-slate-400 mb-2">
                   <span className="text-xs font-mono uppercase font-bold tracking-wider">Audits Conducted</span>
                   <FileCode className="w-4 h-4 text-accent" />
@@ -372,7 +372,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-[#101522] border border-slate-800 relative overflow-hidden">
+              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
                 <div className="flex items-center justify-between text-slate-400 mb-2">
                   <span className="text-xs font-mono uppercase font-bold tracking-wider">Estimated Volume</span>
                   <Coins className="w-4 h-4 text-emerald-400" />
@@ -384,7 +384,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-[#101522] border border-slate-800 relative overflow-hidden">
+              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
                 <div className="flex items-center justify-between text-slate-400 mb-2">
                   <span className="text-xs font-mono uppercase font-bold tracking-wider">Active Credits</span>
                   <Activity className="w-4 h-4 text-accent" />
@@ -398,7 +398,7 @@ export default function AdminDashboardPage() {
 
             {/* AI Diagnostics & System Health */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="p-6 rounded-3xl bg-[#101522] border border-slate-800 space-y-4">
+              <div className="p-6 rounded-3xl bg-[#161616] border border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-accent" />
@@ -431,7 +431,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="p-6 rounded-3xl bg-[#101522] border border-slate-800 space-y-4">
+              <div className="p-6 rounded-3xl bg-[#161616] border border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-accent" />
@@ -467,7 +467,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'users' && (
           <div className="space-y-4">
             {/* Search & Actions Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-[#101522] border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-[#161616] border border-slate-800">
               <div className="relative w-full sm:w-80">
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -485,10 +485,10 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Users Table */}
-            <div className="rounded-2xl bg-[#101522] border border-slate-800 overflow-hidden">
+            <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-[#0b0e17] text-slate-400 border-b border-slate-800">
+                  <thead className="bg-[#121212] text-slate-400 border-b border-slate-800">
                     <tr>
                       <th className="py-3 px-4">Wallet Address</th>
                       <th className="py-3 px-4">Role</th>
@@ -618,10 +618,10 @@ export default function AdminDashboardPage() {
 
         {/* TAB 3: PLATFORM AUDITS */}
         {activeTab === 'audits' && (
-          <div className="rounded-2xl bg-[#101522] border border-slate-800 overflow-hidden">
+          <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-[#0b0e17] text-slate-400 border-b border-slate-800">
+                <thead className="bg-[#121212] text-slate-400 border-b border-slate-800">
                   <tr>
                     <th className="py-3 px-4">Contract Name</th>
                     <th className="py-3 px-4">Auditor Wallet</th>
@@ -680,10 +680,10 @@ export default function AdminDashboardPage() {
 
         {/* TAB 4: XML PURCHASES */}
         {activeTab === 'purchases' && (
-          <div className="rounded-2xl bg-[#101522] border border-slate-800 overflow-hidden">
+          <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-[#0b0e17] text-slate-400 border-b border-slate-800">
+                <thead className="bg-[#121212] text-slate-400 border-b border-slate-800">
                   <tr>
                     <th className="py-3 px-4">Transaction Type</th>
                     <th className="py-3 px-4">Wallet Address</th>
@@ -752,8 +752,8 @@ export default function AdminDashboardPage() {
 
         {/* TAB 5: ADMINISTRATIVE AUDIT TRAIL LOGS */}
         {activeTab === 'logs' && (
-          <div className="rounded-2xl bg-[#101522] border border-slate-800 overflow-hidden">
-            <div className="p-4 bg-[#0b0e17] border-b border-slate-800 flex items-center justify-between">
+          <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
+            <div className="p-4 bg-[#121212] border-b border-slate-800 flex items-center justify-between">
               <span className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-accent" />
                 <span>Immutable Administrative Action Log</span>
@@ -763,7 +763,7 @@ export default function AdminDashboardPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-[#0f1422] text-slate-400 border-b border-slate-800">
+                <thead className="bg-[#161616] text-slate-400 border-b border-slate-800">
                   <tr>
                     <th className="py-3 px-4">Timestamp</th>
                     <th className="py-3 px-4">Actor</th>
@@ -816,7 +816,7 @@ export default function AdminDashboardPage() {
       {/* Credit Adjustment Modal */}
       {adjustModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-[#101522] rounded-3xl p-6 border border-slate-800 shadow-2xl relative">
+          <div className="max-w-md w-full bg-[#161616] rounded-3xl p-6 border border-slate-800 shadow-2xl relative">
             <h2 className="text-lg font-black text-white tracking-tight mb-1">Adjust User Audit Credits</h2>
             <p className="text-xs text-slate-400 font-mono mb-4">
               Target: {adjustTargetWallet.slice(0, 8)}...{adjustTargetWallet.slice(-6)}

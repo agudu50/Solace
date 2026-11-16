@@ -33,7 +33,6 @@ import {
 import { connectWallet, fetchUserCreditBalance, fetchUserCreditHistory } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
 import PricingModal from '../../components/pricing/PricingModal';
-import AmbientBackground3D from '../../components/landing/AmbientBackground3D';
 import { motion } from 'framer-motion';
 import { Brain, Bot, GitCompare, Terminal } from 'lucide-react';
 
@@ -422,29 +421,23 @@ export default function DashboardPage() {
     : 0;
 
   return (
-    <div className="relative w-full min-h-screen bg-[#f4f5f8] dark:bg-[#0a0d14] text-slate-800 dark:text-slate-100 pb-24 md:pb-8 transition-colors overflow-x-hidden selection:bg-accent selection:text-white">
-      {/* Ambient 3D Motion Background (Shared with Landing Page) */}
-      <AmbientBackground3D />
+    <div className="relative w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 pb-24 md:pb-8 transition-colors overflow-x-hidden selection:bg-accent selection:text-white">
 
       {/* Background Ambient Glows (Dominant #C80552) */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[650px] pointer-events-none overflow-hidden">
-        <div className="absolute top-[-140px] left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-accent/12 rounded-full blur-[160px]" />
-        <div className="absolute top-[280px] left-1/4 w-[350px] h-[350px] bg-accent/8 rounded-full blur-[140px]" />
       </div>
 
       {/* Main Dashboard Canvas (Optimized for Mobile & Desktop) */}
       <main className="relative z-10 w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
           {/* Top Greeting & Operations Banner */}
-          <div className="relative overflow-hidden rounded-3xl bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 p-5 sm:p-7 shadow-xl shadow-slate-900/5 dark:shadow-black/40 mb-5 sm:mb-6 transition-all">
+          <div className="relative overflow-hidden rounded-3xl bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 p-5 sm:p-7 shadow-xl shadow-slate-900/5 dark:shadow-black/40 mb-5 sm:mb-6 transition-all">
             {/* Subtle decorative glow */}
-            <div className="absolute -top-16 -right-16 w-80 h-80 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
               <div className="max-w-3xl">
                 {/* Protocol Status Badges (Landing Page Design) */}
                 <div className="flex items-center gap-2 mb-2.5 sm:mb-3 flex-wrap">
-                  <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/90 dark:bg-[#111726]/90 border border-slate-200/80 dark:border-white/10 shadow-xs">
+                  <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/90 dark:bg-[#161616]/90 border border-slate-200/80 dark:border-white/10 shadow-xs">
                     <span className="w-2 h-2 rounded-full bg-accent animate-pulse inline-block" />
                     <span className="font-extrabold text-slate-900 dark:text-white">Solace Security Core</span>
                     <span className="text-slate-300 dark:text-slate-700">|</span>
@@ -517,7 +510,7 @@ export default function DashboardPage() {
             {/* ================= COLUMN 1 (Left): Card 1 & Card 4 ================= */}
             <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
               {/* Card 1: Account Identity & Connected Wallet */}
-              <div className="bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex flex-col justify-between">
+              <div className="bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-3.5">
                   <div>
                     <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
@@ -571,9 +564,8 @@ export default function DashboardPage() {
                 {connectedWallet || user?.address ? (
                   <>
                     {/* Active Connected Signer Card (Landing Page Rich Gradient) */}
-                    <div className="text-white rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden mb-3.5 bg-gradient-to-br from-accent via-[#b00446] to-[#800333] group transition-all">
+                    <div className="text-white rounded-3xl p-5 sm:p-6 relative overflow-hidden mb-3.5 bg-accent group transition-all">
                       {/* Decorative internal glass orbs */}
-                      <div className="absolute -top-12 -right-12 w-36 h-36 bg-white/15 rounded-full blur-2xl pointer-events-none" />
                       <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-black/20 rounded-full blur-xl pointer-events-none" />
 
                       <div className="relative z-10 flex justify-between items-center mb-3">
@@ -669,7 +661,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Card 1B: Prepaid Audit Credit Management */}
-              <div className="bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex flex-col justify-between">
+              <div className="bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-3.5">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center shadow-xs">
@@ -803,7 +795,7 @@ export default function DashboardPage() {
               </div>
 
             {/* Card 4: Recent Security Audits */}
-            <div className="bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex-1 flex flex-col justify-between overflow-hidden">
+            <div className="bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex-1 flex flex-col justify-between overflow-hidden">
               <div>
                 <div className="flex justify-between items-center mb-3 sm:mb-4">
                   <div>
@@ -910,7 +902,7 @@ export default function DashboardPage() {
 
           {/* ================= COLUMN 2 (Center): Card 2 ================= */}
           <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
-            <div className="bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex flex-col justify-between h-full">
+            <div className="bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex flex-col justify-between h-full">
               <div>
                 {/* Header with Title and CTA to Audit Studio */}
                 <div className="flex flex-wrap justify-between items-center mb-3 sm:mb-4 gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
@@ -1071,7 +1063,7 @@ export default function DashboardPage() {
                       >
                         {/* High-Contrast Security Score Badge */}
                         <span
-                          className="text-xs sm:text-sm font-black transition-transform group-hover:scale-110 px-1.5 py-0.5 rounded-lg bg-white dark:bg-[#111726] border shadow-xs tracking-tight select-none"
+                          className="text-xs sm:text-sm font-black transition-transform group-hover:scale-110 px-1.5 py-0.5 rounded-lg bg-white dark:bg-[#161616] border shadow-xs tracking-tight select-none"
                           style={{
                             color: item.glowColor,
                             borderColor: `${item.glowColor}60`,
@@ -1155,7 +1147,7 @@ export default function DashboardPage() {
           {/* ================= COLUMN 3 (Right): Card 3 & Card 5 ================= */}
           <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
             {/* Card 3: AI Analyzed Smart Contract (Auto-updates when audited/loaded) */}
-            <div className="bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex-1 flex flex-col justify-between">
+            <div className="bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex-1 flex flex-col justify-between">
               <div>
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
@@ -1335,7 +1327,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Card 5: Live Threat Shield & AST Defense */}
-            <div className="bg-white/85 dark:bg-[#111726]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex-1 flex flex-col justify-between">
+            <div className="bg-white/85 dark:bg-[#161616]/80 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 dark:shadow-black/40 border border-slate-200/80 dark:border-white/10 hover:border-accent/30 transition-all flex-1 flex flex-col justify-between">
               <div>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3.5">

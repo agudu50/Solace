@@ -81,7 +81,7 @@ export default function AuditReportView({
       {report && !loading && (
         <div className="flex-grow space-y-4 overflow-y-auto max-h-[560px] pr-2">
           {/* Multi-Model Consensus Banner */}
-          <div className="p-3 rounded-lg bg-gradient-to-r from-accent/10 via-purple-500/10 to-blue-500/10 border border-accent/25 text-xs">
+          <div className="p-3 rounded-lg bg-accent-subtle border border-accent/25 text-xs">
             <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
               <span className="font-bold text-slate-200 flex items-center gap-1.5">
                 🛡️ Multi-LLM Cross-Validation
