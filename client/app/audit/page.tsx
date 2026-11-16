@@ -2481,17 +2481,19 @@ impl SolaceContract {
         )}
       </main>
 
-      <PricingModal
-        isOpen={showPricingModal}
-        onClose={() => {
-          setShowPricingModal(false);
-          if (walletKey) {
-            fetchUserCreditBalance(walletKey)
-              .then((bal) => setUserCredits(bal))
-              .catch(() => {});
-          }
-        }}
-      />
+      {showPricingModal && (
+        <PricingModal
+          isOpen={showPricingModal}
+          onClose={() => {
+            setShowPricingModal(false);
+            if (walletKey) {
+              fetchUserCreditBalance(walletKey)
+                .then((bal) => setUserCredits(bal))
+                .catch(() => {});
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -143,12 +143,12 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#f7f7f6]/85 dark:bg-[#0e0e0e]/85 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-2 sm:py-2.5 px-3 sm:px-6 lg:px-8">
-      <div className={`w-full ${pathname === '/' ? 'max-w-[1280px]' : 'max-w-[1700px]'} mx-auto flex items-center justify-between gap-1.5 sm:gap-4`}>
+    <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#f7f7f6]/85 dark:bg-[#0e0e0e]/85 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-2 sm:py-2.5 px-4 sm:px-6 lg:px-8">
+      <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand (Mobile Responsive: hides subtitle on tiny screens) */}
         <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] shrink-0">
-            <div className="w-full h-full overflow-hidden flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-sm shadow-accent/20 dark:shadow-accent/30 group-hover:shadow-accent/40 group-hover:scale-105 transition-all duration-300 shrink-0">
+            <div className="w-full h-full rounded-[10px] sm:rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
               <Image
                 src="/solace-logo.jpg"
                 alt="Solace Logo"
