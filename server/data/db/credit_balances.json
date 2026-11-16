@@ -244,5 +244,26 @@
     "total_purchased": 0,
     "total_consumed": 0,
     "updated_at": "2026-11-16T21:15:49.870Z"
+  },
+  {
+    "wallet_address": "GDRJP5AKBW3P24TNLNBUL2KGX7WAJAFWNVBCIWRQA3GEFFI6BO3Z5T25",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T22:23:22.903Z"
+  },
+  {
+    "wallet_address": "GAJT2JK2553RZSQXFE76M46BOGG4XBJOHWE4SKWL5VO2OW4VNOE6TRS6",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T22:23:22.908Z"
+  },
+  {
+    "wallet_address": "GARUGPVTSOLM3LVNAJUOI3O7FWE5AH5FHZLGBID4QD7AXMSFADULMDZD",
+    "credit_balance": 0,
+    "total_purchased": 0,
+    "total_consumed": 0,
+    "updated_at": "2026-11-16T22:23:22.927Z"
   }
 ]

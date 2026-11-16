@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,
@@ -14,6 +15,7 @@ import {
   Hourglass,
   KeyRound,
   Link2,
+  Lock,
   Mail,
   PlusCircle,
   ShieldCheck,
@@ -48,10 +50,11 @@ interface ActiveAuditInfo {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [selectedAuditMode, setSelectedAuditMode] = useState<'PRE' | 'POST'>('PRE');
   const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo | null>(null);
   const [auditHistory, setAuditHistory] = useState<any[]>([]);
-  const { walletKey: connectedWallet, network, connect, user, linkWallet, refreshUser } = useWallet();
+  const { walletKey: connectedWallet, network, connect, user, linkWallet, refreshUser, sessionLoading } = useWallet();
   const [connectingWallet, setConnectingWallet] = useState<boolean>(false);
   const [copiedWallet, setCopiedWallet] = useState<boolean>(false);
   const [linkingWallet, setLinkingWallet] = useState<boolean>(false);
@@ -65,6 +68,14 @@ export default function DashboardPage() {
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
   const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
   const [showHistoryView, setShowHistoryView] = useState<boolean>(false);
+
+  const isAuth = Boolean(connectedWallet || user);
+
+  useEffect(() => {
+    if (!sessionLoading && !isAuth) {
+      router.replace('/login?redirect=/dashboard');
+    }
+  }, [sessionLoading, isAuth, router]);
 
   const loadCredits = async (address?: string) => {
     const target = address || connectedWallet || user?.address || (user as any)?.id || (user as any)?.email;
@@ -94,12 +105,24 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadAuditData = () => {
       try {
+        const activeAddress = connectedWallet || user?.address;
+        if (!activeAddress) {
+          setAuditHistory([]);
+          setActiveAudit(null);
+          return;
+        }
+
         let history: any[] = [];
         const storedHistory = localStorage.getItem('solace_audit_history');
         if (storedHistory) {
           const parsed = JSON.parse(storedHistory);
           if (Array.isArray(parsed)) {
-            history = parsed;
+            history = parsed.filter(
+              (item: any) =>
+                !item.feeReceipt?.payer ||
+                item.feeReceipt?.payer === activeAddress ||
+                item.wallet === activeAddress
+            );
           }
         }
         setAuditHistory(history);
@@ -109,18 +132,25 @@ export default function DashboardPage() {
 
         if (storedActive) {
           const parsedActive = JSON.parse(storedActive);
-          const hasAuditData = Boolean(
-            parsedActive.report ||
-            (parsedActive.vulnerabilities && parsedActive.vulnerabilities.length > 0) ||
-            parsedActive.anchorResult ||
-            parsedActive.feeReceipt
-          );
+          const belongsToUser =
+            !parsedActive.feeReceipt?.payer ||
+            parsedActive.feeReceipt?.payer === activeAddress ||
+            parsedActive.wallet === activeAddress;
 
-          if (hasAuditData || history.length === 0) {
-            activeToSet = {
-              ...parsedActive,
-              vulnerabilities: parsedActive.vulnerabilities || parsedActive.report?.vulnerabilities || [],
-            };
+          if (belongsToUser) {
+            const hasAuditData = Boolean(
+              parsedActive.report ||
+              (parsedActive.vulnerabilities && parsedActive.vulnerabilities.length > 0) ||
+              parsedActive.anchorResult ||
+              parsedActive.feeReceipt
+            );
+
+            if (hasAuditData || history.length === 0) {
+              activeToSet = {
+                ...parsedActive,
+                vulnerabilities: parsedActive.vulnerabilities || parsedActive.report?.vulnerabilities || [],
+              };
+            }
           }
         }
 
@@ -308,6 +338,47 @@ export default function DashboardPage() {
   ];
 
   const divider = 'border-slate-200 dark:border-white/10';
+
+  if (sessionLoading) {
+    return (
+      <div className="w-full min-h-[calc(100vh-65px)] flex flex-col items-center justify-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100">
+        <div className="w-12 h-12 rounded-2xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent mb-4 animate-pulse">
+          <ShieldCheck className="w-6 h-6 text-accent" />
+        </div>
+        <p className="text-xs font-mono text-slate-500 tracking-wider">Verifying auditor credentials...</p>
+      </div>
+    );
+  }
+
+  if (!isAuth) {
+    return (
+      <div className="w-full min-h-[calc(100vh-65px)] flex flex-col items-center justify-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-center">
+        <div className="max-w-md w-full bg-white dark:bg-[#161616] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4">
+            <Lock className="w-6 h-6 text-accent" />
+          </div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Auditor Access Restricted</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+            Please log in or connect your Stellar auditor wallet to access the Security Dashboard.
+          </p>
+          <div className="flex flex-col gap-2.5">
+            <Link
+              href="/login?redirect=/dashboard"
+              className="w-full py-2.5 px-4 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/25"
+            >
+              Sign In / Connect Wallet
+            </Link>
+            <Link
+              href="/"
+              className="w-full py-2.5 px-4 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition"
+            >
+              Return to Homepage
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">

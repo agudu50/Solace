@@ -34,8 +34,11 @@ export default function RiskChart3D({ bars, active }: { bars: RiskBar[]; active:
   const stageRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { x, y } = usePointerDepth(stageRef);
-  const rotateX = useTransform(y, [-0.5, 0.5], [62, 50]);
-  const rotateZ = useTransform(x, [-0.5, 0.5], [-30, -48]);
+  // Camera faces the chart head-on: the floor tips back (rotateX) so bars rise
+  // straight up the screen. The cursor only turns the floor in its own plane
+  // (rotateZ, applied first), a turntable spin that keeps the bars vertical.
+  const rotateX = useTransform(y, [-0.5, 0.5], [78, 70]);
+  const rotateZ = useTransform(x, [-0.5, 0.5], [10, -10]);
   const [hover, setHover] = useState<string | null>(null);
 
   const floorW = bars.length * BAR + (bars.length - 1) * GAP + 64;
@@ -45,7 +48,7 @@ export default function RiskChart3D({ bars, active }: { bars: RiskBar[]; active:
     <div>
       <div
         ref={stageRef}
-        className="relative h-[250px] sm:h-[280px] [perspective:1100px] overflow-hidden"
+        className="relative h-[260px] sm:h-[290px] [perspective:1100px] [perspective-origin:50%_30%] overflow-hidden"
         role="img"
         aria-label={
           active
@@ -55,15 +58,15 @@ export default function RiskChart3D({ bars, active }: { bars: RiskBar[]; active:
       >
         <motion.div
           style={{
-            rotateX: reduce ? 56 : rotateX,
-            rotateZ: reduce ? -40 : rotateZ,
+            rotateX: reduce ? 74 : rotateX,
+            rotateZ: reduce ? 0 : rotateZ,
             width: floorW,
             height: floorD,
             marginLeft: -floorW / 2,
             marginTop: -floorD / 2,
             transformStyle: 'preserve-3d',
           }}
-          className="absolute left-1/2 top-[62%] scale-[0.8] sm:scale-100"
+          className="absolute left-1/2 top-[80%] scale-[0.8] sm:scale-100"
         >
           {/* Floor */}
           <div className="absolute inset-0 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] grid-lines [background-size:16px_16px]" />

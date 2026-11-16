@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ShieldCheck,
   Mail,
@@ -21,9 +21,18 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
-  const { registerWithEmail, authenticate } = useWallet();
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams?.get('redirect') || '/dashboard';
+  const { registerWithEmail, authenticate, walletKey, user, sessionLoading } = useWallet();
+
+  // If already authenticated, redirect to destination
+  useEffect(() => {
+    if (!sessionLoading && (walletKey || user)) {
+      router.replace(redirectTarget);
+    }
+  }, [sessionLoading, walletKey, user, redirectTarget, router]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -88,10 +97,10 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await registerWithEmail(name, email, password);
-      setSuccess('Account created successfully! Redirecting to dashboard...');
+      setSuccess('Account created successfully! Redirecting...');
       setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
+        router.push(redirectTarget);
+      }, 800);
     } catch (err: any) {
       setError(err?.message || 'Registration failed. Please try again.');
     } finally {
@@ -104,9 +113,9 @@ export default function SignupPage() {
     setWalletLoading(true);
     try {
       await authenticate('solace-auth-login');
-      setSuccess('Wallet authenticated! Redirecting to dashboard...');
+      setSuccess('Wallet authenticated! Redirecting...');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
       setError(err?.message || 'Wallet connection was cancelled.');
@@ -307,7 +316,10 @@ export default function SignupPage() {
           {/* Link to login */}
           <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
             Already have an account?{' '}
-            <Link href="/login" className="text-accent font-bold hover:underline">
+            <Link
+              href={redirectTarget !== '/dashboard' ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : '/login'}
+              className="text-accent font-bold hover:underline"
+            >
               Log in
             </Link>
           </div>
@@ -319,5 +331,19 @@ export default function SignupPage() {
         Solace Protocol • Secure Password Hashing &amp; Non-Custodial Stellar Authentication
       </footer>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[calc(100vh-65px)] flex items-center justify-center bg-[#f7f7f6] dark:bg-[#0e0e0e]">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   );
 }

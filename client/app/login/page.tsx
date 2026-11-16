@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ShieldCheck,
   Mail,
@@ -20,9 +20,18 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
-  const { loginWithEmail, authenticate, freighterReady } = useWallet();
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams?.get('redirect') || '/dashboard';
+  const { walletKey, user, loginWithEmail, authenticate, freighterReady, sessionLoading } = useWallet();
+
+  // If already authenticated, redirect to destination
+  useEffect(() => {
+    if (!sessionLoading && (walletKey || user)) {
+      router.replace(redirectTarget);
+    }
+  }, [sessionLoading, walletKey, user, redirectTarget, router]);
 
   const [activeTab, setActiveTab] = useState<'email' | 'wallet'>('email');
 
@@ -56,7 +65,7 @@ export default function LoginPage() {
       await loginWithEmail(email, password);
       setSuccess('Authenticated successfully! Redirecting...');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
       setError(err?.message || 'Invalid email or password.');
@@ -76,7 +85,7 @@ export default function LoginPage() {
       await authenticate('solace-auth-login');
       setSuccess('Wallet verified cryptographically! Redirecting...');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
       setError(err?.message || 'Wallet connection was cancelled or rejected.');
@@ -298,7 +307,10 @@ export default function LoginPage() {
           {/* Link to sign up */}
           <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
             Don&apos;t have an account yet?{' '}
-            <Link href="/signup" className="text-accent font-bold hover:underline">
+            <Link
+              href={redirectTarget !== '/dashboard' ? `/signup?redirect=${encodeURIComponent(redirectTarget)}` : '/signup'}
+              className="text-accent font-bold hover:underline"
+            >
               Create an account
             </Link>
           </div>
@@ -320,5 +332,19 @@ export default function LoginPage() {
         Solace Protocol • Zero Key Exposure • Ed25519 Cryptographic Proof of Ownership
       </footer>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[calc(100vh-65px)] flex items-center justify-center bg-[#f7f7f6] dark:bg-[#0e0e0e]">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }
