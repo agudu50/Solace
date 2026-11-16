@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -50,6 +50,24 @@ export default function Navbar() {
   const [copiedContract, setCopiedContract] = useState<boolean>(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState<boolean>(false);
+  const [showAccountMenu, setShowAccountMenu] = useState<boolean>(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const credits = user?.availableCredits ?? 0;
+
+  // Close the account menu on outside click or Escape.
+  useEffect(() => {
+    if (!showAccountMenu) return;
+    const onPointer = (e: MouseEvent) => {
+      if (!accountMenuRef.current?.contains(e.target as Node)) setShowAccountMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setShowAccountMenu(false);
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [showAccountMenu]);
 
   useEffect(() => {
     setMounted(true);
@@ -145,36 +163,35 @@ export default function Navbar() {
             <span className="font-semibold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white leading-none">
               Solace
             </span>
-            <span className="font-mono text-[9px] sm:text-[10px] text-slate-500 tracking-wider uppercase mt-0.5 hidden sm:block">
+            <span className={`font-mono text-[9px] sm:text-[10px] text-slate-500 tracking-wider uppercase mt-0.5 ${walletKey ? 'hidden' : 'hidden sm:block'}`}>
               Soroban Security
             </span>
           </div>
         </Link>
 
-        {/* Center Pill Navigation */}
+        {/* Primary navigation */}
         {walletKey ? (
-          <nav className="hidden md:flex items-center bg-white dark:bg-[#161616] rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-slate-800">
+          <nav className="hidden md:flex items-center gap-1 text-sm" aria-label="App">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
-              const IconComponent = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 sm:gap-2.5 px-4 py-2 rounded-full text-xs sm:text-[13px] font-bold transition ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
                     isActive
-                      ? 'bg-accent text-white shadow-md shadow-accent/25'
-                      : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
+                      ? 'text-slate-900 dark:text-white bg-slate-200/60 dark:bg-white/[0.07]'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <IconComponent className="w-[18px] h-[18px] shrink-0" />
-                  <span>{item.label}</span>
+                  {item.label}
                 </Link>
               );
             })}
           </nav>
         ) : (
-          <nav className="hidden lg:flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400">
+          <nav className="hidden lg:flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400" aria-label="Primary">
             {publicNavItems.map((item) => {
               const targetHref = pathname === '/' ? item.href : `/${item.href}`;
               return (
@@ -190,145 +207,138 @@ export default function Navbar() {
           </nav>
         )}
 
-        {/* Right Tools (Network, Theme Toggle, Search, Bell, Settings, Wallet) - Compact on Mobile */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Interactive Live Network Switcher */}
+        {/* Right side */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Network indicator */}
           <button
             type="button"
             onClick={toggleNetwork}
-            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-xs text-[10px] sm:text-xs font-semibold shrink-0 transition cursor-pointer hover:opacity-85 active:scale-95 bg-accent/10 border-accent/25 text-accent"
-            title="Active Stellar Network: Testnet (Protocol 22) • Protocol Smart Contract Live"
-            aria-label="Toggle network"
+            className="hidden sm:inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-slate-200 dark:border-white/10 font-mono text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20 transition-colors cursor-pointer"
+            title="Active Stellar network: Testnet (Protocol 22)"
+            aria-label="Active network: Testnet"
           >
-            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full inline-block bg-accent animate-pulse" />
-            <span className="font-bold uppercase tracking-wide text-[10px] sm:text-xs">
-              Testnet
-            </span>
-            <span className="text-[10px] opacity-75 hidden md:inline">
-              (Protocol 22)
-            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Testnet
           </button>
 
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition shrink-0"
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700 dark:text-slate-200" />
-            )}
-          </button>
-
-          {/* Authenticated Auditor Tools - visible on larger screens to avoid mobile crowding */}
-          {walletKey && (
-            <>
-              {/* Search Button */}
+          {walletKey ? (
+            /* Account menu: credits + address, everything else lives inside */
+            <div className="relative" ref={accountMenuRef}>
               <button
                 type="button"
-                onClick={() => {
-                  const hash = prompt('Search contract audit hash:');
-                  if (hash) window.location.href = `/reports?hash=${encodeURIComponent(hash)}`;
-                }}
-                className="hidden md:flex w-9 h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm items-center justify-center transition shrink-0"
-                title="Search audit by hash"
+                onClick={() => setShowAccountMenu((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={showAccountMenu}
+                className="inline-flex items-center h-8 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] hover:border-slate-300 dark:hover:border-white/20 text-xs transition-colors cursor-pointer overflow-hidden"
               >
-                <Search className="w-4 h-4" />
+                <span className="hidden sm:inline-flex items-center gap-1.5 h-full px-2.5 border-r border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
+                  <Coins className="w-3.5 h-3.5 text-accent" />
+                  <span className="tabular-nums font-medium text-slate-900 dark:text-white">{credits}</span>
+                  {credits === 1 ? 'credit' : 'credits'}
+                </span>
+                <span className="inline-flex items-center gap-1.5 h-full px-2.5 font-mono text-slate-900 dark:text-white">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {walletKey.slice(0, 3)}…{walletKey.slice(-3)}
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showAccountMenu ? 'rotate-180' : ''}`} />
+                </span>
               </button>
 
-              {/* Notification Bell -> Invariants Status Modal (Available on mobile & desktop) */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowInvariantsModal(true)}
-                  className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition shrink-0 cursor-pointer"
-                  title="System Security Invariants Status (All Soroban security invariants passing on Stellar Testnet)"
-                  aria-label="System Security Invariants"
+              {showAccountMenu && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-64 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] shadow-2xl p-1 text-sm animate-dialog-in z-50"
                 >
-                  <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="absolute top-1 sm:top-2 right-1 sm:right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                </button>
-              </div>
-
-              {/* Settings Button */}
+                  <div className="px-3 py-2.5 border-b border-slate-100 dark:border-white/5 mb-1">
+                    <p className="font-mono text-xs text-slate-900 dark:text-white truncate">{walletKey}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      <span className="tabular-nums text-slate-900 dark:text-white">{credits}</span> audit{credits === 1 ? '' : 's'} available · Testnet
+                    </p>
+                  </div>
+                  {[
+                    { label: 'Buy credits', icon: Coins, onClick: () => setShowPricingModal(true) },
+                    { label: 'Account & session', icon: User, onClick: () => setShowWalletModal(true) },
+                    {
+                      label: 'Search audit by hash',
+                      icon: Search,
+                      onClick: () => {
+                        const hash = prompt('Search contract audit hash:');
+                        if (hash) window.location.href = `/reports?hash=${encodeURIComponent(hash)}`;
+                      },
+                    },
+                    { label: 'Security invariants', icon: Bell, onClick: () => setShowInvariantsModal(true) },
+                    { label: 'Settings', icon: Settings, onClick: () => setShowSettings(true) },
+                    { label: theme === 'dark' ? 'Light mode' : 'Dark mode', icon: theme === 'dark' ? Sun : Moon, onClick: toggleTheme },
+                  ].map(({ label, icon: Icon, onClick }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowAccountMenu(false);
+                        onClick();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Icon className="w-4 h-4 text-slate-400" />
+                      {label}
+                    </button>
+                  ))}
+                  <div className="my-1 border-t border-slate-100 dark:border-white/5" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowAccountMenu(false);
+                      handleDisconnect();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left text-accent hover:bg-accent-subtle transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Disconnect
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Theme toggle (inside the account menu once connected) */}
               <button
                 type="button"
-                onClick={() => setShowSettings(!showSettings)}
-                className="hidden sm:flex w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm items-center justify-center transition shrink-0"
-                title="Security Settings & Network Config"
+                onClick={toggleTheme}
+                className="w-8 h-8 rounded-md border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20 flex items-center justify-center transition-colors cursor-pointer"
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label="Toggle theme"
               >
-                <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white hover:border-slate-300 dark:hover:border-white/20 transition-colors"
+                >
+                  <User className="w-3.5 h-3.5 text-accent" />
+                  <span className="max-w-[100px] truncate">{user.name || user.email?.split('@')[0]}</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-flex items-center h-8 px-2.5 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                  Log in
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={handleConnect}
+                disabled={connecting}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-accent hover:bg-accent-hover text-white text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <Wallet className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{connecting ? 'Connecting…' : 'Connect wallet'}</span>
+                <span className="sm:hidden">{connecting ? '…' : 'Connect'}</span>
               </button>
             </>
           )}
-
-          {/* Credit Balance Pill (Rendered when authenticated) */}
-          {(walletKey || user) && (
-            <button
-              type="button"
-              onClick={() => setShowPricingModal(true)}
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-accent/10 border border-accent/25 hover:bg-accent/20 text-accent font-bold text-[10px] sm:text-xs transition cursor-pointer shrink-0"
-              title="Available AI Analysis Credits • Click to purchase packages"
-            >
-              <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span>{user?.availableCredits !== undefined ? `${user.availableCredits * 10} XML` : '0 XML'}</span>
-              <span className="opacity-75 hidden xl:inline">({user?.availableCredits || 0} audits)</span>
-            </button>
-          )}
-
-          {/* User Account / Wallet Button */}
-          <div suppressHydrationWarning className="shrink-0 flex items-center gap-1.5">
-            {walletKey ? (
-              <button
-                type="button"
-                onClick={() => setShowWalletModal(true)}
-                className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs font-mono text-slate-800 dark:text-slate-200 shrink-0 transition cursor-pointer group"
-                title="Auditor Keypair Details & Session"
-              >
-                <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="font-bold">{walletKey.slice(0, 3)}...{walletKey.slice(-3)}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform hidden sm:inline" />
-              </button>
-            ) : user ? (
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-1.5 bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs text-slate-800 dark:text-slate-200 shrink-0 transition"
-                title="User Account Dashboard"
-              >
-                <User className="w-3 h-3 text-accent" />
-                <span className="font-bold max-w-[100px] truncate">{user.name || user.email?.split('@')[0]}</span>
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden sm:inline-flex px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-accent transition shrink-0"
-                >
-                  Log In
-                </Link>
-                <Link
-                  href="/signup"
-                  className="hidden sm:inline-flex px-3 py-1 text-xs font-bold rounded-full border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-accent hover:text-accent transition shrink-0"
-                >
-                  Sign Up
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleConnect}
-                  disabled={connecting}
-                  className="px-2.5 sm:px-4 py-1 sm:py-1.5 bg-accent hover:bg-accent-hover text-white rounded-full text-[11px] sm:text-xs font-bold shadow-md shadow-accent/25 transition disabled:opacity-50 flex items-center gap-1 sm:gap-1.5 shrink-0"
-                >
-                  <Wallet className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{connecting ? 'Connecting...' : 'Connect Wallet'}</span>
-                  <span className="sm:hidden">{connecting ? '...' : 'Connect'}</span>
-                </button>
-              </>
-            )}
-          </div>
 
           {notice && (
             <span className="hidden md:inline-block text-xs text-slate-500 bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm">

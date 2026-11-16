@@ -1,7 +1,8 @@
 'use client';
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { EASE_OUT, TiltCard, useActive } from './motion';
 import { SectionHeading, btn, codePanel, container } from './primitives';
 
 interface Tab {
@@ -13,11 +14,19 @@ interface Tab {
   visual: React.ReactNode;
 }
 
+const rowVariants = {
+  hidden: { opacity: 0, x: -6 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE_OUT } },
+};
+
 const Row = ({ k, v, tone = 'text-slate-300' }: { k: string; v: string; tone?: string }) => (
-  <div className="flex items-center justify-between gap-4 h-9 px-4 border-t border-white/5 first:border-t-0">
+  <motion.div
+    variants={rowVariants}
+    className="flex items-center justify-between gap-4 h-9 px-4 border-t border-white/5 first:border-t-0"
+  >
     <span className="text-slate-500">{k}</span>
     <span className={tone}>{v}</span>
-  </div>
+  </motion.div>
 );
 
 const TABS: Tab[] = [
@@ -85,8 +94,13 @@ const TABS: Tab[] = [
               <span className="text-slate-300">{r.key}</span>
               <span className="text-slate-500">{r.pct}% TTL</span>
             </div>
-            <div className="h-1 bg-white/10 rounded-sm">
-              <div className={`h-1 rounded-sm ${r.tone}`} style={{ width: `${r.pct}%` }} />
+            <div className="h-1 bg-white/10 rounded-sm overflow-hidden">
+              <motion.div
+                className={`h-1 rounded-sm ${r.tone}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${r.pct}%` }}
+                transition={{ duration: 1.1, delay: 0.15, ease: EASE_OUT }}
+              />
             </div>
           </div>
         ))}
@@ -171,18 +185,44 @@ const TABS: Tab[] = [
   },
 ];
 
+const AUTO_ADVANCE_MS = 7000;
+
 export default function FeaturesSection() {
   const [active, setActive] = useState(0);
+  // Auto-advance stops for good once the visitor picks a tab themselves.
+  const [userPicked, setUserPicked] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const onScreen = useActive(sectionRef);
+  const reduce = useReducedMotion();
   const baseId = useId();
   const tab = TABS[active];
+  const autoplay = !userPicked && !reduce && onScreen;
+  const running = autoplay && !hovering;
+
+  useEffect(() => {
+    if (!running) return;
+    const t = setTimeout(() => setActive((a) => (a + 1) % TABS.length), AUTO_ADVANCE_MS);
+    return () => clearTimeout(t);
+  }, [running, active]);
+
+  const pick = (i: number) => {
+    setUserPicked(true);
+    setActive(i);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowRight') setActive((a) => (a + 1) % TABS.length);
-    if (e.key === 'ArrowLeft') setActive((a) => (a - 1 + TABS.length) % TABS.length);
+    if (e.key === 'ArrowRight') pick((active + 1) % TABS.length);
+    if (e.key === 'ArrowLeft') pick((active - 1 + TABS.length) % TABS.length);
   };
 
   return (
-    <section id="features" className="w-full py-20 sm:py-28 border-b border-slate-200 dark:border-white/10">
+    <section
+      ref={sectionRef}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      id="features"
+      className="w-full py-20 sm:py-28 border-b border-slate-200 dark:border-white/10">
       <div className={container}>
         <SectionHeading
           eyebrow="Platform"
@@ -208,7 +248,7 @@ export default function FeaturesSection() {
                 aria-selected={selected}
                 aria-controls={`${baseId}-panel-${t.id}`}
                 tabIndex={selected ? 0 : -1}
-                onClick={() => setActive(i)}
+                onClick={() => pick(i)}
                 className={`relative shrink-0 pb-4 text-sm sm:text-[15px] transition-colors cursor-pointer ${
                   selected
                     ? 'text-slate-900 dark:text-white'
@@ -220,8 +260,16 @@ export default function FeaturesSection() {
                 {selected && (
                   <motion.span
                     layoutId="features-tab-underline"
-                    className="absolute left-0 right-0 -bottom-px h-0.5 bg-accent"
-                  />
+                    transition={{ duration: 0.35, ease: EASE_OUT }}
+                    className="absolute left-0 right-0 -bottom-px h-0.5 bg-slate-300 dark:bg-white/20 overflow-hidden"
+                  >
+                    {/* Progress fill: runs while auto-advancing, solid once the user has picked */}
+                    <span
+                      key={`${active}-${autoplay}`}
+                      style={{ ['--progress-duration' as string]: `${AUTO_ADVANCE_MS}ms`, animationPlayState: running ? 'running' : 'paused' }}
+                      className={`absolute inset-0 origin-left bg-accent ${autoplay ? 'animate-grow-x' : ''}`}
+                    />
+                  </motion.span>
                 )}
               </button>
             );
@@ -238,7 +286,7 @@ export default function FeaturesSection() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={{ duration: 0.3, ease: EASE_OUT }}
             className="pt-10 sm:pt-14 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16"
           >
             <div className="lg:col-span-5">
@@ -246,11 +294,17 @@ export default function FeaturesSection() {
                 {tab.heading}
               </h3>
               <ul className="divide-y divide-slate-200 dark:divide-white/10 border-y border-slate-200 dark:border-white/10">
-                {tab.points.map((p) => (
-                  <li key={p.title} className="py-5">
+                {tab.points.map((p, i) => (
+                  <motion.li
+                    key={p.title}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.08 + i * 0.08, ease: EASE_OUT }}
+                    className="py-5"
+                  >
                     <h4 className="text-[15px] font-medium text-slate-900 dark:text-white mb-1.5">{p.title}</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{p.body}</p>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
               <a href={tab.cta.href} className={`${btn.link} mt-6`}>
@@ -259,9 +313,16 @@ export default function FeaturesSection() {
               </a>
             </div>
 
-            <div className="lg:col-span-7">
-              <div className={`${codePanel} overflow-hidden min-h-[280px]`}>{tab.visual}</div>
-            </div>
+            <TiltCard className="lg:col-span-7" max={5}>
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } }}
+                className={`${codePanel} overflow-hidden min-h-[280px]`}
+              >
+                {tab.visual}
+              </motion.div>
+            </TiltCard>
           </motion.div>
         </AnimatePresence>
       </div>

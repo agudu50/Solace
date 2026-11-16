@@ -32,6 +32,8 @@ interface WalletContextType {
   setShowNetworkModal: (show: boolean) => void;
   checkWalletNetwork: () => Promise<boolean>;
   connecting: boolean;
+  /** True until the initial session restore on page load has settled. */
+  sessionLoading: boolean;
   freighterReady: boolean | null;
   connect: () => Promise<string>;
   authenticate: (action?: 'solace-auth-login' | 'solace-admin-login') => Promise<AuthUser>;
@@ -46,6 +48,9 @@ interface WalletContextType {
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+/** Pages where a successful wallet connect should continue on to the dashboard. */
+const ENTRY_PATHS = new Set(['/', '/login', '/signup', '/forgot-password']);
 
 export function WalletProvider({
   children,
@@ -68,6 +73,7 @@ export function WalletProvider({
   const [connecting, setConnecting] = useState<boolean>(false);
   const [freighterReady, setFreighterReady] = useState<boolean | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [sessionLoading, setSessionLoading] = useState<boolean>(true);
 
   const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'super_admin'));
   const isSuperAdmin = Boolean(user && user.role === 'super_admin');
@@ -88,6 +94,7 @@ export function WalletProvider({
           document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
           document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
         } catch (_) {}
+        setSessionLoading(false);
         return;
       }
     }
@@ -108,7 +115,9 @@ export function WalletProvider({
           document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
         } catch (_) {}
       }
-    });
+    })
+      .catch(() => {})
+      .finally(() => setSessionLoading(false));
   }, []);
 
   const syncWalletToStorageAndCookies = useCallback((key: string) => {
@@ -294,7 +303,7 @@ export function WalletProvider({
   /**
    * Standard wallet connect:
    * Prompts user to unlock Freighter with their password, verifies session on backend,
-   * without auto-redirecting or falling back on cancellation.
+   * without falling back on cancellation. Redirects to /dashboard only when connecting from an entry page.
    */
   const connect = async (): Promise<string> => {
     setConnecting(true);
@@ -336,6 +345,12 @@ export function WalletProvider({
         window.dispatchEvent(
           new CustomEvent('solace-wallet-updated', { detail: { walletKey: key, user: authUser } })
         );
+
+        // Send users who connect from an entry page (landing, login, signup) to their dashboard.
+        // Connecting from inside the app (e.g. /audit) keeps them where they are.
+        if (ENTRY_PATHS.has(window.location.pathname)) {
+          router.push('/dashboard');
+        }
       }
 
       return key;

@@ -1,6 +1,7 @@
 import React from 'react';
 import HeroSection from '../components/landing/HeroSection';
 import StatsSection from '../components/landing/StatsSection';
+import AgentsSection from '../components/landing/AgentsSection';
 import FeaturesSection from '../components/landing/FeaturesSection';
 import InteractiveScanner from '../components/landing/InteractiveScanner';
 import HowItWorksSection from '../components/landing/HowItWorksSection';
@@ -15,6 +16,7 @@ export default function LandingPage() {
     <div className="relative w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 overflow-x-hidden">
       <HeroSection />
       <StatsSection />
+      <AgentsSection />
       <FeaturesSection />
       <HowItWorksSection />
       <InteractiveScanner />

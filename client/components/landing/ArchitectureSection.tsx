@@ -1,7 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, Copy, ExternalLink } from 'lucide-react';
 import { SectionHeading, btn, container, panel } from './primitives';
+import { EASE_OUT, Reveal, useActive } from './motion';
 
 const LAYERS = [
   {
@@ -26,16 +28,57 @@ const LAYERS = [
   },
 ];
 
-const LOG = [
-  { time: '14:02:11', event: 'audit.anchored', subject: 'CBQ7…K2LM', score: 95, ok: true },
-  { time: '13:58:40', event: 'audit.anchored', subject: 'CDX4…9PQA', score: 71, ok: true },
-  { time: '13:51:02', event: 'audit.flagged', subject: 'CA3N…TT8E', score: 38, ok: false },
-  { time: '13:47:26', event: 'credits.purchased', subject: 'GBWS…DYPI', score: null, ok: true },
-  { time: '13:40:55', event: 'audit.anchored', subject: 'CCJ2…W0RS', score: 88, ok: true },
+interface LogRow {
+  id: number;
+  time: string;
+  event: string;
+  subject: string;
+  score: number | null;
+  ok: boolean;
+}
+
+const SEED: Omit<LogRow, 'id' | 'time'>[] = [
+  { event: 'audit.anchored', subject: 'CBQ7…K2LM', score: 95, ok: true },
+  { event: 'audit.anchored', subject: 'CDX4…9PQA', score: 71, ok: true },
+  { event: 'audit.flagged', subject: 'CA3N…TT8E', score: 38, ok: false },
+  { event: 'credits.purchased', subject: 'GBWS…DYPI', score: null, ok: true },
+  { event: 'audit.anchored', subject: 'CCJ2…W0RS', score: 88, ok: true },
+  { event: 'audit.anchored', subject: 'CF81…ZQ3D', score: 92, ok: true },
+  { event: 'audit.flagged', subject: 'CB0D…M4NX', score: 44, ok: false },
+  { event: 'report.verified', subject: 'CDX4…9PQA', score: 71, ok: true },
 ];
+
+const VISIBLE_ROWS = 5;
+const BASE_SECONDS = 14 * 3600 + 2 * 60 + 11; // 14:02:11
+
+const fmt = (sec: number) =>
+  [Math.floor(sec / 3600) % 24, Math.floor(sec / 60) % 60, sec % 60].map((n) => String(n).padStart(2, '0')).join(':');
+
+// Newest first; deterministic so server and client render the same initial rows.
+const initialRows = (): LogRow[] =>
+  SEED.slice(0, VISIBLE_ROWS).map((r, i) => ({ ...r, id: i, time: fmt(BASE_SECONDS - i * 217) }));
 
 export default function ArchitectureSection() {
   const [copied, setCopied] = useState(false);
+  const [rows, setRows] = useState<LogRow[]>(initialRows);
+  const logRef = useRef<HTMLDivElement>(null);
+  const live = useActive(logRef);
+  const reduce = useReducedMotion();
+
+  // Stream a new ledger event in at the top every few seconds while visible.
+  useEffect(() => {
+    if (!live || reduce) return;
+    const t = setInterval(() => {
+      setRows((prev) => {
+        const id = prev[0].id + 1;
+        const seed = SEED[id % SEED.length];
+        const [h, m, sec] = prev[0].time.split(':').map(Number);
+        const time = fmt(h * 3600 + m * 60 + sec + 23 + (id % 5) * 9);
+        return [{ ...seed, id, time }, ...prev].slice(0, VISIBLE_ROWS);
+      });
+    }, 3200);
+    return () => clearInterval(t);
+  }, [live, reduce]);
   const contractId = 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 
   const handleCopy = () => {
@@ -56,21 +99,25 @@ export default function ArchitectureSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
           {/* Layers */}
           <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10 content-start">
-            {LAYERS.map((l) => (
-              <div key={l.tag} className="border-t border-slate-200 dark:border-white/10 pt-5">
+            {LAYERS.map((l, i) => (
+              <Reveal key={l.tag} delay={i * 0.08} className="border-t border-slate-200 dark:border-white/10 pt-5">
                 <span className="eyebrow">{l.tag}</span>
                 <h3 className="mt-3 text-base font-medium text-slate-900 dark:text-white">{l.title}</h3>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{l.body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
 
           {/* Ledger log mockup */}
-          <div className={`lg:col-span-7 ${panel} overflow-hidden`}>
+          <Reveal delay={0.1} className={`lg:col-span-7 ${panel} overflow-hidden`}>
+            <div ref={logRef}>
             <div className="flex items-center justify-between px-4 sm:px-5 h-11 border-b border-slate-200 dark:border-white/10">
               <span className="text-sm font-medium text-slate-900 dark:text-white">Ledger activity</span>
               <span className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="relative flex w-1.5 h-1.5">
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-500 animate-ping-soft motion-reduce:hidden" />
+                  <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                </span>
                 live · testnet
               </span>
             </div>
@@ -85,32 +132,40 @@ export default function ArchitectureSection() {
                   </tr>
                 </thead>
                 <tbody>
-                  {LOG.map((row) => (
-                    <tr
-                      key={row.time}
-                      className="border-b last:border-b-0 border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-300"
-                    >
-                      <td className="px-4 sm:px-5 py-3 text-slate-500">{row.time}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-[1px] ${row.ok ? 'bg-emerald-500' : 'bg-accent'}`} />
-                          {row.event}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">{row.subject}</td>
-                      <td className="px-4 sm:px-5 py-3 text-right">
-                        {row.score === null ? (
-                          <span className="text-slate-400">—</span>
-                        ) : (
-                          <span className={row.score < 50 ? 'text-accent' : ''}>{row.score}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  <AnimatePresence initial={false}>
+                    {rows.map((row) => (
+                      <motion.tr
+                        key={row.id}
+                        layout
+                        initial={{ opacity: 0, backgroundColor: 'rgba(200, 5, 82, 0.08)' }}
+                        animate={{ opacity: 1, backgroundColor: 'rgba(200, 5, 82, 0)' }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.6, ease: EASE_OUT, backgroundColor: { duration: 1.6 } }}
+                        className="border-b last:border-b-0 border-slate-100 dark:border-white/5 text-slate-700 dark:text-slate-300"
+                      >
+                        <td className="px-4 sm:px-5 py-3 text-slate-500 tabular-nums">{row.time}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-2">
+                            <span className={`w-1.5 h-1.5 rounded-[1px] ${row.ok ? 'bg-emerald-500' : 'bg-accent'}`} />
+                            {row.event}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">{row.subject}</td>
+                        <td className="px-4 sm:px-5 py-3 text-right tabular-nums">
+                          {row.score === null ? (
+                            <span className="text-slate-400">—</span>
+                          ) : (
+                            <span className={row.score < 50 ? 'text-accent' : ''}>{row.score}</span>
+                          )}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
-          </div>
+            </div>
+          </Reveal>
         </div>
 
         {/* Contract bar */}

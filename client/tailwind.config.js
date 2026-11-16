@@ -66,6 +66,27 @@ module.exports = {
       letterSpacing: {
         tightest: '-0.035em',
       },
+      transitionTimingFunction: {
+        'out-quart': 'cubic-bezier(0.165, 0.84, 0.44, 1)',
+      },
+      keyframes: {
+        marquee: { to: { transform: 'translateX(-50%)' } },
+        'grow-x': { from: { transform: 'scaleX(0)' }, to: { transform: 'scaleX(1)' } },
+        'fade-in': { from: { opacity: '0' } },
+        'dialog-in': { from: { opacity: '0', transform: 'translateY(12px) scale(0.98)' } },
+        'press': { '0%, 100%': { transform: 'scale(1)' }, '45%': { transform: 'scale(0.97)' } },
+        'flash': { '0%, 100%': { opacity: '0' }, '45%': { opacity: '0.06' } },
+        'ping-soft': { '75%, 100%': { transform: 'scale(2.2)', opacity: '0' } },
+      },
+      animation: {
+        marquee: 'marquee 60s linear infinite',
+        'grow-x': 'grow-x var(--progress-duration, 6s) linear forwards',
+        'fade-in': 'fade-in .3s cubic-bezier(0.165, 0.84, 0.44, 1)',
+        'dialog-in': 'dialog-in .3s cubic-bezier(0.165, 0.84, 0.44, 1)',
+        press: 'press .56s cubic-bezier(.4, 0, .2, 1)',
+        flash: 'flash .56s cubic-bezier(.4, 0, .2, 1)',
+        'ping-soft': 'ping-soft 1.8s cubic-bezier(0, 0, 0.2, 1) infinite',
+      },
     },
   },
   plugins: [],

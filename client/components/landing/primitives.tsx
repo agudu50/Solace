@@ -1,4 +1,5 @@
 import React from 'react';
+import { Reveal, SplitWords } from './motion';
 
 /**
  * Shared marketing primitives for the landing page.
@@ -52,10 +53,10 @@ export function SectionHeading({
 }: SectionHeadingProps) {
   const alignment = align === 'center' ? 'items-center text-center mx-auto' : 'items-start text-left';
   return (
-    <div className={`flex flex-col ${alignment} max-w-3xl mb-12 sm:mb-16 ${className}`}>
+    <Reveal className={`flex flex-col ${alignment} max-w-3xl mb-12 sm:mb-16 ${className}`}>
       <Eyebrow className="mb-4">{eyebrow}</Eyebrow>
       <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-medium tracking-tightest leading-[1.05] text-slate-900 dark:text-white">
-        {title}
+        {typeof title === 'string' ? <SplitWords text={title} inView stagger={0.04} /> : title}
       </h2>
       {description && (
         <p className="mt-5 text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
@@ -63,6 +64,6 @@ export function SectionHeading({
         </p>
       )}
       {children}
-    </div>
+    </Reveal>
   );
 }
