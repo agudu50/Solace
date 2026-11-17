@@ -23,7 +23,7 @@ export interface RiskBar {
 
 const BAR = 30; // footprint (px)
 const GAP = 22;
-const MAX_H = 150;
+const MAX_H = 230;
 
 /**
  * Isometric 3D bar chart: CSS prisms standing on a tilted grid floor.
@@ -48,7 +48,7 @@ export default function RiskChart3D({ bars, active }: { bars: RiskBar[]; active:
     <div>
       <div
         ref={stageRef}
-        className="relative h-[260px] sm:h-[290px] [perspective:1100px] [perspective-origin:50%_30%] overflow-hidden"
+        className="relative h-[320px] sm:h-[370px] [perspective:1100px] [perspective-origin:50%_30%] overflow-hidden"
         role="img"
         aria-label={
           active
@@ -66,7 +66,7 @@ export default function RiskChart3D({ bars, active }: { bars: RiskBar[]; active:
             marginTop: -floorD / 2,
             transformStyle: 'preserve-3d',
           }}
-          className="absolute left-1/2 top-[80%] scale-[0.8] sm:scale-100"
+          className="absolute left-1/2 top-[84%] scale-[0.75] sm:scale-100"
         >
           {/* Floor */}
           <div className="absolute inset-0 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] grid-lines [background-size:16px_16px]" />

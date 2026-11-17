@@ -121,10 +121,10 @@ export function SplitWords({
     ? { whileInView: 'show', viewport: { once: true, margin: '-60px' } }
     : { animate: 'show' };
   return (
+    // The words are the real text (read and copied once). A separate sr-only
+    // copy would duplicate the sentence whenever someone selects and copies it.
     <span className={className}>
-      <span className="sr-only">{text}</span>
       <motion.span
-        aria-hidden
         initial={reduce ? false : 'hidden'}
         {...trigger}
         variants={{ show: { transition: { staggerChildren: stagger, delayChildren: delay } } }}

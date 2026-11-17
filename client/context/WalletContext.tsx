@@ -82,15 +82,15 @@ export function WalletProvider({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
-      const token = localStorage.getItem('solace_auth_token');
+      const token = sessionStorage.getItem('solace_auth_token');
       const hasCookie = document.cookie.includes('solace_session=');
       if (isDisconnected || (!token && !hasCookie)) {
         setUser(null);
         setWalletKeyState('');
         try {
           localStorage.removeItem('solace_connected_wallet');
-          localStorage.removeItem('solace_auth_token');
-          localStorage.removeItem('solace_user_role');
+          sessionStorage.removeItem('solace_auth_token');
+          sessionStorage.removeItem('solace_user_role');
           document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
           document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
         } catch (_) {}
@@ -108,8 +108,8 @@ export function WalletProvider({
         setWalletKeyState('');
         try {
           localStorage.removeItem('solace_connected_wallet');
-          localStorage.removeItem('solace_auth_token');
-          localStorage.removeItem('solace_user_role');
+          sessionStorage.removeItem('solace_auth_token');
+          sessionStorage.removeItem('solace_user_role');
           localStorage.setItem('solace_wallet_disconnected', 'true');
           document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
           document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
@@ -126,7 +126,8 @@ export function WalletProvider({
       if (key && /^G[A-Z0-9]{55}$/.test(key)) {
         localStorage.removeItem('solace_wallet_disconnected');
         localStorage.setItem('solace_connected_wallet', key);
-        document.cookie = `solace_connected_wallet=${key}; path=/; max-age=31536000; SameSite=Lax`;
+        // Session cookie (no max-age): cleared when the browser closes, like the login.
+        document.cookie = `solace_connected_wallet=${key}; path=/; SameSite=Lax`;
       } else {
         localStorage.removeItem('solace_connected_wallet');
         document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
@@ -289,8 +290,8 @@ export function WalletProvider({
       if (typeof window !== 'undefined') {
         localStorage.setItem('solace_wallet_disconnected', 'true');
         localStorage.removeItem('solace_connected_wallet');
-        localStorage.removeItem('solace_auth_token');
-        localStorage.removeItem('solace_user_role');
+        sessionStorage.removeItem('solace_auth_token');
+        sessionStorage.removeItem('solace_user_role');
         document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
       }
@@ -362,8 +363,8 @@ export function WalletProvider({
       if (typeof window !== 'undefined') {
         localStorage.setItem('solace_wallet_disconnected', 'true');
         localStorage.removeItem('solace_connected_wallet');
-        localStorage.removeItem('solace_auth_token');
-        localStorage.removeItem('solace_user_role');
+        sessionStorage.removeItem('solace_auth_token');
+        sessionStorage.removeItem('solace_user_role');
         document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
       }
@@ -433,8 +434,8 @@ export function WalletProvider({
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('solace_connected_wallet');
-        localStorage.removeItem('solace_auth_token');
-        localStorage.removeItem('solace_user_role');
+        sessionStorage.removeItem('solace_auth_token');
+        sessionStorage.removeItem('solace_user_role');
         localStorage.setItem('solace_wallet_disconnected', 'true');
         document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'solace_connected_wallet=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';

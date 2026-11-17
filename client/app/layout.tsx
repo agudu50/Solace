@@ -43,8 +43,12 @@ export default function RootLayout({
                 } else {
                   document.documentElement.classList.remove('dark');
                 }
+                // Logins now live in sessionStorage (end when the browser closes).
+                // Drop tokens persisted by older builds so they can't restore a session.
+                localStorage.removeItem('solace_auth_token');
+                localStorage.removeItem('solace_user_role');
                 const isDisconnected = localStorage.getItem('solace_wallet_disconnected') === 'true';
-                const authToken = localStorage.getItem('solace_auth_token');
+                const authToken = sessionStorage.getItem('solace_auth_token');
                 if (isDisconnected || !authToken) {
                   document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
                   document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';

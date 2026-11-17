@@ -721,8 +721,8 @@ export async function registerWithEmail(name: string, email: string, password: s
     throw new Error(data.error || 'Registration failed.');
   }
   if (typeof window !== 'undefined' && data.token) {
-    localStorage.setItem('solace_auth_token', data.token);
-    localStorage.setItem('solace_user_role', data.user.role);
+    sessionStorage.setItem('solace_auth_token', data.token);
+    sessionStorage.setItem('solace_user_role', data.user.role);
   }
   return data;
 }
@@ -739,8 +739,8 @@ export async function loginWithEmail(email: string, password: string): Promise<A
     throw new Error(data.error || 'Login failed.');
   }
   if (typeof window !== 'undefined' && data.token) {
-    localStorage.setItem('solace_auth_token', data.token);
-    localStorage.setItem('solace_user_role', data.user.role);
+    sessionStorage.setItem('solace_auth_token', data.token);
+    sessionStorage.setItem('solace_user_role', data.user.role);
   }
   return data;
 }
@@ -777,7 +777,7 @@ export async function linkWalletToAccount(address: string): Promise<{ success: b
 
   let token = '';
   if (typeof window !== 'undefined') {
-    token = localStorage.getItem('solace_auth_token') || '';
+    token = sessionStorage.getItem('solace_auth_token') || '';
   }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -910,8 +910,8 @@ export async function loginWalletSession(address: string): Promise<AuthVerifyRes
 
   try {
     if (typeof window !== 'undefined' && data.token) {
-      localStorage.setItem('solace_auth_token', data.token);
-      localStorage.setItem('solace_user_role', data.user.role);
+      sessionStorage.setItem('solace_auth_token', data.token);
+      sessionStorage.setItem('solace_user_role', data.user.role);
     }
   } catch (_) {}
 
@@ -958,8 +958,8 @@ export async function authenticateWalletSession(
     // Cache token in memory / storage
     try {
       if (typeof window !== 'undefined' && data.token) {
-        localStorage.setItem('solace_auth_token', data.token);
-        localStorage.setItem('solace_user_role', data.user.role);
+        sessionStorage.setItem('solace_auth_token', data.token);
+        sessionStorage.setItem('solace_user_role', data.user.role);
         localStorage.removeItem('solace_wallet_disconnected');
       }
     } catch (_) {}
@@ -982,7 +982,7 @@ export async function fetchCurrentUserSession(): Promise<AuthUser | null> {
       if (isDisconnected) {
         return null;
       }
-      token = localStorage.getItem('solace_auth_token') || '';
+      token = sessionStorage.getItem('solace_auth_token') || '';
       hasCookie = document.cookie.includes('solace_session=');
       // If neither token nor session cookie exists, visitor is unauthenticated
       if (!token && !hasCookie) {
@@ -1005,9 +1005,9 @@ export async function fetchCurrentUserSession(): Promise<AuthUser | null> {
       // If 401 Unauthorized or invalid session, purge stored credentials immediately
       if (typeof window !== 'undefined') {
         try {
-          localStorage.removeItem('solace_auth_token');
+          sessionStorage.removeItem('solace_auth_token');
           localStorage.removeItem('solace_connected_wallet');
-          localStorage.removeItem('solace_user_role');
+          sessionStorage.removeItem('solace_user_role');
           localStorage.setItem('solace_wallet_disconnected', 'true');
           document.cookie = 'solace_session=; path=/; max-age=0; SameSite=Lax';
           document.cookie = 'solace_connected_wallet=; path=/; max-age=0; SameSite=Lax';
@@ -1032,9 +1032,9 @@ export async function logoutUserSession(): Promise<void> {
   try {
     let token = '';
     if (typeof window !== 'undefined') {
-      token = localStorage.getItem('solace_auth_token') || '';
-      localStorage.removeItem('solace_auth_token');
-      localStorage.removeItem('solace_user_role');
+      token = sessionStorage.getItem('solace_auth_token') || '';
+      sessionStorage.removeItem('solace_auth_token');
+      sessionStorage.removeItem('solace_user_role');
       localStorage.removeItem('solace_connected_wallet');
       localStorage.setItem('solace_wallet_disconnected', 'true');
     }
@@ -1061,7 +1061,7 @@ function getAdminAuthHeaders(): Record<string, string> {
     'Content-Type': 'application/json',
   };
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('solace_auth_token');
+    const token = sessionStorage.getItem('solace_auth_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }

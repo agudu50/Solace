@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ShieldCheck,
   Mail,
   Lock,
   Wallet,
@@ -16,9 +15,16 @@ import {
   ChevronLeft,
   Eye,
   EyeOff,
-  Cpu,
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import AuthShowcase from '../../components/auth/AuthShowcase';
+import { Segmented } from '../../components/audit/StudioParts';
+import { Chip } from '../../components/dashboard/Panel';
+import { EASE_OUT, SplitWords } from '../../components/landing/motion';
+import { btn } from '../../components/landing/primitives';
+
+const input =
+  'w-full h-10 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20';
 
 function LoginContent() {
   const router = useRouter();
@@ -39,7 +45,6 @@ function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
 
   // Wallet auth state
@@ -63,7 +68,7 @@ function LoginContent() {
     setLoading(true);
     try {
       await loginWithEmail(email, password);
-      setSuccess('Authenticated successfully! Redirecting...');
+      setSuccess('Signed in. Redirecting…');
       setTimeout(() => {
         router.push(redirectTarget);
       }, 800);
@@ -78,12 +83,12 @@ function LoginContent() {
     setError('');
     setSuccess('');
     setWalletLoading(true);
-    setAuthStep('Requesting cryptographic authentication challenge...');
+    setAuthStep('Requesting authentication challenge…');
 
     try {
-      setAuthStep('Prompting Freighter signature...');
+      setAuthStep('Waiting for Freighter signature…');
       await authenticate('solace-auth-login');
-      setSuccess('Wallet verified cryptographically! Redirecting...');
+      setSuccess('Wallet verified. Redirecting…');
       setTimeout(() => {
         router.push(redirectTarget);
       }, 800);
@@ -95,242 +100,246 @@ function LoginContent() {
     }
   };
 
+  const switchTab = (t: 'email' | 'wallet') => {
+    setActiveTab(t);
+    setError('');
+  };
+
+  const signupHref =
+    redirectTarget !== '/dashboard' ? `/signup?redirect=${encodeURIComponent(redirectTarget)}` : '/signup';
+
   return (
-    <div className="min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
-      {/* Background ambient lighting */}
+    <div className="relative min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute inset-0 grid-lines pointer-events-none [mask-image:radial-gradient(ellipse_60%_70%_at_30%_40%,#000_20%,transparent_100%)]"
+      />
 
-      {/* Main Authentication Card */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-md mb-3 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition font-medium"
+      <main className="relative w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-stretch">
+        {/* Form column */}
+        <div className="flex flex-col justify-center w-full max-w-md mx-auto lg:mx-0">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE_OUT }}
+            className="flex items-center justify-between mb-10"
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </Link>
-          <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
-            Protocol 22 • Testnet
-          </span>
-        </div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back to home
+            </Link>
+            <Chip tone="accent" pulse>Protocol 22 · Testnet</Chip>
+          </motion.div>
 
-        <div className="max-w-md w-full bg-white/95 dark:bg-[#161616]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 relative overflow-hidden transition-colors duration-200">
-          {/* Top highlight bar */}
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-accent" />
-
-          {/* Heading */}
-          <h1 className="text-2xl sm:text-3xl font-black text-center text-slate-900 dark:text-white tracking-tight mb-1.5">
-            Welcome to Solace
+          <h1 className="text-3xl sm:text-4xl font-medium tracking-tightest leading-[1.05] text-slate-900 dark:text-white">
+            <SplitWords text="Welcome back" />
           </h1>
-          <p className="text-xs text-center text-slate-500 dark:text-slate-400 leading-relaxed mb-6 font-medium">
-            Log in to manage your smart contract security audits, inspect AST invariant checks, and view credit balances.
-          </p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.25 }}
+            className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed"
+          >
+            Sign in to manage your contract audits, review invariant checks and check your credit balance.
+          </motion.p>
 
-          {/* Dual Method Tabs */}
-          <div className="flex bg-slate-100 dark:bg-[#0e0e0e] p-1 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 transition-colors">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('email');
-                setError('');
-              }}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-                activeTab === 'email'
-                  ? 'bg-accent text-white shadow-md shadow-accent/25'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Email &amp; Password</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('wallet');
-                setError('');
-              }}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-                activeTab === 'wallet'
-                  ? 'bg-accent text-white shadow-md shadow-accent/25'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-            >
-              <Wallet className="w-3.5 h-3.5" />
-              <span>Stellar Wallet</span>
-            </button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3, ease: EASE_OUT }}
+            className="mt-8"
+          >
+            <Segmented
+              id="login-method"
+              label="Sign-in method"
+              value={activeTab}
+              onChange={switchTab}
+              options={[
+                { value: 'email', label: <><Mail className="w-3.5 h-3.5" />Email</> },
+                { value: 'wallet', label: <><Wallet className="w-3.5 h-3.5" />Stellar wallet</> },
+              ]}
+            />
 
-          {/* Feedback Messages */}
-          {error && (
-            <div className="mb-4 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800/80 text-xs text-red-700 dark:text-red-200 font-medium flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-700 dark:text-emerald-200 font-medium flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>{success}</span>
-            </div>
-          )}
-
-          {/* TAB 1: EMAIL & PASSWORD */}
-          {activeTab === 'email' && (
-            <form onSubmit={handleEmailLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="developer@example.com"
-                    className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Password
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-[11px] text-accent hover:underline font-medium"
+            {/* Feedback */}
+            <AnimatePresence>
+              {(error || success) && (
+                <motion.div
+                  key={error ? 'err' : 'ok'}
+                  role={error ? 'alert' : 'status'}
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 20 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.3, ease: EASE_OUT }}
+                  className="overflow-hidden"
+                >
+                  <div
+                    className={`flex items-start gap-2.5 p-3 rounded-md border text-xs ${
+                      error
+                        ? 'border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300'
+                        : 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                    }`}
                   >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {error ? <AlertCircle className="w-4 h-4 shrink-0 mt-px" /> : <CheckCircle2 className="w-4 h-4 shrink-0 mt-px" />}
+                    {error || success}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait" initial={false}>
+              {activeTab === 'email' ? (
+                <motion.form
+                  key="email"
+                  onSubmit={handleEmailLogin}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 12 }}
+                  transition={{ duration: 0.3, ease: EASE_OUT }}
+                  className="mt-6 space-y-4"
+                >
+                  <div>
+                    <label htmlFor="login-email" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="login-email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="developer@example.com"
+                        className={input}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label htmlFor="login-password" className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                        Password
+                      </label>
+                      <Link href="/forgot-password" className="text-xs text-accent hover:underline">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className={`${input} pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={loading} className={`${btn.primary} w-full group`}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing in…
+                      </>
+                    ) : (
+                      <>
+                        Sign in
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                      </>
+                    )}
                   </button>
-                </div>
-              </div>
+                  <p className="text-[11px] text-slate-500 text-center">You stay signed in until you close the browser.</p>
+                </motion.form>
+              ) : (
+                <motion.div
+                  key="wallet"
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.3, ease: EASE_OUT }}
+                  className="mt-6 space-y-4"
+                >
+                  <dl className="rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] divide-y divide-slate-200 dark:divide-white/10 text-xs">
+                    {[
+                      ['Network', <span key="n" className="text-slate-900 dark:text-white">Stellar Testnet · Protocol 22</span>],
+                      [
+                        'Freighter',
+                        <span key="f" className={`inline-flex items-center gap-1.5 ${freighterReady ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${freighterReady ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                          {freighterReady ? 'Detected' : 'Checking…'}
+                        </span>,
+                      ],
+                      ['Security', <span key="s" className="text-slate-900 dark:text-white">Non-custodial · zero key exposure</span>],
+                    ].map(([k, v]) => (
+                      <div key={k as string} className="flex items-center justify-between gap-4 px-3.5 h-10">
+                        <dt className="text-slate-500">{k}</dt>
+                        <dd className="font-mono text-right truncate">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
 
-              <div className="flex items-center">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-accent focus:ring-accent"
-                  />
-                  <span>Remember this device</span>
-                </label>
-              </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Connect Freighter and sign a one-time challenge with your key. Your private key never leaves the extension.
+                  </p>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-6 rounded-full bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-lg shadow-accent/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          )}
+                  <button type="button" onClick={handleWalletLogin} disabled={walletLoading} className={`${btn.primary} w-full`}>
+                    {walletLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="truncate">{authStep || 'Authenticating wallet…'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="w-4 h-4" />
+                        Connect and sign in
+                      </>
+                    )}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* TAB 2: BLOCKCHAIN WALLET */}
-          {activeTab === 'wallet' && (
-            <div className="space-y-4 text-center">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800/80 text-left space-y-2.5 transition-colors">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-500 dark:text-slate-400">Supported Network:</span>
-                  <span className="text-accent font-bold">Stellar Testnet (Protocol 22)</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-500 dark:text-slate-400">Freighter Extension:</span>
-                  <span className={freighterReady ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-600 dark:text-amber-400 font-bold'}>
-                    {freighterReady ? 'Detected' : 'Standby / Checking'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-500 dark:text-slate-400">Security Model:</span>
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">Non-Custodial (Zero Key Exposure)</span>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed text-left">
-                Click below to connect your Freighter wallet and cryptographically sign an authentication challenge with your private key.
-              </p>
-
-              <button
-                type="button"
-                onClick={handleWalletLogin}
-                disabled={walletLoading}
-                className="w-full py-3 px-6 rounded-full bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-lg shadow-accent/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-              >
-                {walletLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="truncate">{authStep || 'Authenticating Wallet...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Wallet className="w-4 h-4" />
-                    <span>Connect &amp; Authenticate Wallet</span>
-                  </>
-                )}
-              </button>
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 text-xs">
+              <span className="text-slate-500">
+                New to Solace?{' '}
+                <Link href={signupHref} className="text-slate-900 dark:text-white font-medium hover:text-accent transition-colors">
+                  Create an account
+                </Link>
+              </span>
+              <Link href="/admin/login" className="font-mono text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                Admin console →
+              </Link>
             </div>
-          )}
-
-          {/* Link to sign up */}
-          <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
-            Don&apos;t have an account yet?{' '}
-            <Link
-              href={redirectTarget !== '/dashboard' ? `/signup?redirect=${encodeURIComponent(redirectTarget)}` : '/signup'}
-              className="text-accent font-bold hover:underline"
-            >
-              Create an account
-            </Link>
-          </div>
-
-          {/* Admin link */}
-          <div className="mt-3 text-center">
-            <Link
-              href="/admin/login"
-              className="text-[11px] text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 font-mono transition"
-            >
-              Administrator Console &rarr;
-            </Link>
-          </div>
+          </motion.div>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 w-full text-center py-4 text-xs text-slate-500 dark:text-slate-600 font-mono">
-        Solace Protocol • Zero Key Exposure • Ed25519 Cryptographic Proof of Ownership
-      </footer>
+        {/* 3D showcase */}
+        <motion.div
+          initial={{ opacity: 0, rotateY: -12, x: 24 }}
+          animate={{ opacity: 1, rotateY: 0, x: 0 }}
+          transition={{ duration: 1, delay: 0.15, ease: EASE_OUT }}
+          style={{ transformPerspective: 1600 }}
+          className="hidden lg:block"
+        >
+          <AuthShowcase />
+        </motion.div>
+      </main>
     </div>
   );
 }

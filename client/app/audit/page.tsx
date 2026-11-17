@@ -1018,7 +1018,7 @@ impl SolaceContract {
 
       // 3. Deduct 10 XML credits (1 audit) & execute Solace Dual Flash AST AI analysis
       setAuditStep(`Deducting 10 XML credits (${currentBalance.availableCredits} audits available)...`);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('solace_auth_token') : null;
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('solace_auth_token') : null;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;

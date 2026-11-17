@@ -141,7 +141,8 @@ export async function verifyChallengeHandler(req, res) {
       secure: isProd,
       sameSite: 'lax',
       path: '/',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      // No maxAge: a browser-session cookie, cleared when the browser closes.
+      // The server-side session itself still expires after 24 hours.
     });
 
     const userCredits = getUserBalance(normalized);
@@ -193,7 +194,8 @@ export async function registerEmailHandler(req, res) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
+      // No maxAge: a browser-session cookie, cleared when the browser closes.
+      // The server-side session itself still expires after 24 hours.
     });
 
     res.status(201).json({
@@ -240,7 +242,8 @@ export async function loginEmailHandler(req, res) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
+      // No maxAge: a browser-session cookie, cleared when the browser closes.
+      // The server-side session itself still expires after 24 hours.
     });
 
     res.json({
@@ -338,7 +341,8 @@ export async function linkWalletHandler(req, res) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
+      // No maxAge: a browser-session cookie, cleared when the browser closes.
+      // The server-side session itself still expires after 24 hours.
     });
 
     res.json({
@@ -541,7 +545,8 @@ export async function walletLoginHandler(req, res) {
       secure: isProd,
       sameSite: 'lax',
       path: '/',
-      maxAge: 24 * 60 * 60 * 1000,
+      // No maxAge: a browser-session cookie, cleared when the browser closes.
+      // The server-side session itself still expires after 24 hours.
     });
 
     const userCredits = getUserBalance(normalized);
