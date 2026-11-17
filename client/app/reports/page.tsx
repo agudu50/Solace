@@ -2,28 +2,31 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertTriangle,
+  ArrowRight,
+  ArrowUpRight,
+  BrainCircuit,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Code2,
+  Copy,
+  ExternalLink,
+  FileCode,
+  Loader2,
   Search,
   ShieldCheck,
-  Shield,
-  ExternalLink,
-  FileText,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowUpRight,
-  Clock,
-  Calendar,
-  Layers,
-  Copy,
-  Check,
-  BrainCircuit,
-  SlidersHorizontal,
-  FileCode,
   X,
-  Code2,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
+import { Chip, Panel, PanelHeader } from '../../components/dashboard/Panel';
+import { ScoreRing } from '../../components/dashboard/Visuals';
+import { Segmented } from '../../components/audit/StudioParts';
+import ReportDeck3D from '../../components/reports/ReportDeck3D';
+import { CountUp, EASE_OUT, SplitWords } from '../../components/landing/motion';
+import { btn } from '../../components/landing/primitives';
 
 interface VulnerabilityDetail {
   title: string;
@@ -272,7 +275,7 @@ function ReportsContent() {
           contract: localMatch?.contract || 'On-Chain Verified Soroban Contract',
           auditType: remoteData.audit_type || 'PRE_DEPLOYMENT',
           riskScore: remoteData.risk_score ?? (localMatch?.riskScore || 0),
-          isSecure: remoteData.is_secure ?? (localMatch?.isSecure || true),
+          isSecure: remoteData.is_secure ?? localMatch?.isSecure ?? true,
           auditor: remoteData.auditor || localMatch?.auditor || 'Solace Signer',
           timestamp: 'Confirmed on Stellar Soroban Ledger',
           date: localMatch?.date || 'Today',
@@ -358,104 +361,120 @@ function ReportsContent() {
     setTimeout(() => setCopiedFixIndex(null), 2000);
   };
 
-  const displayList = [...reportsList];
+  // History entries are prepended newest-first but often lack `createdAt`,
+  // so fall back to their stored order to keep Newest/Oldest meaningful.
+  const displayList = reportsList
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      const byTime = (b.r.createdAt || 0) - (a.r.createdAt || 0);
+      if (sortBy === 'newest') return byTime || a.i - b.i;
+      if (sortBy === 'oldest') return -byTime || b.i - a.i;
+      if (sortBy === 'score-high') return b.r.riskScore - a.r.riskScore;
+      return a.r.riskScore - b.r.riskScore;
+    })
+    .map(({ r }) => r);
 
-  // Sort list: Always new contracts at top by default
-  displayList.sort((a, b) => {
-    if (sortBy === 'newest') {
-      return (b.createdAt || 0) - (a.createdAt || 0);
-    }
-    if (sortBy === 'oldest') {
-      return (a.createdAt || 0) - (b.createdAt || 0);
-    }
-    if (sortBy === 'score-high') {
-      return b.riskScore - a.riskScore;
-    }
-    if (sortBy === 'score-low') {
-      return a.riskScore - b.riskScore;
-    }
-    return 0;
-  });
+  const secureCount = reportsList.filter((r) => r.isSecure).length;
+  const issueCount = reportsList.reduce((n, r) => n + (r.vulnerabilities?.length || 0), 0);
+  const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`;
+
+  const KPIS = [
+    { label: 'Total proofs', value: String(reportsList.length), sub: 'recorded audits' },
+    { label: 'Verified secure', value: String(secureCount), sub: 'passed every invariant' },
+    { label: 'Action required', value: String(reportsList.length - secureCount), sub: 'need fixes before deploy' },
+    { label: 'Issues found', value: String(issueCount), sub: 'with AI-drafted fixes' },
+  ];
 
   return (
-    <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
-      <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {/* Top Header Card */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
+    <div className="relative w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[420px] grid-lines pointer-events-none [mask-image:radial-gradient(ellipse_70%_100%_at_50%_0%,#000_30%,transparent_100%)]"
+      />
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                  <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                  <span>Ledger Provenance &amp; AI History</span>
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                  Stellar Soroban Testnet (Protocol 22)
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                Verified On-Chain Reports &amp; AI Recommendations
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-xl leading-relaxed">
-                Review cryptographically signed smart contract audit reports and recall the complete AI security recommendations and code fixes at any time.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 flex-wrap shrink-0">
-              <a
-                href={`https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs px-4 py-2 rounded-full bg-slate-100/90 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap font-bold"
-              >
-                <span>Stellar Expert (Testnet)</span>
+      <main className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+          <div className="min-w-0 max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: EASE_OUT }}
+              className="flex flex-wrap items-center gap-2 mb-5"
+            >
+              <Chip tone="accent" pulse>Ledger provenance</Chip>
+              <Chip>{network === 'mainnet' ? 'Mainnet' : 'Testnet'} · Protocol 22</Chip>
+            </motion.div>
+            <h1 className="text-3xl sm:text-5xl font-medium tracking-tightest leading-[1.05] text-slate-900 dark:text-white">
+              <SplitWords text="Verified audit reports" />
+            </h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400"
+            >
+              Every signed audit, with its full AI recommendations and Rust fixes, ready to revisit any time.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.35, ease: EASE_OUT }}
+              className="mt-6 flex flex-wrap items-center gap-2"
+            >
+              <Link href="/audit" className={`${btn.primary} group`}>
+                Launch Audit Studio
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className={btn.secondary}>
+                Stellar Expert
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
-              <Link
-                href="/audit"
-                className="text-xs px-5 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white shadow-md shadow-accent/25 transition flex items-center gap-2 whitespace-nowrap font-bold hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Launch Audit Studio</span>
-              </Link>
-            </div>
+            </motion.div>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="hidden lg:block shrink-0 lg:mr-10"
+          >
+            <ReportDeck3D items={displayList} onOpen={executeLookup} />
+          </motion.div>
         </div>
 
-        {/* Quick Hash Buttons from Real Inscriptions */}
-        {reportsList.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Recent Inscriptions:</span>
-            {reportsList.slice(0, 3).map((rep) => (
-              <button
-                key={rep.hash}
-                type="button"
-                onClick={() => executeLookup(rep.hash)}
-                className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
-                  searchHash === rep.hash
-                    ? 'bg-accent text-white border-accent'
-                    : 'bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
-                }`}
+        {/* KPI strip */}
+        <Panel index={0} className="mt-8 sm:mt-10">
+          <dl className="grid grid-cols-2 lg:grid-cols-4">
+            {KPIS.map((k, i) => (
+              <div
+                key={k.label}
+                className={`px-5 sm:px-6 py-5 ${i % 2 === 1 ? 'border-l' : ''} ${i >= 2 ? 'border-t lg:border-t-0' : ''} ${
+                  i === 2 ? 'lg:border-l' : ''
+                } border-slate-200 dark:border-white/10`}
               >
-                #{rep.contract}
-              </button>
+                <dt className="eyebrow">{k.label}</dt>
+                <dd className="mt-2 text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
+                  <CountUp value={k.value} />
+                </dd>
+                <dd className="mt-1 text-xs text-slate-500">{k.sub}</dd>
+              </div>
             ))}
-          </div>
-        )}
+          </dl>
+        </Panel>
 
-        {/* Search Bar - Starts completely EMPTY by default */}
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        {/* Search */}
+        <Panel index={1} className="mt-4 sm:mt-5">
+          <form onSubmit={handleSearch} className="p-4 sm:p-5 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={searchHash}
                 onChange={(e) => setSearchHash(e.target.value)}
-                placeholder="Search by contract SHA-256 hash (e.g. 07c390518ca81e3...)..."
-                className="w-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
+                aria-label="Contract SHA-256 hash"
+                placeholder="Search by contract SHA-256 hash, e.g. 07c390518ca81e3…"
+                className="w-full h-10 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] pl-10 pr-10 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-sans focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
               />
               {searchHash && (
                 <button
@@ -464,609 +483,437 @@ function ReportsContent() {
                     setSearchHash('');
                     setSearchResult(null);
                   }}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition"
-                  title="Clear search"
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-            <button
-              type="submit"
-              disabled={searching}
-              className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold rounded-2xl text-sm shadow-md shadow-accent/25 transition flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <Search className="w-4 h-4" />
-              <span>{searching ? 'Querying Ledger...' : 'Lookup Report'}</span>
+            <button type="submit" disabled={searching} className={btn.primary}>
+              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {searching ? 'Querying ledger…' : 'Look up'}
             </button>
-          </div>
-        </form>
-
-        {/* Selected / Search Result Card (Only rendered when user searches or clicks a contract) */}
-        {searchResult && (
-          <div className="mb-8 transition-all duration-300">
-            {searchResult.notFound ? (
-              <div className="p-6 bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-3xl text-sm text-slate-700 dark:text-slate-300 font-medium shadow-sm flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-                  <span>
-                    No on-chain audit record found for hash <span className="font-mono text-slate-900 dark:text-white font-bold break-all">{searchHash}</span>.
-                  </span>
-                </div>
+          </form>
+          {reportsList.length > 0 && (
+            <div className="px-4 sm:px-5 pb-4 flex flex-wrap items-center gap-2 -mt-1">
+              <span className="eyebrow mr-1">Recent</span>
+              {reportsList.slice(0, 3).map((rep) => (
                 <button
+                  key={rep.hash}
                   type="button"
-                  onClick={() => setSearchResult(null)}
-                  className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition"
+                  onClick={() => executeLookup(rep.hash)}
+                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border text-xs transition-colors cursor-pointer ${
+                    searchHash === rep.hash
+                      ? 'border-accent bg-accent-subtle text-accent'
+                      : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20'
+                  }`}
                 >
-                  <X className="w-4 h-4" />
+                  <span className={`w-1.5 h-1.5 rounded-full ${rep.isSecure ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  {rep.contract}
                 </button>
-              </div>
-            ) : (
-              <div className="p-5 sm:p-7 bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm transition-colors">
-                {/* Header Info */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 uppercase tracking-wider inline-block">
-                        Active Inspection Dossier
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                        {searchResult.auditType}
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        {/* Lookup result */}
+        <AnimatePresence mode="wait">
+          {searchResult && (
+            <motion.div
+              key={searchResult.notFound ? `nf-${searchResult.hash}` : searchResult.hash}
+              initial={{ opacity: 0, y: 16, rotateX: 10 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.55, ease: EASE_OUT }}
+              style={{ transformPerspective: 1600, transformOrigin: '50% 0%' }}
+              className="mt-4 sm:mt-5"
+            >
+              {searchResult.notFound ? (
+                <Panel>
+                  <div className="flex items-center justify-between gap-3 p-5">
+                    <div className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300 min-w-0">
+                      <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                      <span className="min-w-0">
+                        No on-chain audit record found for{' '}
+                        <span className="font-mono text-slate-900 dark:text-white break-all">{searchHash}</span>.
                       </span>
                     </div>
-
-                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white break-words">
-                      {searchResult.contract}
-                    </h3>
-
-                    {/* Cryptographic SHA-256 Hash Display with Copy */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 max-w-full">
-                        <span className="text-[11px] font-mono text-slate-500 shrink-0">SHA256:</span>
-                        <p className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 break-all select-all">
-                          {searchResult.hash}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyHash(searchResult.hash)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200/80 dark:border-slate-700 transition flex items-center gap-1.5 shrink-0"
-                      >
-                        {copiedHash ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedHash ? 'Copied' : 'Copy Hash'}</span>
-                      </button>
-                    </div>
+                    <CloseButton onClick={() => setSearchResult(null)} />
                   </div>
-
-                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-xs ${
-                      searchResult.isSecure
-                        ? 'bg-accent-subtle text-accent border border-accent/20'
-                        : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
-                    }`}>
-                      {searchResult.isSecure ? '• SECURE' : '• ACTION REQUIRED'}
-                    </span>
+                </Panel>
+              ) : (
+                <Panel className="border-accent/40 dark:border-accent/40">
+                  <PanelHeader
+                    eyebrow="Inspection dossier"
+                    title={searchResult.contract}
+                    action={
+                      <div className="flex items-center gap-2">
+                        <Chip tone={searchResult.isSecure ? 'ok' : 'bad'}>{searchResult.isSecure ? 'Secure' : 'Action required'}</Chip>
+                        <CloseButton onClick={() => setSearchResult(null)} />
+                      </div>
+                    }
+                  />
+                  <div className="px-5 sm:px-6 -mt-1 flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-xs text-slate-500 break-all select-all">{searchResult.hash}</span>
                     <button
                       type="button"
-                      onClick={() => setSearchResult(null)}
-                      className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition"
-                      title="Close recommendation view"
+                      onClick={() => handleCopyHash(searchResult.hash)}
+                      aria-label="Copy hash"
+                      className="grid place-items-center w-7 h-7 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer"
                     >
-                      <X className="w-5 h-5" />
+                      {copiedHash ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                </div>
 
-                {/* Enhanced Core Parameters Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 py-5 border-b border-slate-100 dark:border-slate-800">
-                  {/* Security Score */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                      Security Score
-                    </span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className={`font-black text-2xl sm:text-3xl ${searchResult.riskScore > 50 ? 'text-red-600 dark:text-red-400' : 'text-accent'}`}>
-                        {searchResult.riskScore}
-                      </span>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ 100</span>
-                    </div>
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mt-1">
-                      {searchResult.riskScore > 50 ? 'Critical Vulnerabilities Detected' : 'Verified Secure AST Invariants'}
-                    </span>
-                  </div>
-
-                  {/* Audit Mode */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                      Audit Mode
-                    </span>
-                    <p className="text-slate-900 dark:text-white font-bold text-base mt-1">
-                      {searchResult.auditType}
-                    </p>
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mt-1">
-                      {searchResult.auditType === 'PRE_DEPLOYMENT' ? 'Static AST & Auth Invariants' : 'Live Host State & Rent TTL'}
-                    </span>
-                  </div>
-
-                  {/* Auditor Keypair */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                      Auditor Keypair
-                    </span>
-                    <p className="text-slate-900 dark:text-slate-100 font-mono font-bold text-xs mt-1 truncate" title={searchResult.auditor}>
-                      {searchResult.auditor ? `${searchResult.auditor.slice(0, 8)}...${searchResult.auditor.slice(-6)}` : 'Solace Master Key'}
-                    </p>
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mt-1">
-                      Ed25519 Verified Signer
-                    </span>
-                  </div>
-
-                  {/* Ledger Verification */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                      Ledger Verification
-                    </span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
-                      <p className="text-slate-900 dark:text-white font-bold text-xs">
-                        {searchResult.timestamp}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mt-1">
-                      Stellar Testnet Ledger
-                    </span>
-                  </div>
-                </div>
-
-                {/* AI Security Recommendation Section */}
-                <div className="pt-6 space-y-5">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-accent-subtle text-accent border border-accent/25 flex items-center justify-center shrink-0 shadow-xs">
-                        <BrainCircuit className="w-4 h-4 text-accent" />
+                  <dl className="mt-5 grid grid-cols-2 lg:grid-cols-4 border-y border-slate-200 dark:border-white/10">
+                    <div className="px-5 sm:px-6 py-4 flex items-center gap-3">
+                      <ScoreRing
+                        value={searchResult.riskScore}
+                        size={52}
+                        color={searchResult.riskScore > 50 ? '#ef4444' : undefined}
+                        label={`Score ${searchResult.riskScore} of 100`}
+                      />
+                      <div className="min-w-0">
+                        <dt className="eyebrow">Score</dt>
+                        <dd className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                          {searchResult.riskScore > 50 ? 'Critical issues detected' : 'Invariants verified'}
+                        </dd>
                       </div>
-                      <div>
-                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
-                          AI Security Recommendation &amp; AST Analysis
-                        </h4>
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                          Dual Flash AST Invariant Verification Engine
+                    </div>
+                    <DossierCell label="Audit mode" value={searchResult.auditType} note={searchResult.auditType === 'PRE_DEPLOYMENT' ? 'Static AST and auth invariants' : 'Live host state and rent TTL'} className="border-l" />
+                    <DossierCell
+                      label="Auditor"
+                      value={<span className="font-mono">{searchResult.auditor ? `${searchResult.auditor.slice(0, 8)}…${searchResult.auditor.slice(-6)}` : 'Solace master key'}</span>}
+                      note="Ed25519 verified signer"
+                      className="border-t lg:border-t-0 lg:border-l"
+                    />
+                    <DossierCell
+                      label="Ledger"
+                      value={
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {searchResult.timestamp}
                         </span>
-                      </div>
-                    </div>
+                      }
+                      note="Stellar testnet ledger"
+                      className="border-t border-l lg:border-t-0"
+                    />
+                  </dl>
 
-                    <Link
-                      href="/audit"
-                      className="px-4 py-2 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/25 flex items-center gap-1.5 hover:scale-105 active:scale-95"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Test &amp; Fix in Audit Studio</span>
-                    </Link>
+                  <div className="p-5 sm:p-6">
+                    <RecommendationBody
+                      summary={searchResult.summary}
+                      vulns={searchResult.vulnerabilities || []}
+                      action={
+                        <Link href="/audit" className={`${btn.secondary} h-8 px-3 text-xs`}>
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          Test and fix in Studio
+                        </Link>
+                      }
+                    />
                   </div>
+                </Panel>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                  {/* Executive Summary */}
-                  {searchResult.summary && (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 text-xs">
-                      <span className="font-bold text-slate-900 dark:text-white block mb-1.5 text-xs sm:text-sm">
-                        Executive Summary
-                      </span>
-                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium text-xs sm:text-[13px]">
-                        {searchResult.summary}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Vulnerabilities & Recommended Fixes with Syntax Highlighting */}
-                  {searchResult.vulnerabilities && searchResult.vulnerabilities.length > 0 ? (
-                    <div className="space-y-4">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block uppercase tracking-wider">
-                        Detected Invariant Flaws &amp; Actionable Recommendations ({searchResult.vulnerabilities.length})
-                      </span>
-                      {searchResult.vulnerabilities.map((vuln, i) => (
-                        <div
-                          key={i}
-                          className="p-4 sm:p-5 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/60 text-xs"
-                        >
-                          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                            <span className="font-bold text-red-950 dark:text-red-200 text-sm sm:text-base">
-                              {vuln.title}
-                            </span>
-                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-red-600 text-white shrink-0 shadow-xs">
-                              {vuln.severity}
-                            </span>
-                          </div>
-                          <p className="text-red-950 dark:text-red-200 text-xs sm:text-[13px] leading-relaxed mb-4 font-medium">
-                            {vuln.description}
-                          </p>
-
-                          {/* Recommended AI Fix with syntax highlighting */}
-                          <div className="rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col">
-                            {/* Editor Top Bar */}
-                            <div className="flex justify-between items-center text-xs text-slate-300 px-3.5 py-2.5 border-b border-slate-800 font-mono bg-slate-900/80 flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
-                                <Code2 className="w-3.5 h-3.5 text-accent" />
-                                <span className="font-bold text-slate-100">Recommended AI Fix</span>
-                                <span className="text-slate-500">•</span>
-                                <span className="text-slate-400 text-[11px]">Soroban Rust (no_std)</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyFix(vuln.recommendation, i)}
-                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold border border-slate-700 transition flex items-center gap-1.5"
-                              >
-                                {copiedFixIndex === i ? (
-                                  <Check className="w-3 h-3 text-accent" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                                <span>{copiedFixIndex === i ? 'Copied' : 'Copy Fix'}</span>
-                              </button>
-                            </div>
-
-                            {/* Code Container with Rust Highlighting */}
-                            <pre
-                              className="p-4 m-0 overflow-x-auto text-slate-200 font-mono text-xs leading-6 selection:bg-accent/40"
-                              dangerouslySetInnerHTML={{
-                                __html: highlightRustSnippet(vuln.recommendation),
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 flex items-center gap-3.5 text-xs">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-                      <div>
-                        <span className="font-bold text-emerald-950 dark:text-emerald-200 text-sm block">
-                          Zero Invariant Vulnerabilities Detected
-                        </span>
-                        <p className="text-emerald-900 dark:text-emerald-300 font-medium mt-0.5 leading-relaxed">
-                          All authorization guards, persistent rent bounds, and panic safety assertions are fully satisfied on Stellar Soroban.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Recent Ledger Records List Header with Sorting */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        {/* History */}
+        <div className="mt-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-              Recent Verified Audits &amp; History
-            </h2>
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Click any report below to inspect its detailed AI recommendations
+            <p className="eyebrow inline-flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-[1px] bg-accent" />
+              History
             </p>
+            <h2 className="mt-2 text-xl sm:text-2xl font-medium tracking-tight text-slate-900 dark:text-white">Recent verified audits</h2>
+            <p className="mt-1 text-xs text-slate-500">Open any report to see its AI recommendations and fixes.</p>
           </div>
-
-          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end flex-wrap">
-            {/* Sort Controls */}
-            <div className="flex items-center gap-1.5 bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-1 rounded-full shadow-xs text-xs">
-              <span className="text-[11px] font-bold text-slate-500 pl-2 hidden sm:inline">Sort:</span>
-              <button
-                type="button"
-                onClick={() => setSortBy('newest')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                  sortBy === 'newest'
-                    ? 'bg-accent text-white shadow-xs'
-                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Newest First
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortBy('score-high')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                  sortBy === 'score-high'
-                    ? 'bg-accent text-white shadow-xs'
-                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Highest Risk
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortBy('oldest')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                  sortBy === 'oldest'
-                    ? 'bg-accent text-white shadow-xs'
-                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Oldest First
-              </button>
-            </div>
-
-            <span className="text-xs font-bold text-accent px-3 py-1 bg-accent-subtle rounded-full border border-accent/20">
-              {displayList.length} Total Proofs
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Segmented
+              id="reports-sort"
+              label="Sort reports"
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                { value: 'newest', label: 'Newest' },
+                { value: 'score-high', label: 'Highest score' },
+                { value: 'oldest', label: 'Oldest' },
+              ]}
+            />
+            <Chip>{displayList.length} total</Chip>
           </div>
         </div>
 
-        {/* Contract History List */}
         {displayList.length === 0 ? (
-          <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 rounded-3xl shadow-sm text-center flex flex-col items-center justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-accent-subtle text-accent border border-accent/20 flex items-center justify-center mb-4 shadow-xs">
-              <FileCode className="w-7 h-7" />
+          <Panel index={2}>
+            <div className="flex flex-col items-center text-center px-6 py-14">
+              <motion.span
+                initial={{ rotateX: 70, opacity: 0 }}
+                animate={{ rotateX: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: EASE_OUT }}
+                style={{ transformPerspective: 400 }}
+                className="grid place-items-center w-11 h-11 rounded-md bg-accent-subtle text-accent"
+              >
+                <FileCode className="w-5 h-5" />
+              </motion.span>
+              <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">No audit reports yet</p>
+              <p className="mt-1 text-xs text-slate-500 max-w-sm leading-relaxed">
+                Analyse a Soroban contract in Audit Studio to create your first verifiable security record.
+              </p>
+              <Link href="/audit" className={`${btn.primary} mt-5`}>
+                Launch Audit Studio
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1.5">
-              No Audit Reports Inscribed Yet
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-5 leading-relaxed">
-              Upload and analyze your Soroban smart contracts in Audit Studio to generate permanent cryptographic AST security proofs.
-            </p>
-            <Link
-              href="/audit"
-              className="px-5 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/25 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Launch Audit Studio</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </div>
+          </Panel>
         ) : (
-          <div className="space-y-3.5">
-            {displayList.map((item, idx) => {
-              const isExpanded = expandedHash === item.hash;
-              const resolvedVulns = item.vulnerabilities || [];
-              const resolvedSummary = item.summary || '';
-
-              return (
-                <div
-                  key={idx}
-                  className={`bg-white dark:bg-[#161616] border p-5 rounded-3xl shadow-sm transition-all duration-200 group ${
-                    isExpanded
-                      ? 'border-accent ring-2 ring-accent/20 shadow-md'
-                      : 'border-slate-200/80 dark:border-slate-800 hover:border-accent/40 dark:hover:border-accent/40 hover:shadow-md'
-                  }`}
-                >
-                {/* Title & Status Bar (Clickable to toggle) */}
-                <div
-                  className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2.5 cursor-pointer select-none"
-                  onClick={() => handleToggleRecommendation(item.hash)}
-                  title="Click to toggle recommendation dropdown"
-                >
-                  <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-accent transition">
-                      {item.contract}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700">
-                      {item.auditType}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full w-fit ${
-                      item.isSecure
-                        ? 'bg-accent-subtle text-accent border border-accent/20'
-                        : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
-                    }`}>
-                      {item.isSecure ? '• SECURE' : '• ACTION REQUIRED'}
-                    </span>
-                    <span className="text-xs font-mono text-slate-900 dark:text-white font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                      {item.riskScore}/100
-                    </span>
-                  </div>
-                </div>
-
-                {/* Hash: Fully Visible on Mobile (break-all) */}
-                <p className="text-xs font-mono text-slate-700 dark:text-slate-300 font-medium mb-2.5 break-all leading-relaxed">
-                  <span className="text-slate-400 dark:text-slate-500 font-normal">Hash: </span>
-                  {item.hash}
-                </p>
-
-                {/* Summary: Fully Visible, No Clamp Cuts */}
-                {resolvedSummary && (
-                  <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mb-3.5 leading-relaxed break-words">
-                    {resolvedSummary}
-                  </p>
-                )}
-
-                {/* Footer Bar: Auditor, Checked Date/Time, Dropdown Toggle Button */}
-                <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium pt-3.5 border-t border-slate-100 dark:border-slate-800 flex-wrap gap-2.5">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span>
-                      Auditor:{' '}
-                      <span className="font-mono font-bold text-slate-900 dark:text-white">
-                        {item.auditor ? `${item.auditor.slice(0, 8)}...${item.auditor.slice(-6)}` : 'Solace Keypair'}
-                      </span>
-                    </span>
-                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                    <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                      <Clock className="w-3.5 h-3.5 text-accent" />
-                      <span>
-                        Checked:{' '}
-                        {item.date
-                          ? `${item.date} • ${item.time}`
-                          : item.timestamp}
-                      </span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
+          <Panel index={2}>
+            <motion.ul
+              initial="hidden"
+              animate="show"
+              variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.2 } } }}
+              className="divide-y divide-slate-200 dark:divide-white/10"
+            >
+              {displayList.map((item, idx) => {
+                const isExpanded = expandedHash === item.hash;
+                const panelId = `report-${idx}`;
+                return (
+                  <motion.li
+                    key={`${item.hash}-${idx}`}
+                    layout="position"
+                    variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT } } }}
+                    className={`relative transition-colors ${isExpanded ? 'bg-slate-50/80 dark:bg-white/[0.02]' : ''}`}
+                  >
+                    {isExpanded && <motion.span layoutId="report-active" className="absolute left-0 inset-y-0 w-0.5 bg-accent" />}
                     <button
                       type="button"
-                      onClick={(e) => handleToggleRecommendation(item.hash, e)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
-                        isExpanded
-                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 ring-2 ring-accent/30'
-                          : 'bg-accent hover:bg-accent-hover text-white shadow-accent/25 hover:scale-105'
-                      }`}
+                      onClick={() => handleToggleRecommendation(item.hash)}
+                      aria-expanded={isExpanded}
+                      aria-controls={panelId}
+                      className="group w-full text-left px-5 sm:px-6 py-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors"
                     >
-                      <span>{isExpanded ? 'Hide Recommendation' : 'View Recommendation'}</span>
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      <div className="flex items-start gap-4">
+                        <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${item.isSecure ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm sm:text-[15px] font-medium text-slate-900 dark:text-white">{item.contract}</span>
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">{item.auditType}</span>
+                          </div>
+                          <p className="mt-1 font-mono text-xs text-slate-500 break-all">{item.hash}</p>
+                          {item.summary && !isExpanded && (
+                            <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">{item.summary}</p>
+                          )}
+                          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                            <span>
+                              Auditor{' '}
+                              <span className="font-mono text-slate-700 dark:text-slate-300">
+                                {item.auditor ? `${item.auditor.slice(0, 8)}…${item.auditor.slice(-6)}` : 'Solace keypair'}
+                              </span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {item.date ? `${item.date} · ${item.time}` : item.timestamp}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-right">
+                            <p className="text-lg font-medium tabular-nums text-slate-900 dark:text-white leading-none">{item.riskScore}</p>
+                            <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">score</p>
+                          </div>
+                          <motion.span
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.3, ease: EASE_OUT }}
+                            className="grid place-items-center w-8 h-8 rounded-md border border-slate-200 dark:border-white/10 text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </motion.span>
+                        </div>
+                      </div>
                     </button>
-                  </div>
-                </div>
 
-                {/* Inline Expandable Dropdown Menu: Shows everything directly on this card without scrolling to the top */}
-                {isExpanded && (
-                  <div
-                    className="mt-4 pt-5 border-t border-slate-200/90 dark:border-slate-800 animate-in fade-in slide-in-from-top-2 duration-200 space-y-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Dropdown Header & AST Badge */}
-                    <div className="flex items-center justify-between flex-wrap gap-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-accent-subtle text-accent border border-accent/25 flex items-center justify-center shrink-0 shadow-xs">
-                          <BrainCircuit className="w-3.5 h-3.5 text-accent" />
-                        </div>
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                            AI Security Recommendation &amp; AST Analysis
-                          </h4>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-                            Dual Flash AST Invariant Verification Engine
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href="/audit"
-                          className="px-3 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white text-[11px] font-bold transition shadow-xs flex items-center gap-1.5 hover:scale-105 active:scale-95"
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <motion.div
+                          id={panelId}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.4, ease: EASE_OUT }}
+                          className="overflow-hidden"
                         >
-                          <ShieldCheck className="w-3 h-3" />
-                          <span>Test in Audit Studio</span>
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Executive Summary in Dropdown */}
-                    {resolvedSummary && (
-                      <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 text-xs">
-                        <span className="font-bold text-slate-900 dark:text-white block mb-1 text-xs">
-                          Executive Summary
-                        </span>
-                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium text-xs sm:text-[13px]">
-                          {resolvedSummary}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Detected Invariant Flaws with Syntax-Highlighted Rust Fixes */}
-                    {resolvedVulns.length > 0 ? (
-                      <div className="space-y-3">
-                        <span className="text-[11px] font-bold text-slate-900 dark:text-white block uppercase tracking-wider">
-                          Detected Invariant Flaws &amp; Actionable Recommendations ({resolvedVulns.length})
-                        </span>
-                        {resolvedVulns.map((vuln: any, vIdx: number) => {
-                          const fixKey = `${item.hash}-${vIdx}`;
-                          const isCopied = copiedCardFixKey === fixKey;
-                          return (
-                            <div
-                              key={vIdx}
-                              className="p-3.5 sm:p-4 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/60 text-xs"
-                            >
-                              <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
-                                <span className="font-bold text-red-950 dark:text-red-200 text-xs sm:text-sm">
-                                  {vuln.title}
-                                </span>
-                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white shrink-0 shadow-xs">
-                                  {vuln.severity}
-                                </span>
-                              </div>
-                              <p className="text-red-950 dark:text-red-200 text-xs sm:text-[13px] leading-relaxed mb-3 font-medium">
-                                {vuln.description}
-                              </p>
-
-                              {/* Recommended AI Fix with syntax highlighting */}
-                              <div className="rounded-xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col">
-                                <div className="flex justify-between items-center text-[11px] text-slate-300 px-3 py-2 border-b border-slate-800 font-mono bg-slate-900/80 flex-wrap gap-2">
-                                  <div className="flex items-center gap-1.5">
-                                    <Code2 className="w-3 h-3 text-accent" />
-                                    <span className="font-bold text-slate-100">Recommended AI Fix</span>
-                                    <span className="text-slate-500">•</span>
-                                    <span className="text-slate-400 text-[10px]">Soroban Rust (no_std)</span>
-                                  </div>
+                          <div className="px-5 sm:px-6 pb-6 sm:pl-[3.25rem]">
+                            <RecommendationBody
+                              summary={item.summary}
+                              vulns={item.vulnerabilities || []}
+                              action={
+                                <div className="flex items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      navigator.clipboard.writeText(vuln.recommendation);
-                                      setCopiedCardFixKey(fixKey);
-                                      setTimeout(() => setCopiedCardFixKey(null), 2000);
+                                      navigator.clipboard.writeText(item.hash);
+                                      setCopiedCardHash(item.hash);
+                                      setTimeout(() => setCopiedCardHash(null), 2000);
                                     }}
-                                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold border border-slate-700 transition flex items-center gap-1"
+                                    className={`${btn.secondary} h-8 px-3 text-xs`}
                                   >
-                                    {isCopied ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
-                                    <span>{isCopied ? 'Copied' : 'Copy Fix'}</span>
+                                    {copiedCardHash === item.hash ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                    {copiedCardHash === item.hash ? 'Copied' : 'Copy hash'}
                                   </button>
+                                  <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className={`${btn.secondary} h-8 px-3 text-xs`}>
+                                    Explorer <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                  <Link href="/audit" className={`${btn.primary} h-8 px-3 text-xs`}>
+                                    Test in Studio
+                                  </Link>
                                 </div>
-
-                                <pre
-                                  className="p-3 m-0 overflow-x-auto text-slate-200 font-mono text-xs leading-5 selection:bg-accent/40"
-                                  dangerouslySetInnerHTML={{
-                                    __html: highlightRustSnippet(vuln.recommendation),
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 flex items-center gap-3 text-xs">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                        <div>
-                          <span className="font-bold text-emerald-950 dark:text-emerald-200 text-xs sm:text-sm block">
-                            Zero Invariant Vulnerabilities Detected
-                          </span>
-                          <p className="text-emerald-900 dark:text-emerald-300 font-medium mt-0.5 leading-relaxed text-xs">
-                            All authorization guards, persistent rent bounds, and panic safety assertions are fully satisfied on Stellar Soroban.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Dropdown Quick Actions Bar */}
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 flex-wrap gap-2 text-xs">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(item.hash);
-                            setCopiedCardHash(item.hash);
-                            setTimeout(() => setCopiedCardHash(null), 2000);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1"
-                        >
-                          {copiedCardHash === item.hash ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
-                          <span>{copiedCardHash === item.hash ? 'Hash Copied' : 'Copy Hash'}</span>
-                        </button>
-
-                        <a
-                          href={`https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center gap-1"
-                        >
-                          <span>Stellar Expert (Testnet)</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setExpandedHash(null)}
-                        className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                      >
-                        Close Recommendation
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                              }
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.li>
+                );
+              })}
+            </motion.ul>
+          </Panel>
+        )}
       </main>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared report pieces                                                */
+/* ------------------------------------------------------------------ */
+
+function CloseButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Close"
+      className="grid place-items-center w-8 h-8 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+    >
+      <X className="w-4 h-4" />
+    </button>
+  );
+}
+
+function DossierCell({ label, value, note, className = '' }: { label: string; value: React.ReactNode; note: string; className?: string }) {
+  return (
+    <div className={`px-5 sm:px-6 py-4 min-w-0 border-slate-200 dark:border-white/10 ${className}`}>
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-1.5 text-sm text-slate-900 dark:text-white truncate">{value}</dd>
+      <dd className="mt-0.5 text-[11px] text-slate-500 truncate">{note}</dd>
+    </div>
+  );
+}
+
+/** Summary, issues with Rust fixes (or an all-clear), and an action row. */
+function RecommendationBody({
+  summary,
+  vulns,
+  action,
+}: {
+  summary?: string;
+  vulns: VulnerabilityDetail[];
+  action: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
+          <BrainCircuit className="w-4 h-4 text-accent" />
+          AI recommendation and AST analysis
+        </span>
+        {action}
+      </div>
+
+      {summary && (
+        <div>
+          <p className="eyebrow mb-1.5">Executive summary</p>
+          <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed">{summary}</p>
+        </div>
+      )}
+
+      {vulns.length > 0 ? (
+        <div>
+          <p className="eyebrow mb-2.5">Issues and fixes ({vulns.length})</p>
+          <ul className="space-y-3">
+            {vulns.map((v, i) => (
+              <VulnBlock key={`${v.title}-${i}`} vuln={v} index={i} />
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="flex items-start gap-3 p-4 rounded-md border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">No invariant vulnerabilities detected</p>
+            <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
+              Authorization guards, persistent rent bounds and panic safety checks all pass.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SEV_TONE: Record<string, string> = {
+  CRITICAL: 'text-red-500 border-red-500/30 bg-red-500/10',
+  HIGH: 'text-amber-500 border-amber-500/30 bg-amber-500/10',
+  MEDIUM: 'text-sky-500 border-sky-500/30 bg-sky-500/10',
+  LOW: 'text-slate-500 border-slate-500/30 bg-slate-500/10',
+};
+
+function VulnBlock({ vuln, index }: { vuln: VulnerabilityDetail; index: number }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <motion.li
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.45, delay: 0.1 + index * 0.06, ease: EASE_OUT }}
+      className="rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] overflow-hidden"
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-slate-900 dark:text-white">{vuln.title}</p>
+          <span className={`shrink-0 px-1.5 h-5 inline-flex items-center rounded border font-mono text-[10px] uppercase ${SEV_TONE[vuln.severity] ?? SEV_TONE.LOW}`}>
+            {vuln.severity}
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed break-words">{vuln.description}</p>
+      </div>
+      <div className="bg-[#121212] border-t border-slate-200 dark:border-white/10">
+        <div className="flex items-center justify-between gap-2 px-4 h-9 border-b border-white/10 text-[11px]">
+          <span className="inline-flex items-center gap-1.5 text-emerald-400">
+            <Code2 className="w-3.5 h-3.5" />
+            Recommended fix
+            <span className="text-slate-500 font-mono">· Soroban Rust</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(vuln.recommendation);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="inline-flex items-center gap-1 h-6 px-2 rounded-md border border-white/10 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <pre
+          className="p-4 m-0 overflow-x-auto text-slate-200 font-mono text-xs leading-6 modern-code-scrollbar selection:bg-accent/40"
+          dangerouslySetInnerHTML={{ __html: highlightRustSnippet(vuln.recommendation) }}
+        />
+      </div>
+    </motion.li>
   );
 }
 
@@ -1074,8 +921,8 @@ export default function ReportsPage() {
   return (
     <Suspense
       fallback={
-        <div className="w-full max-w-[1700px] mx-auto px-4 py-12 text-center text-slate-400">
-          Loading verified reports...
+        <div className="w-full min-h-[60vh] grid place-items-center">
+          <Loader2 className="w-6 h-6 animate-spin text-accent" />
         </div>
       }
     >
