@@ -35,12 +35,13 @@ import {
 } from 'lucide-react';
 import { connectWallet, detectWalletNetwork, CONTRACT_ID } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
+import { useToast } from '../../context/ToastContext';
 import PricingModal from '../pricing/PricingModal';
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { walletKey, user, network, connecting, connect, disconnect, setNetwork, toggleNetwork, isAdmin } = useWallet();
-  const [notice, setNotice] = useState<string>('');
+  const toast = useToast();
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
   const [showInvariantsModal, setShowInvariantsModal] = useState<boolean>(false);
@@ -97,7 +98,6 @@ export default function Navbar() {
   };
 
   const handleConnect = async () => {
-    setNotice('');
     try {
       await connect();
     } catch (err: any) {
@@ -108,13 +108,9 @@ export default function Navbar() {
       }
       if (msg === 'FREIGHTER_NOT_INSTALLED') {
         window.open('https://www.freighter.app/', '_blank');
-      } else if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('cancel')) {
-        setNotice('Cancelled');
-        setTimeout(() => setNotice(''), 3000);
-      } else {
-        setNotice(msg);
-        setTimeout(() => setNotice(''), 3000);
       }
+      // Cancellations, timeouts and the rest are translated by friendlyError().
+      toast.error(err, 'Connection failed.');
     }
   };
 
@@ -338,12 +334,6 @@ export default function Navbar() {
                 <span className="sm:hidden">{connecting ? '…' : 'Connect'}</span>
               </button>
             </>
-          )}
-
-          {notice && (
-            <span className="hidden md:inline-block text-xs text-slate-500 bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm">
-              {notice}
-            </span>
           )}
 
           {/* Mobile Menu Toggle Button */}

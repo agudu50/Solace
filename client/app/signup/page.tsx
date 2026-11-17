@@ -2,30 +2,41 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  ShieldCheck,
-  Mail,
-  Lock,
-  User,
-  ArrowRight,
-  Wallet,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  ChevronLeft,
-  Eye,
-  EyeOff,
-  Sparkles,
-} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Mail, Lock, User, ArrowRight, Wallet, Loader2, ChevronLeft, Eye, EyeOff, Check } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import { useToast } from '../../context/ToastContext';
+import AuthShowcase from '../../components/auth/AuthShowcase';
+import { Chip } from '../../components/dashboard/Panel';
+import { EASE_OUT, SplitWords } from '../../components/landing/motion';
+import { btn } from '../../components/landing/primitives';
+
+const inputBase =
+  'w-full h-10 rounded-md border bg-white dark:bg-[#0e0e0e] pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors focus:outline-none focus:ring-2';
+const inputOk = 'border-slate-200 dark:border-white/10 focus:border-accent focus:ring-accent/20';
+const inputBad = 'border-red-400 dark:border-red-500/60 focus:border-red-500 focus:ring-red-500/20';
+
+type Field = 'name' | 'email' | 'password' | 'confirm';
+
+function getPasswordStrength(pass: string) {
+  if (!pass) return { score: 0, label: '' };
+  let score = 0;
+  if (pass.length >= 8) score += 1;
+  if (/[a-z]/.test(pass) && /[A-Z]/.test(pass)) score += 1;
+  if (/\d/.test(pass)) score += 1;
+  if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+  return { score, label: ['Too short', 'Weak', 'Fair', 'Good', 'Strong'][score] };
+}
+
+const STRENGTH_COLOR = ['bg-red-400', 'bg-red-500', 'bg-amber-500', 'bg-sky-500', 'bg-emerald-500'];
 
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTarget = searchParams?.get('redirect') || '/dashboard';
   const { registerWithEmail, authenticate, walletKey, user, sessionLoading } = useWallet();
+  const toast = useToast();
 
   // If already authenticated, redirect to destination
   useEffect(() => {
@@ -41,295 +52,306 @@ function SignupContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [walletLoading, setWalletLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  // Password strength calculation
-  const getPasswordStrength = (pass: string) => {
-    if (!pass) return { score: 0, label: '', color: '' };
-    let score = 0;
-    if (pass.length >= 8) score += 1;
-    if (/[a-z]/.test(pass) && /[A-Z]/.test(pass)) score += 1;
-    if (/\d/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-
-    switch (score) {
-      case 1:
-        return { score: 25, label: 'Weak', color: 'bg-red-500' };
-      case 2:
-        return { score: 50, label: 'Fair', color: 'bg-amber-500' };
-      case 3:
-        return { score: 75, label: 'Good', color: 'bg-blue-500' };
-      case 4:
-        return { score: 100, label: 'Strong', color: 'bg-emerald-500' };
-      default:
-        return { score: 10, label: 'Too short', color: 'bg-red-400' };
-    }
-  };
+  // Inline errors appear after the first submit attempt, then update live.
+  const [submitted, setSubmitted] = useState(false);
 
   const strength = getPasswordStrength(password);
 
+  const errors: Partial<Record<Field, string>> = {};
+  if (!name.trim()) errors.name = 'Please enter your full name.';
+  if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Please enter a valid email address.';
+  if (password.length < 8) errors.password = 'Password must be at least 8 characters long.';
+  if (password !== confirmPassword) errors.confirm = 'Passwords do not match.';
+  const show = (f: Field) => (submitted ? errors[f] : undefined);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!name.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+    setSubmitted(true);
+    if (Object.keys(errors).length > 0) {
+      const first = (['name', 'email', 'password', 'confirm'] as Field[]).find((f) => errors[f]);
+      if (first) document.getElementById(`signup-${first}`)?.focus();
       return;
     }
 
     setLoading(true);
     try {
       await registerWithEmail(name, email, password);
-      setSuccess('Account created successfully! Redirecting...');
+      toast.success('Account created', 'Redirecting…');
       setTimeout(() => {
         router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
-      setError(err?.message || 'Registration failed. Please try again.');
+      toast.error(err, 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleWalletSignup = async () => {
-    setError('');
     setWalletLoading(true);
     try {
       await authenticate('solace-auth-login');
-      setSuccess('Wallet authenticated! Redirecting...');
+      toast.success('Wallet verified', 'Redirecting…');
       setTimeout(() => {
         router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
-      setError(err?.message || 'Wallet connection was cancelled.');
+      toast.error(err, 'Wallet connection was cancelled.');
     } finally {
       setWalletLoading(false);
     }
   };
 
+  const loginHref =
+    redirectTarget !== '/dashboard' ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : '/login';
+
   return (
-    <div className="min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-accent selection:text-white transition-colors duration-200">
-      {/* Background ambient lighting */}
+    <div className="relative min-h-[calc(100vh-65px)] bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute inset-0 grid-lines pointer-events-none [mask-image:radial-gradient(ellipse_60%_70%_at_30%_40%,#000_20%,transparent_100%)]"
+      />
 
-      {/* Main Registration Card */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-md mb-3 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition font-medium"
+      <main className="relative w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-stretch">
+        <div className="flex flex-col justify-center w-full max-w-md mx-auto lg:mx-0">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE_OUT }}
+            className="flex items-center justify-between mb-10"
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </Link>
-          <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
-            Protocol 22 • Testnet
-          </span>
-        </div>
-
-        <div className="max-w-md w-full bg-white/95 dark:bg-[#161616]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-xl shadow-slate-200/50 dark:shadow-2xl dark:shadow-black/80 relative overflow-hidden transition-colors duration-200">
-          {/* Top highlight bar */}
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-accent" />
-
-          {/* Icon Badge */}
-          <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-accent/15 dark:bg-accent/20 border border-accent/30 dark:border-accent/40 flex items-center justify-center text-accent shadow-md shadow-accent/20">
-            <Sparkles className="w-6 h-6 text-accent" />
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-black text-center text-slate-900 dark:text-white tracking-tight mb-1.5">
-            Create an Account
-          </h1>
-          <p className="text-xs text-center text-slate-500 dark:text-slate-400 leading-relaxed mb-6 font-medium">
-            Sign up to run AI-powered Soroban smart contract audits and purchase audit credits.
-          </p>
-
-          {/* Feedback Messages */}
-          {error && (
-            <div className="mb-4 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800/80 text-xs text-red-700 dark:text-red-200 font-medium flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-700 dark:text-emerald-200 font-medium flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>{success}</span>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Alex Rivera"
-                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="developer@example.com"
-                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
-                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {/* Password strength bar */}
-              {password && (
-                <div className="mt-2">
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-300 ${strength.color}`}
-                      style={{ width: `${strength.score}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center mt-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                    <span>Password Strength:</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-200">{strength.label}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your password"
-                  className="w-full bg-slate-50 dark:bg-[#0e0e0e] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-accent focus:bg-white dark:focus:bg-[#0e0e0e] transition"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 py-3 px-6 rounded-full bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-lg shadow-accent/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
+              <ChevronLeft className="w-4 h-4" />
+              Back to home
+            </Link>
+            <Chip tone="accent" pulse>Protocol 22 · Testnet</Chip>
+          </motion.div>
+
+          <h1 className="text-3xl sm:text-4xl font-medium tracking-tightest leading-[1.05] text-slate-900 dark:text-white">
+            <SplitWords text="Create your account" />
+          </h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.25 }}
+            className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed"
+          >
+            Run AI-powered Soroban contract audits and buy prepaid audit credits.
+          </motion.p>
+
+          <motion.form
+            onSubmit={handleSubmit}
+            noValidate
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3, ease: EASE_OUT }}
+            className="mt-8 space-y-4"
+          >
+            <FieldRow id="signup-name" label="Full name" icon={User} error={show('name')}>
+              <input
+                id="signup-name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Alex Rivera"
+                aria-invalid={Boolean(show('name'))}
+                aria-describedby={show('name') ? 'signup-name-err' : undefined}
+                className={`${inputBase} ${show('name') ? inputBad : inputOk}`}
+              />
+            </FieldRow>
+
+            <FieldRow id="signup-email" label="Email" icon={Mail} error={show('email')}>
+              <input
+                id="signup-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="developer@example.com"
+                aria-invalid={Boolean(show('email'))}
+                aria-describedby={show('email') ? 'signup-email-err' : undefined}
+                className={`${inputBase} ${show('email') ? inputBad : inputOk}`}
+              />
+            </FieldRow>
+
+            <FieldRow id="signup-password" label="Password" icon={Lock} error={show('password')}>
+              <input
+                id="signup-password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 8 characters"
+                aria-invalid={Boolean(show('password'))}
+                aria-describedby="signup-password-strength"
+                className={`${inputBase} pr-10 ${show('password') ? inputBad : inputOk}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </FieldRow>
+
+            {/* Strength meter */}
+            <AnimatePresence initial={false}>
+              {password && (
+                <motion.div
+                  id="signup-password-strength"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25, ease: EASE_OUT }}
+                  className="overflow-hidden -mt-1"
+                >
+                  <div className="grid grid-cols-4 gap-1.5" aria-hidden>
+                    {[1, 2, 3, 4].map((seg) => (
+                      <span key={seg} className="h-1 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                        <motion.span
+                          className={`block h-full ${STRENGTH_COLOR[strength.score]}`}
+                          initial={false}
+                          animate={{ scaleX: strength.score >= seg ? 1 : 0 }}
+                          style={{ originX: 0 }}
+                          transition={{ duration: 0.3, ease: EASE_OUT }}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 flex justify-between text-[11px] text-slate-500">
+                    <span>Strength</span>
+                    <span className="text-slate-900 dark:text-white">{strength.label}</span>
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <FieldRow id="signup-confirm" label="Confirm password" icon={Lock} error={show('confirm')}>
+              <input
+                id="signup-confirm"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password"
+                aria-invalid={Boolean(show('confirm'))}
+                aria-describedby={show('confirm') ? 'signup-confirm-err' : undefined}
+                className={`${inputBase} pr-10 ${show('confirm') ? inputBad : inputOk}`}
+              />
+              <AnimatePresence>
+                {confirmPassword && confirmPassword === password && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500"
+                    aria-label="Passwords match"
+                  >
+                    <Check className="w-3 h-3" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </FieldRow>
+
+            <button type="submit" disabled={loading} className={`${btn.primary} w-full group !mt-6`}>
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Creating Account...</span>
+                  Creating account…
                 </>
               ) : (
                 <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
+                  Create account
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
             </button>
-          </form>
 
-          {/* Divider */}
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-            <span className="text-[11px] font-mono text-slate-500 uppercase">Or sign up with</span>
-            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-          </div>
+            <div className="flex items-center gap-3 py-1">
+              <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+              <span className="eyebrow">Or</span>
+              <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+            </div>
 
-          {/* Wallet Signup Button */}
-          <button
-            type="button"
-            onClick={handleWalletSignup}
-            disabled={walletLoading}
-            className="w-full py-2.5 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/90 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 text-xs font-mono font-medium transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            {walletLoading ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />
-                <span>Connecting Wallet...</span>
-              </>
-            ) : (
-              <>
-                <Wallet className="w-4 h-4 text-accent" />
-                <span>Connect Stellar / Freighter Wallet</span>
-              </>
-            )}
-          </button>
+            <button type="button" onClick={handleWalletSignup} disabled={walletLoading} className={`${btn.secondary} w-full`}>
+              {walletLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                  Connecting wallet…
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-4 h-4 text-accent" />
+                  Continue with Freighter wallet
+                </>
+              )}
+            </button>
 
-          {/* Link to login */}
-          <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-            Already have an account?{' '}
-            <Link
-              href={redirectTarget !== '/dashboard' ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : '/login'}
-              className="text-accent font-bold hover:underline"
-            >
-              Log in
-            </Link>
-          </div>
+            <p className="pt-4 border-t border-slate-200 dark:border-white/10 text-xs text-slate-500">
+              Already have an account?{' '}
+              <Link href={loginHref} className="text-slate-900 dark:text-white font-medium hover:text-accent transition-colors">
+                Sign in
+              </Link>
+            </p>
+          </motion.form>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 w-full text-center py-4 text-xs text-slate-500 dark:text-slate-600 font-mono">
-        Solace Protocol • Secure Password Hashing &amp; Non-Custodial Stellar Authentication
-      </footer>
+        <motion.div
+          initial={{ opacity: 0, rotateY: -12, x: 24 }}
+          animate={{ opacity: 1, rotateY: 0, x: 0 }}
+          transition={{ duration: 1, delay: 0.15, ease: EASE_OUT }}
+          style={{ transformPerspective: 1600 }}
+          className="hidden lg:block"
+        >
+          <AuthShowcase />
+        </motion.div>
+      </main>
+    </div>
+  );
+}
+
+function FieldRow({
+  id,
+  label,
+  icon: Icon,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+        {label}
+      </label>
+      <div className="relative">
+        <Icon className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${error ? 'text-red-400' : 'text-slate-400'}`} />
+        {children}
+      </div>
+      <AnimatePresence initial={false}>
+        {error && (
+          <motion.p
+            id={`${id}-err`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden text-xs text-red-600 dark:text-red-400 pt-1.5"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

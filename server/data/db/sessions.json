@@ -334,5 +334,29 @@
     "ip_address": null,
     "user_agent": null,
     "created_at": "2026-11-16T22:23:22.933Z"
+  },
+  {
+    "id": "ses_865f95eb5272b0e3b2050f46651f6939",
+    "user_id": "usr_dd2c002f9a9a2ec670c6b6d9071edc93",
+    "wallet_address": "GBSGXCN2YRF5BBQ56A26MXKHWM3KIB56YKS6XH2XZ6635ER257L46KX3",
+    "role": "user",
+    "token_hash": "5ce78083dc0048cd8680bbf8b307e2088ddc8dc309bc82e6bb75161048c18b46",
+    "expires_at": "2026-11-18T00:51:47.112Z",
+    "revoked": true,
+    "ip_address": "127.0.0.1",
+    "user_agent": "Jest-Automated-Test",
+    "created_at": "2026-11-17T00:51:47.112Z"
+  },
+  {
+    "id": "ses_1bae40ccd893a28f70fe4040588ea90d",
+    "user_id": "usr_632e0cc5921a91b0f5932e82ede7d901",
+    "wallet_address": "GB2WZ2YXUTMO3N2BCMA3UCPY46DDXZX3NPNJMLRXVEIUCDPCDAQ4SIX2",
+    "role": "user",
+    "token_hash": "c314c1070f3c7ef5a87ce6b41eebc5ea033255dd39b38d3a61d4c7b228fbb5d8",
+    "expires_at": "2026-11-18T00:51:47.154Z",
+    "revoked": false,
+    "ip_address": null,
+    "user_agent": null,
+    "created_at": "2026-11-17T00:51:47.154Z"
   }
 ]

@@ -9,14 +9,13 @@ import {
   Lock,
   Wallet,
   ArrowRight,
-  AlertCircle,
-  CheckCircle2,
   Loader2,
   ChevronLeft,
   Eye,
   EyeOff,
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import { useToast } from '../../context/ToastContext';
 import AuthShowcase from '../../components/auth/AuthShowcase';
 import { Segmented } from '../../components/audit/StudioParts';
 import { Chip } from '../../components/dashboard/Panel';
@@ -51,59 +50,51 @@ function LoginContent() {
   const [walletLoading, setWalletLoading] = useState(false);
   const [authStep, setAuthStep] = useState('');
 
-  // Feedback state
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  // Feedback goes to the global toast stack
+  const toast = useToast();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (!email.trim() || !password) {
-      setError('Please provide your email and password.');
+      toast.show({ tone: 'error', title: 'Missing details', message: 'Please provide your email and password.' });
       return;
     }
 
     setLoading(true);
     try {
       await loginWithEmail(email, password);
-      setSuccess('Signed in. Redirecting…');
+      toast.success('Signed in', 'Redirecting…');
       setTimeout(() => {
         router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
-      setError(err?.message || 'Invalid email or password.');
+      toast.error(err, 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleWalletLogin = async () => {
-    setError('');
-    setSuccess('');
     setWalletLoading(true);
     setAuthStep('Requesting authentication challenge…');
 
     try {
       setAuthStep('Waiting for Freighter signature…');
       await authenticate('solace-auth-login');
-      setSuccess('Wallet verified. Redirecting…');
+      toast.success('Wallet verified', 'Redirecting…');
       setTimeout(() => {
         router.push(redirectTarget);
       }, 800);
     } catch (err: any) {
-      setError(err?.message || 'Wallet connection was cancelled or rejected.');
+      toast.error(err, 'Wallet connection was cancelled or rejected.');
     } finally {
       setWalletLoading(false);
       setAuthStep('');
     }
   };
 
-  const switchTab = (t: 'email' | 'wallet') => {
-    setActiveTab(t);
-    setError('');
-  };
+  const switchTab = (t: 'email' | 'wallet') => setActiveTab(t);
 
   const signupHref =
     redirectTarget !== '/dashboard' ? `/signup?redirect=${encodeURIComponent(redirectTarget)}` : '/signup';
@@ -162,32 +153,6 @@ function LoginContent() {
                 { value: 'wallet', label: <><Wallet className="w-3.5 h-3.5" />Stellar wallet</> },
               ]}
             />
-
-            {/* Feedback */}
-            <AnimatePresence>
-              {(error || success) && (
-                <motion.div
-                  key={error ? 'err' : 'ok'}
-                  role={error ? 'alert' : 'status'}
-                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginTop: 20 }}
-                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                  transition={{ duration: 0.3, ease: EASE_OUT }}
-                  className="overflow-hidden"
-                >
-                  <div
-                    className={`flex items-start gap-2.5 p-3 rounded-md border text-xs ${
-                      error
-                        ? 'border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300'
-                        : 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                    }`}
-                  >
-                    {error ? <AlertCircle className="w-4 h-4 shrink-0 mt-px" /> : <CheckCircle2 className="w-4 h-4 shrink-0 mt-px" />}
-                    {error || success}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             <AnimatePresence mode="wait" initial={false}>
               {activeTab === 'email' ? (
