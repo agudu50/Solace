@@ -3,31 +3,26 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  ArrowUpRight,
-  Bug,
-  Calendar,
-  ExternalLink,
-  FileCode,
-  Hourglass,
-  KeyRound,
-  Link2,
-  Lock,
-  Mail,
-  PlusCircle,
-  ShieldCheck,
-  User,
-} from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Check, Coins, Copy, FileCode, Link2, Lock, Plus, ShieldCheck } from 'lucide-react';
 import { fetchUserCreditBalance, fetchUserCreditHistory } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
+import { useToast } from '../../context/ToastContext';
 import PricingModal from '../../components/pricing/PricingModal';
-import { Chip, Panel, PanelHeader } from '../../components/dashboard/Panel';
 import RiskChart3D, { type RiskBar } from '../../components/dashboard/RiskChart3D';
-import { ScoreRing, Sparkline, WalletCard3D } from '../../components/dashboard/Visuals';
-import { CountUp, EASE_OUT, SplitWords } from '../../components/landing/motion';
+import {
+  FeedList,
+  ScoreStrip,
+  SeverityBar,
+  SurfaceGauge,
+  Tile,
+  TileHeader,
+  Tray,
+  ViewAll,
+  type FeedItem,
+  type SeverityCounts,
+} from '../../components/dashboard/Overview';
+import { Orb, Segmented } from '../../components/audit/StudioParts';
+import { CountUp, EASE_OUT, SplitWords, TiltCard } from '../../components/landing/motion';
 import { btn } from '../../components/landing/primitives';
 
 interface ActiveAuditInfo {
@@ -51,7 +46,7 @@ interface ActiveAuditInfo {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [selectedAuditMode, setSelectedAuditMode] = useState<'PRE' | 'POST'>('PRE');
+  const [selectedAuditMode, setSelectedAuditMode] = useState<'ALL' | 'PRE' | 'POST'>('ALL');
   const [activeAudit, setActiveAudit] = useState<ActiveAuditInfo | null>(null);
   const [auditHistory, setAuditHistory] = useState<any[]>([]);
   const { walletKey: connectedWallet, network, connect, user, linkWallet, refreshUser, sessionLoading } = useWallet();
@@ -194,7 +189,7 @@ export default function DashboardPage() {
       window.removeEventListener('solace-audit-updated', loadAuditData);
       window.removeEventListener('focus', loadAuditData);
     };
-  }, []);
+  }, [connectedWallet, user]); // re-run once the session is restored
 
   const handleCopyWallet = (key: string) => {
     navigator.clipboard.writeText(key);
@@ -249,130 +244,248 @@ export default function DashboardPage() {
   };
 
   /* ---------------------------------------------------------------- */
-  /* Derived metrics                                                   */
+  /* Derived data                                                      */
   /* ---------------------------------------------------------------- */
 
+  const toast = useToast();
+  const [overviewView, setOverviewView] = useState<'breakdown' | '3d'>('breakdown');
+
+  // Surface wallet-link problems as toasts (consistent with the rest of the app).
+  useEffect(() => {
+    if (linkError) toast.error(linkError, 'Failed to link Stellar wallet.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkError]);
+  useEffect(() => {
+    if (linkSuccess) toast.success('Wallet linked', linkSuccess);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkSuccess]);
+
   const totalSubmitted = auditHistory.length;
-  const verifiedSecure = auditHistory.filter((item) => item.isSecure).length;
-  const totalFlaws = auditHistory.reduce(
-    (acc, item) => acc + (item.vulnerabilities?.length || (item.isSecure ? 0 : 1)),
-    0
+  const verifiedSecure = auditHistory.filter((a) => a.isSecure).length;
+  const passRate = totalSubmitted ? Math.round((verifiedSecure / totalSubmitted) * 100) : 0;
+  const preCount = auditHistory.filter((a) => (a.auditType || 'PRE_DEPLOYMENT') !== 'POST_DEPLOYMENT').length;
+
+  const vulnsOf = (a: any): any[] => a.vulnerabilities || a.report?.vulnerabilities || [];
+
+  // Scope for the overview: all audits, or only pre-/post-deployment ones.
+  const scoped = auditHistory.filter((a) =>
+    selectedAuditMode === 'ALL'
+      ? true
+      : selectedAuditMode === 'POST'
+      ? a.auditType === 'POST_DEPLOYMENT'
+      : (a.auditType || 'PRE_DEPLOYMENT') !== 'POST_DEPLOYMENT',
   );
-  const passRate = totalSubmitted > 0 ? Math.round((verifiedSecure / totalSubmitted) * 100) : 0;
-  const overallRiskScore = activeAudit
-    ? activeAudit.riskScore
-    : totalSubmitted > 0
-    ? Math.round(auditHistory.reduce((acc, a) => acc + (a.riskScore || 0), 0) / totalSubmitted)
-    : 0;
 
-  const vulnerabilities: any[] = (activeAudit as any)?.vulnerabilities || [];
-  const hits = (re: RegExp) =>
-    vulnerabilities.some((v: any) => re.test((v.title || v.name || v.description || '').toLowerCase()));
-  const hasAuthVuln = hits(/auth/);
-  const hasStorageVuln = hits(/storage|rent|ttl/);
-  const hasPanicVuln = hits(/panic|unwrap|crash/);
-  const hasAdminVuln = hits(/admin|governance|privilege/);
-  const hasMathVuln = hits(/overflow|underflow|arithmetic/);
-  const hasGasVuln = hits(/gas|bytecode|limit/);
+  const severity: SeverityCounts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+  scoped.forEach((a) =>
+    vulnsOf(a).forEach((v) => {
+      const k = String(v.severity || 'LOW').toUpperCase() as keyof SeverityCounts;
+      severity[k in severity ? k : 'LOW'] += 1;
+    }),
+  );
+  const openFindings = auditHistory.filter((a) => !a.isSecure).reduce((n, a) => n + (vulnsOf(a).length || 1), 0);
+  const scopedAnchored = scoped.filter((a) => a.anchorResult).length;
+  const scopedSecure = scoped.filter((a) => a.isSecure).length;
 
+  // Issue surface: every finding classified into a Soroban risk category.
+  const CATEGORIES: { label: string; test: RegExp }[] = [
+    { label: 'Authorization', test: /auth|signature|caller|privilege|admin|governance/ },
+    { label: 'Storage rent (TTL)', test: /storage|rent|ttl|evict/ },
+    { label: 'Host panics', test: /panic|unwrap|crash|trap/ },
+    { label: 'Arithmetic', test: /overflow|underflow|arithmetic|checked/ },
+    { label: 'Gas & bytecode', test: /gas|bytecode|limit|loop/ },
+  ];
+  const surface = [...CATEGORIES.map((c) => ({ label: c.label, value: 0 })), { label: 'Other', value: 0 }];
+  auditHistory.forEach((a) =>
+    vulnsOf(a).forEach((v) => {
+      const text = `${v.title || ''} ${v.description || ''}`.toLowerCase();
+      const idx = CATEGORIES.findIndex((c) => c.test.test(text));
+      surface[idx === -1 ? surface.length - 1 : idx].value += 1;
+    }),
+  );
+  const surfaceSorted = surface.filter((s) => s.value > 0 || s.label !== 'Other').sort((a, b) => b.value - a.value);
+
+  // 3D index (kept from the previous dashboard, now a view of the overview card).
+  const latestVulns = vulnsOf(activeAudit || {});
+  const hit = (re: RegExp) => latestVulns.some((v: any) => re.test(`${v.title || ''} ${v.description || ''}`.toLowerCase()));
   const isScanningActive = Boolean(activeAudit || totalSubmitted > 0);
-  const score = (hit: boolean, penalty: number) => (!isScanningActive ? 0 : hit ? Math.max(0, 100 - penalty) : 100);
-
-  const VECTORS = [
-    { key: 'auth', label: 'Auth', category: 'Auth hijack', hit: hasAuthVuln, penalty: 45, ok: '#10b981', okLabel: 'Guarded', badLabel: 'Breached', detail: 'require_auth() enforcement on state mutators' },
-    { key: 'storage', label: 'Storage', category: 'Storage rent eviction (TTL)', hit: hasStorageVuln, penalty: 35, ok: '#06b6d4', okLabel: 'Protected', badLabel: 'Eviction', detail: 'Persistent vs instance storage and TTL bumps' },
-    { key: 'safety', label: 'Safety', category: 'Host panic crash risk', hit: hasPanicVuln, penalty: 40, ok: '#a855f7', okLabel: 'Safe', badLabel: 'Panic', detail: 'No unhandled .unwrap() or indexing panics' },
-    { key: 'admin', label: 'Admin', category: 'Admin privilege escalation', hit: hasAdminVuln, penalty: 40, ok: '#C80552', okLabel: 'Enforced', badLabel: 'Escalation', detail: 'Admin governance and caller authentication' },
-    { key: 'math', label: 'Math', category: 'Arithmetic overflow / underflow', hit: hasMathVuln, penalty: 30, ok: '#f59e0b', okLabel: 'Safe', badLabel: 'Overflow', detail: 'Checked integer operations' },
-    { key: 'code', label: 'Code', category: 'Bytecode and gas exhaustion', hit: hasGasVuln, penalty: 25, ok: '#6366f1', okLabel: 'Safe', badLabel: 'Gas spike', detail: 'Release binary within the 64KB limit' },
+  const bar = (key: string, label: string, isHit: boolean, penalty: number, ok: string, okLabel: string, badLabel: string): RiskBar => ({
+    key,
+    label,
+    category: label,
+    detail: '',
+    score: !isScanningActive ? 0 : isHit ? 100 - penalty : 100,
+    status: !isScanningActive ? 'Standby' : isHit ? badLabel : okLabel,
+    color: isHit ? '#ef4444' : ok,
+  });
+  const riskBars: RiskBar[] = [
+    bar('auth', 'Auth', hit(/auth/), 45, '#10b981', 'Guarded', 'Breached'),
+    bar('storage', 'Storage', hit(/storage|rent|ttl/), 35, '#06b6d4', 'Protected', 'Eviction'),
+    bar('safety', 'Safety', hit(/panic|unwrap|crash/), 40, '#a855f7', 'Safe', 'Panic'),
+    bar('admin', 'Admin', hit(/admin|governance|privilege/), 40, '#C80552', 'Enforced', 'Escalation'),
+    bar('math', 'Math', hit(/overflow|underflow|arithmetic/), 30, '#f59e0b', 'Safe', 'Overflow'),
+    bar('code', 'Code', hit(/gas|bytecode|limit/), 25, '#6366f1', 'Safe', 'Gas spike'),
   ];
-
-  const riskBars: RiskBar[] = VECTORS.map((v) => ({
-    key: v.key,
-    label: v.label,
-    category: v.category,
-    detail: v.detail,
-    score: score(v.hit, v.penalty),
-    status: !isScanningActive ? 'Standby' : v.hit ? v.badLabel : v.okLabel,
-    color: v.hit ? '#ef4444' : v.ok,
-  }));
-
-  const GUARDS = [
-    { name: 'Authorization guard', icon: KeyRound, hit: hasAuthVuln, ok: 'require_auth() signature enforcement', bad: 'Missing require_auth() enforcement', okLabel: 'Guarded', badLabel: 'Breached' },
-    { name: 'Storage rent guardian', icon: Hourglass, hit: hasStorageVuln, ok: 'TTL auto-bump and state isolation', bad: 'Storage TTL exposure, eviction risk', okLabel: 'Protected', badLabel: 'Eviction' },
-    { name: 'Panic crash shield', icon: Bug, hit: hasPanicVuln, ok: 'Zero unhandled .unwrap() host panics', bad: 'Host panic vector from .unwrap()', okLabel: 'Safe', badLabel: 'Panic' },
-    { name: 'Admin access control', icon: ShieldCheck, hit: hasAdminVuln, ok: 'Role and caller authentication', bad: 'Admin privilege escalation vector', okLabel: 'Enforced', badLabel: 'Escalation' },
-  ];
-  const passingGuardsCount = isScanningActive ? GUARDS.filter((g) => !g.hit).length : 0;
-
-  const signer = connectedWallet || user?.address || '';
-  const displayName =
-    user?.name || (connectedWallet ? `${connectedWallet.slice(0, 4)}…${connectedWallet.slice(-4)}` : user?.email || 'auditor');
-  const authLabel =
-    user?.authProvider === 'hybrid' || (user?.email && signer)
-      ? 'Email + Freighter'
-      : user?.authProvider === 'wallet' || (connectedWallet && !user?.email)
-      ? 'Stellar wallet'
-      : 'Email account';
-  const networkLabel = network === 'mainnet' ? 'Mainnet' : 'Testnet';
 
   const available = userCredits?.availableCredits ?? 0;
   const purchased = userCredits?.totalPurchased ?? 0;
   const consumed = userCredits?.totalConsumed ?? 0;
   const usedPct = purchased > 0 ? Math.min(100, Math.round((consumed / purchased) * 100)) : 0;
-
-  // Oldest → newest scores from real history for the trend line.
-  const trend = auditHistory
-    .slice(0, 12)
-    .map((a) => a.riskScore ?? (a.isSecure ? 95 : 55))
-    .reverse();
-  if (trend.length === 0 && activeAudit) trend.push(activeAudit.riskScore);
-
-  const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  const signer = connectedWallet || user?.address || '';
+  const displayName = user?.name || (signer ? `${signer.slice(0, 4)}…${signer.slice(-4)}` : user?.email || 'auditor');
 
   const KPIS = [
-    { label: 'Contracts submitted', value: String(totalSubmitted), sub: totalSubmitted ? 'this session' : 'awaiting first contract' },
-    { label: 'Verified secure', value: String(verifiedSecure), sub: `${passRate}% pass rate` },
-    { label: 'Flaws quarantined', value: String(totalFlaws), sub: totalFlaws ? 'isolated across audits' : 'none found yet' },
-    { label: 'Audit credits', value: String(available), sub: `${available * 10} XLM · never expires` },
+    {
+      label: 'Contracts audited',
+      icon: FileCode,
+      value: totalSubmitted,
+      foot: `${preCount} pre · ${totalSubmitted - preCount} post`,
+      pill: { text: 'All time', tone: 'neutral' as const },
+      href: '/reports',
+    },
+    {
+      label: 'Open findings',
+      icon: AlertTriangle,
+      value: openFindings,
+      foot: `${severity.CRITICAL} critical in scope`,
+      pill: { text: openFindings ? 'Needs fixes' : 'All clear', tone: openFindings ? ('bad' as const) : ('ok' as const) },
+      href: '/reports',
+    },
+    {
+      label: 'Verified secure',
+      icon: ShieldCheck,
+      value: verifiedSecure,
+      foot: `of ${totalSubmitted} audits`,
+      pill: { text: `${passRate}% pass rate`, tone: passRate >= 50 ? ('ok' as const) : ('warn' as const) },
+      href: '/reports',
+    },
+    {
+      label: 'Audit credits',
+      icon: Coins,
+      value: available,
+      foot: `${available * 10} XLM · never expires`,
+      pill: { text: `${usedPct}% used`, tone: available <= 1 ? ('warn' as const) : ('neutral' as const) },
+      onClick: () => setShowPricingModal(true),
+    },
   ];
 
-  const divider = 'border-slate-200 dark:border-white/10';
+  const sevTone = (s?: string): FeedItem['tone'] =>
+    s === 'CRITICAL' ? 'ink' : s === 'HIGH' ? 'accent' : s === 'MEDIUM' ? 'amber' : 'sky';
+  const worst = (a: any) => {
+    const order = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+    return vulnsOf(a).map((v) => String(v.severity).toUpperCase()).sort((x, y) => order.indexOf(x) - order.indexOf(y))[0];
+  };
+  const hashTag = (h?: string) => (h ? `#${h.slice(0, 6)}` : '#——');
+
+  const recentAudits: FeedItem[] = auditHistory.slice(0, 4).map((a, i) => ({
+    id: `${a.hash}-${i}`,
+    title: a.contract || 'Soroban contract',
+    meta: (
+      <>
+        {hashTag(a.hash)} · {a.date || 'Recent'} · score <span className="text-slate-900 dark:text-white">{a.riskScore ?? '—'}</span>
+      </>
+    ),
+    tone: a.isSecure ? 'emerald' : sevTone(worst(a)),
+    href: `/reports?hash=${a.hash}`,
+  }));
+
+  const openIssues: FeedItem[] = auditHistory
+    .filter((a) => !a.isSecure)
+    .flatMap((a) => vulnsOf(a).map((v: any, j: number) => ({ a, v, j })))
+    .sort(
+      (x, y) =>
+        ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].indexOf(String(x.v.severity).toUpperCase()) -
+        ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].indexOf(String(y.v.severity).toUpperCase()),
+    )
+    .slice(0, 4)
+    .map(({ a, v, j }) => ({
+      id: `${a.hash}-v${j}`,
+      title: v.title || 'Unnamed finding',
+      meta: (
+        <>
+          {hashTag(a.hash)} · {String(v.severity || 'LOW').toLowerCase()} in{' '}
+          <span className="text-slate-900 dark:text-white">{a.contract || 'contract'}</span>
+        </>
+      ),
+      tone: sevTone(String(v.severity).toUpperCase()),
+      href: `/reports?hash=${a.hash}`,
+    }));
+
+  const when = (d?: string, t?: string) => {
+    const ms = Date.parse(`${d || ''} ${t || ''}`.trim()) || Date.parse(d || '');
+    return Number.isNaN(ms) ? 0 : ms;
+  };
+  const activity: (FeedItem & { at: number })[] = [
+    ...auditHistory.map((a, i) => ({
+      id: `audit-${a.hash}-${i}`,
+      title: `Audited ${a.contract || 'a contract'}`,
+      meta: <>{a.date ? `${a.date}${a.time ? ` · ${a.time}` : ''}` : 'Recently'} · {a.isSecure ? 'passed' : 'action required'}</>,
+      tone: 'slate' as const,
+      href: `/reports?hash=${a.hash}`,
+      at: when(a.date, a.time) - i, // keep stored (newest-first) order on ties
+    })),
+    ...auditHistory
+      .filter((a) => a.anchorResult)
+      .map((a, i) => ({
+        id: `anchor-${a.hash}-${i}`,
+        title: `Anchored ${a.contract || 'audit'} on-chain`,
+        meta: <>{a.date || 'Recently'} · Stellar testnet</>,
+        tone: 'emerald' as const,
+        href: `/reports?hash=${a.hash}`,
+        at: when(a.date, a.time) + 1,
+      })),
+    ...purchaseHistory.map((p, i) => ({
+      id: `buy-${p.id || p.transactionHash || i}`,
+      title: `Bought ${p.packageName || 'credit bundle'} (+${p.credits})`,
+      meta: <>{p.timestamp ? new Date(p.timestamp).toLocaleDateString() : 'Confirmed'} · {p.amountXLM} XLM</>,
+      tone: 'accent' as const,
+      at: p.timestamp ? Date.parse(p.timestamp) : 0,
+    })),
+  ]
+    .sort((x, y) => y.at - x.at)
+    .slice(0, 4);
+
+  const scoreItems = scoped.slice(0, 24).map((a, i) => ({
+    id: `${a.hash}-${i}`,
+    score: Math.max(0, Math.min(100, a.riskScore ?? 0)),
+    label: a.contract || 'contract',
+    secure: Boolean(a.isSecure),
+  }));
+
+  /* ---------------------------------------------------------------- */
+  /* Auth gates                                                        */
+  /* ---------------------------------------------------------------- */
 
   if (sessionLoading) {
     return (
-      <div className="w-full min-h-[calc(100vh-65px)] flex flex-col items-center justify-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100">
-        <div className="w-12 h-12 rounded-2xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent mb-4 animate-pulse">
-          <ShieldCheck className="w-6 h-6 text-accent" />
+      <div className="w-full min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e]">
+        <div className="text-center">
+          <Orb active>
+            <ShieldCheck className="w-5 h-5 text-accent" />
+          </Orb>
+          <p className="mt-6 font-mono text-xs text-slate-500 tracking-wider">Verifying auditor credentials…</p>
         </div>
-        <p className="text-xs font-mono text-slate-500 tracking-wider">Verifying auditor credentials...</p>
       </div>
     );
   }
 
   if (!isAuth) {
     return (
-      <div className="w-full min-h-[calc(100vh-65px)] flex flex-col items-center justify-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-center">
-        <div className="max-w-md w-full bg-white dark:bg-[#161616] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4">
-            <Lock className="w-6 h-6 text-accent" />
-          </div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Auditor Access Restricted</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-            Please log in or connect your Stellar auditor wallet to access the Security Dashboard.
+      <div className="w-full min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-center">
+        <div className="w-full max-w-md rounded-[18px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] p-8">
+          <span className="mx-auto grid place-items-center w-11 h-11 rounded-xl bg-accent-subtle text-accent">
+            <Lock className="w-5 h-5" />
+          </span>
+          <h2 className="mt-5 text-xl font-medium tracking-tight text-slate-900 dark:text-white">Auditor access restricted</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            Please log in or connect your Stellar auditor wallet to access the security dashboard.
           </p>
-          <div className="flex flex-col gap-2.5">
-            <Link
-              href="/login?redirect=/dashboard"
-              className="w-full py-2.5 px-4 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/25"
-            >
-              Sign In / Connect Wallet
+          <div className="mt-6 flex flex-col gap-2">
+            <Link href="/login?redirect=/dashboard" className={btn.primary}>
+              Sign in / connect wallet
             </Link>
-            <Link
-              href="/"
-              className="w-full py-2.5 px-4 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition"
-            >
-              Return to Homepage
+            <Link href="/" className={btn.secondary}>
+              Return to homepage
             </Link>
           </div>
         </div>
@@ -380,461 +493,226 @@ export default function DashboardPage() {
     );
   }
 
-  return (
-    <div className="relative w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-[420px] grid-lines pointer-events-none [mask-image:radial-gradient(ellipse_70%_100%_at_50%_0%,#000_30%,transparent_100%)]"
-      />
+  /* ---------------------------------------------------------------- */
+  /* Render                                                            */
+  /* ---------------------------------------------------------------- */
 
-      <main className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+  return (
+    <div className="relative w-full min-h-screen bg-[#f2f2f0] dark:bg-[#0b0b0b] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
+      <main className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 pb-2">
           <div className="min-w-0">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: EASE_OUT }}
-              className="flex flex-wrap items-center gap-2 mb-5"
-            >
-              <Chip tone="accent" pulse>Security core</Chip>
-              <Chip>Protocol 22</Chip>
-              <Chip tone={connectedWallet ? 'ok' : 'neutral'}>{connectedWallet ? 'Auditor active' : 'Wallet offline'}</Chip>
-            </motion.div>
-            <h1 className="text-3xl sm:text-5xl font-medium tracking-tightest leading-[1.05] text-slate-900 dark:text-white">
+            <h1 className="text-2xl sm:text-[28px] font-medium tracking-tight text-slate-900 dark:text-white">
               <SplitWords text={`Welcome back, ${displayName}`} />
             </h1>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl"
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="mt-1.5 text-sm text-slate-500 max-w-lg"
             >
-              AST invariant checks, storage-rent monitoring and on-chain audit proofs for your Soroban contracts.
+              Track how your Soroban contracts are trending, what still needs fixing, and what is sealed on-chain.
             </motion.p>
           </div>
 
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: EASE_OUT }}
-            className="flex flex-wrap items-center gap-2 shrink-0"
+            transition={{ duration: 0.6, delay: 0.15, ease: EASE_OUT }}
+            className="flex items-center gap-2 shrink-0"
           >
-            <span className="inline-flex items-center gap-2 h-10 px-3 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] text-xs text-slate-600 dark:text-slate-400">
-              <Calendar className="w-3.5 h-3.5" />
-              {today} · {networkLabel}
-            </span>
-            <Link href="/audit" className={`${btn.primary} group`}>
-              Run security audit
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            <Link
+              href="/audit"
+              aria-label="Run a new audit"
+              title="Run a new audit"
+              className="grid place-items-center w-11 h-11 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:scale-[1.04] active:scale-95 transition-transform"
+            >
+              <Plus className="w-5 h-5" />
             </Link>
+            <span className="inline-flex items-center gap-2 h-11 px-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-xs text-slate-500">
+              Network
+              <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+              </span>
+            </span>
+            {signer ? (
+              <button
+                type="button"
+                onClick={() => handleCopyWallet(signer)}
+                title="Copy wallet address"
+                className="inline-flex items-center gap-2 h-11 pl-1.5 pr-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-xs hover:border-slate-300 dark:hover:border-white/20 transition-colors cursor-pointer"
+              >
+                <Identicon seed={signer} />
+                <span className="font-mono text-slate-900 dark:text-white hidden sm:inline">
+                  {signer.slice(0, 4)}…{signer.slice(-4)}
+                </span>
+                {copiedWallet ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+              </button>
+            ) : (
+              <button type="button" onClick={handleLinkWallet} disabled={linkingWallet} className={`${btn.primary} h-11 rounded-xl`}>
+                <Link2 className="w-4 h-4" />
+                {linkingWallet ? 'Linking…' : 'Link wallet'}
+              </button>
+            )}
           </motion.div>
         </div>
 
-        {/* KPI strip */}
-        <Panel index={0} className="mt-8 sm:mt-10">
-          <dl className="grid grid-cols-2 lg:grid-cols-4">
-            {KPIS.map((k, i) => (
-              <div
-                key={k.label}
-                className={`px-5 sm:px-6 py-5 ${i % 2 === 1 ? 'border-l' : ''} ${i >= 2 ? 'border-t lg:border-t-0' : ''} ${i === 2 ? 'lg:border-l' : ''} ${divider}`}
-              >
-                <dt className="eyebrow">{k.label}</dt>
-                <dd className="mt-2 text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
-                  <CountUp value={k.value} />
-                </dd>
-                <dd className="mt-1 text-xs text-slate-500">{k.sub}</dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
-
-        {/* Row 1 */}
-        <div className="mt-4 sm:mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
-          <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-5">
-            {/* Identity */}
-            <Panel index={1}>
-              <PanelHeader eyebrow="Account" title="Auditor identity" action={<Chip tone={signer ? 'ok' : 'neutral'}>{authLabel}</Chip>} />
-              <div className="px-5 sm:px-6 pb-5 sm:pb-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center w-9 h-9 rounded-md border border-slate-200 dark:border-white/10 text-slate-500">
-                    <User className="w-4 h-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                      {user?.name || (connectedWallet ? `Auditor ${connectedWallet.slice(0, 6)}` : 'Security auditor')}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate flex items-center gap-1">
-                      <Mail className="w-3 h-3 shrink-0" />
-                      {user?.email || (connectedWallet ? 'Wallet signer session' : 'Email account')}
-                    </p>
-                  </div>
-                </div>
-
-                {signer ? (
-                  <WalletCard3D address={signer} copied={copiedWallet} onCopy={() => handleCopyWallet(signer)} network={networkLabel} />
-                ) : (
-                  <div className="rounded-lg border border-dashed border-slate-300 dark:border-white/15 p-5 text-center">
-                    <span className="mx-auto grid place-items-center w-10 h-10 rounded-md bg-accent-subtle text-accent">
-                      <Link2 className="w-5 h-5" />
+        {/* KPI tray */}
+        <Tray index={0}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+            {KPIS.map((k, i) => {
+              const Icon = k.icon;
+              const inner = (
+                <Tile className="h-full p-4 sm:p-5 transition-colors group-hover:border-slate-300 dark:group-hover:border-white/15">
+                  <div className="flex items-center gap-3">
+                    <span className="grid place-items-center w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-slate-700 dark:text-slate-300">
+                      <Icon className="w-4 h-4" />
                     </span>
-                    <p className="mt-3 text-sm font-medium text-slate-900 dark:text-white">No Stellar wallet linked</p>
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">Link Freighter to sign ledger proofs and buy credit bundles.</p>
-                    <AnimatePresence>
-                      {(linkError || linkSuccess) && (
-                        <motion.p
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className={`mt-2 text-xs ${linkError ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}
-                        >
-                          {linkError || linkSuccess}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                    <button type="button" onClick={handleLinkWallet} disabled={linkingWallet} className={`${btn.primary} w-full mt-4`}>
-                      <Link2 className="w-4 h-4" />
-                      {linkingWallet ? 'Connecting Freighter…' : 'Link Freighter wallet'}
+                    <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{k.label}</span>
+                    <ArrowUpRight className="w-4 h-4 text-slate-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  </div>
+                  <p className="mt-6 sm:mt-8 text-4xl sm:text-[44px] font-medium tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
+                    <CountUp value={String(k.value)} />
+                  </p>
+                  <div className="mt-5 pt-3 border-t border-slate-200/70 dark:border-white/[0.07] flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-500 truncate">{k.foot}</span>
+                    <Pill tone={k.pill.tone}>{k.pill.text}</Pill>
+                  </div>
+                </Tile>
+              );
+              return (
+                <TiltCard key={k.label} max={4} glare={false} className="h-full">
+                  {k.href ? (
+                    <Link href={k.href} className="group block h-full" aria-label={k.label}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <button type="button" onClick={k.onClick} className="group block w-full h-full text-left cursor-pointer" aria-label={`${k.label}: buy more`}>
+                      {inner}
                     </button>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <span className="text-slate-500">Ledger records</span>
-                  <span className="font-mono text-slate-900 dark:text-white">
-                    {totalSubmitted} {totalSubmitted === 1 ? 'record' : 'records'}
-                  </span>
-                </div>
-              </div>
-            </Panel>
-
-            {/* Credits */}
-            <Panel index={2}>
-              <PanelHeader eyebrow="Credits" title="Prepaid audit balance" action={<Chip tone="ok">Never expires</Chip>} />
-              <div className="px-5 sm:px-6 pb-5 sm:pb-6">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-4xl font-medium tracking-tight text-slate-900 dark:text-white">
-                      <CountUp value={String(available)} />
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">audits available · {available * 10} XLM</p>
-                  </div>
-                  <div className="text-right text-xs text-slate-500 font-mono space-y-0.5">
-                    <p>bought {purchased}</p>
-                    <p>used {consumed}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                  <motion.div
-                    className="h-full bg-accent rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${usedPct}%` }}
-                    transition={{ duration: 1.1, delay: 0.4, ease: EASE_OUT }}
-                  />
-                </div>
-                <p className="mt-1.5 text-[11px] text-slate-500">{usedPct}% of purchased credits used</p>
-
-                <AnimatePresence>
-                  {userCredits && available <= 1 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className={`mt-4 flex items-start gap-2.5 p-3 rounded-md border text-xs ${
-                        available === 0
-                          ? 'border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300'
-                          : 'border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300'
-                      }`}
-                    >
-                      <AlertTriangle className="w-4 h-4 shrink-0 mt-px" />
-                      {available === 0
-                        ? 'No credits left. Buy a bundle to run your next audit (10 XLM = 1 audit).'
-                        : 'One audit left. Top up any time; credits never expire.'}
-                    </motion.div>
                   )}
-                </AnimatePresence>
-
-                <button type="button" onClick={() => setShowPricingModal(true)} className={`${btn.primary} w-full mt-4`}>
-                  <PlusCircle className="w-4 h-4" />
-                  Buy audit bundles
-                </button>
-
-                {purchaseHistory.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setShowHistoryView(!showHistoryView)}
-                      aria-expanded={showHistoryView}
-                      className="mt-3 w-full flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-                    >
-                      <span>Purchases ({purchaseHistory.length})</span>
-                      <motion.span animate={{ rotate: showHistoryView ? 90 : 0 }}>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </motion.span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {showHistoryView && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.35, ease: EASE_OUT }}
-                          className="overflow-hidden"
-                        >
-                          <ul className={`mt-2 max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-white/10 border-y ${divider}`}>
-                            {purchaseHistory.map((p, i) => (
-                              <li key={p.id || i} className="py-2.5 text-xs flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="text-slate-900 dark:text-white truncate">
-                                    {p.packageName || 'Audit bundle'} · +{p.credits}
-                                  </p>
-                                  <p className="text-slate-500">{p.timestamp ? new Date(p.timestamp).toLocaleDateString() : 'Confirmed'}</p>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <p className="font-mono text-slate-900 dark:text-white">{p.amountXLM} XLM</p>
-                                  {p.transactionHash && (
-                                    <a
-                                      href={`https://stellar.expert/explorer/testnet/tx/${p.transactionHash}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="font-mono text-accent hover:underline inline-flex items-center gap-0.5"
-                                    >
-                                      {p.transactionHash.slice(0, 8)}…
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>
-                                  )}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </>
-                )}
-              </div>
-            </Panel>
+                </TiltCard>
+              );
+            })}
           </div>
+        </Tray>
 
-          {/* 3D risk index */}
-          <Panel index={3} className="lg:col-span-8">
-            <PanelHeader
-              eyebrow="Invariant engine"
-              title="Smart contract security index"
-              action={
-                <div className="flex p-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]" role="tablist" aria-label="Audit mode">
-                  {(['PRE', 'POST'] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      role="tab"
-                      aria-selected={selectedAuditMode === m}
-                      onClick={() => setSelectedAuditMode(m)}
-                      className={`relative px-2.5 h-7 text-xs rounded-[4px] transition-colors cursor-pointer ${
-                        selectedAuditMode === m ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      {selectedAuditMode === m && (
-                        <motion.span
-                          layoutId="audit-mode"
-                          className="absolute inset-0 rounded-[4px] bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 shadow-xs"
-                          transition={{ duration: 0.3, ease: EASE_OUT }}
-                        />
-                      )}
-                      <span className="relative">{m === 'PRE' ? 'Pre-deploy' : 'Post-deploy'}</span>
-                    </button>
-                  ))}
-                </div>
-              }
-            />
-            <div className="px-5 sm:px-6 -mt-1 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-500">
-              <span>
-                Overall score <span className="font-mono text-slate-900 dark:text-white">{isScanningActive ? `${overallRiskScore}/100` : '—'}</span>
-              </span>
-              <span>
-                Consensus latency <span className="font-mono text-slate-900 dark:text-white">{isScanningActive ? '1,150ms' : '—'}</span>
-              </span>
-              {!isScanningActive && <span>Run an audit in Studio to light up the index.</span>}
-            </div>
-            <div className="mt-auto">
-              <RiskChart3D bars={riskBars} active={isScanningActive} />
-            </div>
-          </Panel>
-        </div>
-
-        {/* Row 2 */}
-        <div className="mt-4 sm:mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5">
-          {/* Recent audits */}
-          <Panel index={4} className="lg:col-span-4">
-            <PanelHeader
-              eyebrow="History"
-              title="Recent audits"
-              action={
-                <Link href="/reports" className={btn.link}>
-                  All <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
-              }
-            />
-            {auditHistory.length === 0 ? (
-              <EmptyState icon={FileCode} title="No audit records yet" body="Run your first inspection in Audit Studio to create an on-chain proof." />
-            ) : (
-              <motion.ul
-                initial="hidden"
-                animate="show"
-                variants={{ show: { transition: { staggerChildren: 0.06, delayChildren: 0.4 } } }}
-                className={`border-t ${divider} divide-y divide-slate-200 dark:divide-white/10`}
-              >
-                {auditHistory.slice(0, 5).map((item: any, idx: number) => {
-                  const name = item.contract || 'Soroban contract';
-                  const s = item.riskScore ?? (item.isSecure ? 95 : 55);
-                  return (
-                    <motion.li
-                      key={item.hash || idx}
-                      variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.45, ease: EASE_OUT } } }}
-                    >
-                      <Link
-                        href={`/reports?hash=${item.hash}`}
-                        className="group flex items-center gap-3 px-5 sm:px-6 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors"
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.isSecure ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-slate-900 dark:text-white truncate">{name}</p>
-                          <p className="text-xs text-slate-500 truncate">{item.date || item.timestamp || 'Recent'}</p>
-                        </div>
-                        <span className="font-mono text-xs text-slate-600 dark:text-slate-400 tabular-nums">{s}</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      </Link>
-                    </motion.li>
-                  );
-                })}
-              </motion.ul>
-            )}
-          </Panel>
-
-          {/* Latest analysis */}
-          <Panel index={5} className="lg:col-span-4">
-            <PanelHeader
-              eyebrow="Latest analysis"
-              title={activeAudit ? activeAudit.contractName : 'No active contract'}
-              action={activeAudit && <Chip tone={activeAudit.isSecure ? 'ok' : 'warn'}>{activeAudit.isSecure ? 'Verified' : 'Action req.'}</Chip>}
-            />
-            {!activeAudit ? (
-              <EmptyState icon={Activity} title="Nothing scanned yet" body="Paste or upload a Soroban contract in Audit Studio to see live results here." />
-            ) : (
-              <div className="px-5 sm:px-6 pb-5 sm:pb-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-4">
-                  <ScoreRing value={activeAudit.riskScore} label={`Consensus score ${activeAudit.riskScore} of 100`} />
-                  <dl className="text-xs space-y-1.5 min-w-0">
-                    <div className="flex gap-2">
-                      <dt className="text-slate-500">File</dt>
-                      <dd className="font-mono text-slate-900 dark:text-white truncate">{activeAudit.subtitle}</dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="text-slate-500">Lines</dt>
-                      <dd className="font-mono text-slate-900 dark:text-white">{activeAudit.linesCount}</dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="text-slate-500">Flaws</dt>
-                      <dd className="font-mono text-accent">{activeAudit.vulnerabilitiesCount} detected</dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div className="mt-5 h-16 relative">
-                  <Sparkline points={trend} />
-                  <span className="absolute top-0 right-0 font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                    score trend · {trend.length} {trend.length === 1 ? 'audit' : 'audits'}
-                  </span>
-                </div>
-
-                <div className={`mt-4 flex items-center justify-between gap-2 text-xs border-t ${divider} pt-3`}>
-                  <span className="text-slate-500">SHA-256</span>
-                  <span className="font-mono text-slate-900 dark:text-white truncate">
-                    {activeAudit.contractHash?.slice(0, 10)}…{activeAudit.contractHash?.slice(-8)}
-                  </span>
-                </div>
-                <p className="mt-3 text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">{activeAudit.summary}</p>
-
-                <div className="mt-auto pt-5 grid grid-cols-2 gap-2">
-                  <Link href="/audit" className={btn.primary}>
-                    Audit Studio
-                  </Link>
-                  <Link href={`/reports?hash=${activeAudit.contractHash}`} className={btn.secondary}>
-                    View report
-                  </Link>
-                </div>
-              </div>
-            )}
-          </Panel>
-
-          {/* Threat shield */}
-          <Panel index={6} className="md:col-span-2 lg:col-span-4">
-            <PanelHeader
-              eyebrow="Threat shield"
-              title="Invariant guards"
-              action={
-                <Chip tone={!isScanningActive ? 'neutral' : passingGuardsCount === 4 ? 'ok' : passingGuardsCount >= 2 ? 'warn' : 'bad'}>
-                  {isScanningActive ? `${passingGuardsCount}/4 active` : 'Standby'}
-                </Chip>
-              }
-            />
-            <div className="px-5 sm:px-6 grid grid-cols-4 gap-1.5" aria-hidden>
-              {GUARDS.map((g, i) => (
-                <motion.span
-                  key={g.name}
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 0.5, delay: 0.5 + i * 0.1, ease: EASE_OUT }}
-                  className={`h-1.5 rounded-full origin-left ${!isScanningActive ? 'bg-slate-200 dark:bg-white/10' : g.hit ? 'bg-red-500' : 'bg-emerald-500'}`}
-                />
-              ))}
-            </div>
-            <motion.ul
-              initial="hidden"
-              animate="show"
-              variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.5 } } }}
-              className={`mt-4 border-t ${divider} divide-y divide-slate-200 dark:divide-white/10`}
-            >
-              {GUARDS.map((g) => {
-                const Icon = g.icon;
-                const state = !isScanningActive ? 'Standby' : g.hit ? g.badLabel : g.okLabel;
-                return (
-                  <motion.li
-                    key={g.name}
-                    variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } } }}
-                    className="flex items-center gap-3 px-5 sm:px-6 py-3"
+        {/* Overview + surface */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+          <Tray index={1} className="lg:col-span-8">
+            <Tile flat className="h-full flex flex-col">
+              <TileHeader
+                title="Finding overview"
+                action={
+                  <div className="flex items-center gap-2">
+                    <Segmented
+                      id="overview-view"
+                      label="Overview view"
+                      value={overviewView}
+                      onChange={setOverviewView}
+                      options={[
+                        { value: 'breakdown', label: 'Breakdown' },
+                        { value: '3d', label: '3D index' },
+                      ]}
+                    />
+                    <Segmented
+                      id="overview-scope"
+                      label="Audit scope"
+                      value={selectedAuditMode}
+                      onChange={setSelectedAuditMode}
+                      options={[
+                        { value: 'ALL', label: 'All' },
+                        { value: 'PRE', label: 'Pre' },
+                        { value: 'POST', label: 'Post' },
+                      ]}
+                    />
+                  </div>
+                }
+              />
+              <AnimatePresence mode="wait">
+                {overviewView === 'breakdown' ? (
+                  <motion.div
+                    key="breakdown"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3, ease: EASE_OUT }}
+                    className="px-4 sm:px-5 pb-5 pt-5 space-y-6"
                   >
-                    <span
-                      className={`grid place-items-center w-7 h-7 rounded-md border shrink-0 ${
-                        !isScanningActive
-                          ? 'border-slate-200 dark:border-white/10 text-slate-400'
-                          : g.hit
-                          ? 'border-red-500/30 bg-red-500/10 text-red-500'
-                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-900 dark:text-white truncate">{g.name}</p>
-                      <p className="text-xs text-slate-500 truncate">{isScanningActive && g.hit ? g.bad : g.ok}</p>
-                    </div>
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 shrink-0">{state}</span>
-                  </motion.li>
-                );
-              })}
-            </motion.ul>
-            <div className={`mt-auto flex items-center justify-between gap-3 px-5 sm:px-6 py-3 border-t ${divider} text-xs`}>
-              <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('solace-open-invariants-modal'))} className={btn.link}>
-                Invariants matrix <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-              <Link href="/monitor" className={btn.link}>
-                Monitor <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </Panel>
+                    <section>
+                      <p className="mb-2.5 text-xs text-slate-500">Severity</p>
+                      <SeverityBar counts={severity} />
+                    </section>
+                    <section>
+                      <p className="mb-2.5 text-xs text-slate-500">State</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { n: scopedSecure, label: 'Verified secure' },
+                          { n: scoped.length - scopedSecure, label: 'Action required' },
+                          { n: scopedAnchored, label: 'Anchored on-chain' },
+                        ].map((s) => (
+                          <div
+                            key={s.label}
+                            className="h-12 rounded-xl bg-slate-100 dark:bg-white/[0.05] grid place-items-center px-2 text-xs text-slate-700 dark:text-slate-300 text-center"
+                          >
+                            <span>
+                              <span className="font-medium text-slate-900 dark:text-white tabular-nums">{s.n}</span> {s.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                    <section>
+                      <p className="mb-4 text-xs text-slate-500">Risk score distribution</p>
+                      <ScoreStrip items={scoreItems} />
+                    </section>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="3d"
+                    initial={{ opacity: 0, rotateX: 12 }}
+                    animate={{ opacity: 1, rotateX: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, ease: EASE_OUT }}
+                    style={{ transformPerspective: 1200 }}
+                    className="pt-2"
+                  >
+                    <RiskChart3D bars={riskBars} active={isScanningActive} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Tile>
+          </Tray>
+
+          <Tray index={2} className="lg:col-span-4">
+            <Tile className="h-full flex flex-col">
+              <TileHeader title="Issue surface" action={<ViewAll href="/reports" label="Details" />} />
+              <div className="px-4 sm:px-5 pt-5 pb-5 flex-1">
+                <SurfaceGauge segments={surfaceSorted} centerLabel="Findings" />
+              </div>
+            </Tile>
+          </Tray>
         </div>
+
+        {/* Lists */}
+        <Tray index={3}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5">
+            {[
+              { title: 'Recent audits', items: recentAudits, empty: 'No audits yet. Run one in Audit Studio.', href: '/reports' },
+              { title: 'Open issues', items: openIssues, empty: 'Nothing open. Every audited contract passes.', href: '/reports' },
+              { title: 'Recent activity', items: activity, empty: 'Activity from audits, anchors and purchases shows up here.', href: '/reports' },
+            ].map((col) => (
+              <Tile key={col.title} className="flex flex-col">
+                <TileHeader title={col.title} action={<ViewAll href={col.href} />} />
+                <div className="pt-2">
+                  <FeedList items={col.items} empty={col.empty} />
+                </div>
+              </Tile>
+            ))}
+          </div>
+        </Tray>
       </main>
 
       <PricingModal
@@ -848,30 +726,29 @@ export default function DashboardPage() {
   );
 }
 
-function EmptyState({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
-}) {
+function Pill({ tone, children }: { tone: 'neutral' | 'ok' | 'warn' | 'bad'; children: React.ReactNode }) {
+  const cls = {
+    neutral: 'bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300',
+    ok: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    warn: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+    bad: 'bg-accent/10 text-accent',
+  }[tone];
+  return <span className={`shrink-0 inline-flex items-center h-5 px-2 rounded-md text-[10px] font-medium whitespace-nowrap ${cls}`}>{children}</span>;
+}
+
+/** Deterministic 4×4 avatar from a wallet address. */
+function Identicon({ seed }: { seed: string }) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const cells = Array.from({ length: 8 }, (_, i) => (h >> i) & 1);
   return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-10 [perspective:400px]">
-      <motion.span
-        initial={{ rotateX: 70, opacity: 0 }}
-        animate={{ rotateX: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.4, ease: EASE_OUT }}
-        className="grid place-items-center w-10 h-10 rounded-md bg-accent-subtle text-accent"
-      >
-        <Icon className="w-5 h-5" />
-      </motion.span>
-      <p className="mt-3 text-sm font-medium text-slate-900 dark:text-white">{title}</p>
-      <p className="mt-1 text-xs text-slate-500 max-w-[16rem] leading-relaxed">{body}</p>
-      <Link href="/audit" className={`${btn.secondary} mt-4 h-9`}>
-        Open Audit Studio
-      </Link>
-    </div>
+    <span aria-hidden className="grid grid-cols-4 gap-px w-8 h-8 p-1 rounded-lg bg-accent-subtle">
+      {Array.from({ length: 16 }, (_, i) => {
+        const col = i % 4;
+        const row = Math.floor(i / 4);
+        const on = cells[row * 2 + (col < 2 ? col : 3 - col)]; // mirrored
+        return <span key={i} className={`rounded-[2px] ${on ? 'bg-accent' : 'bg-transparent'}`} />;
+      })}
+    </span>
   );
 }
