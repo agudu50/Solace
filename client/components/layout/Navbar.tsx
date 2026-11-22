@@ -258,7 +258,7 @@ export default function Navbar() {
                       icon: Search,
                       onClick: () => {
                         const hash = prompt('Search contract audit hash:');
-                        if (hash) window.location.href = `/reports?hash=${encodeURIComponent(hash)}`;
+                        if (hash) router.push(`/reports?hash=${encodeURIComponent(hash)}`);
                       },
                     },
                     { label: 'Security invariants', icon: Bell, onClick: () => setShowInvariantsModal(true) },

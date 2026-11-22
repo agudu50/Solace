@@ -6,7 +6,7 @@ import { useWallet } from '../../context/WalletContext';
 import PricingModal from '../pricing/PricingModal';
 import { btn, container } from './primitives';
 import AuditStage from './AuditStage';
-import { CountUp, EASE_OUT, SplitWords, useParallax, usePointerDepth } from './motion';
+import { CountUp, EASE_OUT, SplitWords, useActive, useParallax, usePointerDepth } from './motion';
 
 const METRICS = [
   { value: '< 0.4s', label: 'AST scan latency' },
@@ -126,6 +126,8 @@ function HeroStage() {
   const stageRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { x, y } = usePointerDepth(stageRef, { global: true });
+  // Only run the idle bobbing while the stage is on screen and the tab is visible.
+  const onScreen = useActive(stageRef);
 
   const { scrollYProgress } = useScroll({ target: stageRef, offset: ['start end', 'start 0.25'] });
   const scrollTilt = useTransform(scrollYProgress, [0, 1], [26, 0]);
@@ -165,13 +167,13 @@ function HeroStage() {
           <AuditStage />
         </div>
 
-        <FloatingCard x={x} y={y} z={110} depth={22} className="-left-44 top-10" delay={1.1} bob={0}>
+        <FloatingCard x={x} y={y} z={110} depth={22} className="-left-44 top-10" delay={1.1} bob={0} active={onScreen}>
           <AgentCard />
         </FloatingCard>
-        <FloatingCard x={x} y={y} z={150} depth={32} className="-right-48 top-[38%]" delay={1.3} bob={1.2}>
+        <FloatingCard x={x} y={y} z={150} depth={32} className="-right-48 top-[38%]" delay={1.3} bob={1.2} active={onScreen}>
           <PatchCard />
         </FloatingCard>
-        <FloatingCard x={x} y={y} z={80} depth={16} className="-left-36 bottom-6" delay={1.5} bob={2.1}>
+        <FloatingCard x={x} y={y} z={80} depth={16} className="-left-36 bottom-6" delay={1.5} bob={2.1} active={onScreen}>
           <AnchorCard />
         </FloatingCard>
       </motion.div>
@@ -188,6 +190,7 @@ function FloatingCard({
   depth,
   delay,
   bob,
+  active,
 }: {
   children: React.ReactNode;
   className: string;
@@ -197,6 +200,7 @@ function FloatingCard({
   depth: number;
   delay: number;
   bob: number;
+  active: boolean;
 }) {
   const reduce = useReducedMotion();
   const px = useParallax(x, depth);
@@ -209,7 +213,11 @@ function FloatingCard({
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, filter: 'blur(8px)' }}
-        animate={reduce ? { opacity: 1, scale: 1, filter: 'blur(0px)' } : { opacity: 1, scale: 1, filter: 'blur(0px)', y: [0, -8, 0] }}
+        animate={
+          reduce || !active
+            ? { opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }
+            : { opacity: 1, scale: 1, filter: 'blur(0px)', y: [0, -8, 0] }
+        }
         transition={{
           opacity: { duration: 0.8, delay, ease: EASE_OUT },
           scale: { duration: 0.8, delay, ease: EASE_OUT },
@@ -217,7 +225,7 @@ function FloatingCard({
           y: { duration: 6, delay: delay + bob, repeat: Infinity, ease: 'easeInOut' },
         }}
         style={{ translateZ: z }}
-        className="w-64 rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-md p-3.5 text-left shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]"
+        className="w-64 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-3.5 text-left shadow-[0_24px_60px_-20px_rgba(0,0,0,0.45)]"
       >
         {children}
       </motion.div>

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import React from 'react';
-import { cookies } from 'next/headers';
 import { Inter, DM_Mono } from 'next/font/google';
 import './globals.css';
 import Navbar from '../components/layout/Navbar';
@@ -8,6 +7,7 @@ import Footer from '../components/layout/Footer';
 import SidebarDock from '../components/layout/SidebarDock';
 import { WalletProvider } from '../context/WalletContext';
 import { ToastProvider } from '../context/ToastContext';
+import NavProgress from '../components/layout/NavProgress';
 
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const mono = DM_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-mono', display: 'swap' });
@@ -27,9 +27,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
-  const initialWallet = cookieStore.get('solace_connected_wallet')?.value || '';
-  const initialNetwork = (cookieStore.get('solace_network')?.value as 'testnet' | 'mainnet') || 'testnet';
+  // No cookies() here: reading request cookies makes every route dynamic (no
+  // prefetch, a server round-trip per click). The wallet session is restored
+  // client-side by WalletProvider, which never used these initial values.
 
   return (
     <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
@@ -66,7 +66,8 @@ export default function RootLayout({
       </head>
       <body className="font-sans bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 min-h-screen antialiased flex flex-col justify-between selection:bg-accent selection:text-white transition-colors duration-200 overflow-x-hidden w-full max-w-full">
         <ToastProvider>
-          <WalletProvider initialWallet={initialWallet} initialNetwork={initialNetwork}>
+          <WalletProvider>
+            <NavProgress />
             <Navbar />
             <div className="flex-grow w-full max-w-full overflow-x-hidden">
               {children}
