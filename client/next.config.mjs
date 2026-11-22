@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
   reactStrictMode: true,
   experimental: {
     // Rewrite barrel imports (`import { X } from 'lucide-react'`) to per-icon

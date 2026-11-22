@@ -15,6 +15,28 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+body {
+  font-weight: 500;
+}
+
+.text-slate-400 {
+  color: #6b6b69;
+}
+
+.text-slate-500 {
+  color: #575755;
+}
+
+.dark .text-slate-400,
+.dark .dark\:text-slate-400 {
+  color: #b8b8b6;
+}
+
+.dark .text-slate-500,
+.dark .dark\:text-slate-500 {
+  color: #a3a3a1;
+}
+
 /* ---------- Marketing primitives (flat, hairline, mono labels) ---------- */
 
 /* Mono uppercase eyebrow label used above section headings */

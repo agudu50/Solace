@@ -1,196 +1,226 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ShieldAlert,
-  ShieldCheck,
-  Users,
-  Coins,
   Activity,
-  FileCode,
-  FileText,
-  Clock,
-  ExternalLink,
-  RefreshCw,
-  Search,
-  Filter,
-  CheckCircle2,
   AlertTriangle,
-  Lock,
-  Layers,
-  Cpu,
-  LogOut,
-  SlidersHorizontal,
-  PlusCircle,
-  MinusCircle,
+  CheckCircle2,
+  ChevronDown,
+  Coins,
   Copy,
   Check,
-  ChevronRight,
-  Database,
-  Terminal,
+  FileCode,
+  Gauge,
+  Lock,
+  LogOut,
+  MinusCircle,
+  PlusCircle,
+  RefreshCw,
+  ScrollText,
+  Search,
+  ShieldCheck,
+  User as UserIcon,
+  Users,
+  Wrench,
 } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import { useToast } from '../../context/ToastContext';
 import {
-  fetchCurrentUserSession,
+  adjustCreditsAdmin,
+  fetchAdminAudits,
+  fetchAdminLogs,
+  fetchAdminPurchases,
   fetchAdminStats,
   fetchAdminUsers,
-  updateUserStatusAdmin,
+  fetchCurrentUserSession,
   updateUserRoleAdmin,
-  fetchAdminAudits,
-  fetchAdminPurchases,
-  adjustCreditsAdmin,
-  fetchAdminLogs,
-  AuthUser,
+  updateUserStatusAdmin,
+  type AuthUser,
 } from '../../utils/solaceService';
+import {
+  fetchAdminIssues,
+  fetchAdminMetrics,
+  fetchAdminPresence,
+  updateAdminIssue,
+  type Issue,
+  type IssueStatus,
+  type Metrics,
+  type Presence,
+} from '../../utils/opsService';
+import { Tile, TileHeader, Tray } from '../../components/dashboard/Overview';
+import { Orb, Segmented } from '../../components/audit/StudioParts';
+import { CountUp, EASE_OUT } from '../../components/landing/motion';
+import { btn } from '../../components/landing/primitives';
 
-export default function AdminDashboardPage() {
-  const router = useRouter();
-  const { walletKey, user, isAdmin, disconnect } = useWallet();
+type Tab = 'overview' | 'issues' | 'users' | 'credits' | 'audits' | 'logs';
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [authorized, setAuthorized] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+const LIVE_MS = 10_000;
+const ISSUES_MS = 30_000;
+const STELLAR_KEY = /^G[A-Z0-9]{55}$/;
 
-  // Active Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'audits' | 'purchases' | 'logs'>('overview');
+/* ------------------------------------------------------------------ */
+/* Small helpers                                                       */
+/* ------------------------------------------------------------------ */
 
-  // Data states
+function ago(input?: string | number | null) {
+  if (!input) return '—';
+  const ms = typeof input === 'number' ? input : Date.parse(input);
+  if (Number.isNaN(ms)) return '—';
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+function duration(sec: number) {
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m`;
+  return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+}
+
+const short = (w?: string | null) => (w ? `${w.slice(0, 5)}…${w.slice(-4)}` : '');
+
+function Pill({ tone = 'neutral', children }: { tone?: 'neutral' | 'ok' | 'warn' | 'bad' | 'accent' | 'info'; children: React.ReactNode }) {
+  const cls = {
+    neutral: 'bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300',
+    ok: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    warn: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+    bad: 'bg-red-500/10 text-red-600 dark:text-red-400',
+    accent: 'bg-accent/10 text-accent',
+    info: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
+  }[tone];
+  return <span className={`inline-flex items-center gap-1 h-5 px-2 rounded-md text-[10px] font-medium whitespace-nowrap ${cls}`}>{children}</span>;
+}
+
+const SEVERITY_TONE: Record<Issue['severity'], 'neutral' | 'warn' | 'bad' | 'accent'> = {
+  low: 'neutral',
+  medium: 'warn',
+  high: 'accent',
+  critical: 'bad',
+};
+const STATUS_LABEL: Record<IssueStatus, string> = { open: 'Open', in_progress: 'In progress', resolved: 'Resolved' };
+const STATUS_TONE: Record<IssueStatus, 'bad' | 'info' | 'ok'> = { open: 'bad', in_progress: 'info', resolved: 'ok' };
+
+const input =
+  'w-full h-10 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20';
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
+
+export default function AdminConsolePage() {
+  const { disconnect } = useWallet();
+  const toast = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [me, setMe] = useState<AuthUser | null>(null);
+  const [tab, setTab] = useState<Tab>('overview');
+
   const [stats, setStats] = useState<any>(null);
-  const [usersList, setUsersList] = useState<any[]>([]);
-  const [auditsList, setAuditsList] = useState<any[]>([]);
-  const [purchasesList, setPurchasesList] = useState<any[]>([]);
-  const [logsList, setLogsList] = useState<any[]>([]);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string>('');
-  const [successMsg, setSuccessMsg] = useState<string>('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [audits, setAudits] = useState<any[]>([]);
+  const [ledger, setLedger] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [presence, setPresence] = useState<Presence | null>(null);
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [liveAt, setLiveAt] = useState<number>(0);
+  const [, tick] = useState(0);
 
-  // Search & Filter
-  const [userSearch, setUserSearch] = useState<string>('');
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  // Credit grant form (also opened from the Users tab)
+  const [grantWallet, setGrantWallet] = useState('');
+  const amountRef = useRef<HTMLInputElement>(null);
 
-  // Credit Adjustment Modal
-  const [adjustModalOpen, setAdjustModalOpen] = useState<boolean>(false);
-  const [adjustTargetWallet, setAdjustTargetWallet] = useState<string>('');
-  const [adjustAmount, setAdjustAmount] = useState<number>(3);
-  const [adjustReason, setAdjustReason] = useState<string>('');
-  const [adjustSubmitting, setAdjustSubmitting] = useState<boolean>(false);
-
-  // 1. Verify Server-Side Authorization on Mount
-  const loadDashboardData = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setRefreshing(true);
-    setErrorMsg('');
-
     try {
-      // Confirm authenticated admin session with backend
       const sessionUser = await fetchCurrentUserSession();
       if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'super_admin')) {
         setAuthorized(false);
-        setLoading(false);
-        setRefreshing(false);
         return;
       }
-
-      setCurrentUser(sessionUser);
+      setMe(sessionUser);
       setAuthorized(true);
-
-      // Fetch admin data in parallel
-      const [statsData, usersData, auditsData, purchasesData, logsData] = await Promise.all([
+      const [s, u, a, p, l, i, pr, m] = await Promise.all([
         fetchAdminStats().catch(() => null),
         fetchAdminUsers().catch(() => []),
         fetchAdminAudits().catch(() => []),
         fetchAdminPurchases().catch(() => []),
         fetchAdminLogs().catch(() => []),
+        fetchAdminIssues().catch(() => []),
+        fetchAdminPresence().catch(() => null),
+        fetchAdminMetrics().catch(() => null),
       ]);
-
-      setStats(statsData);
-      setUsersList(usersData || []);
-      setAuditsList(auditsData || []);
-      setPurchasesList(purchasesData || []);
-      setLogsList(logsData || []);
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to load administrative data.');
+      setStats(s);
+      setUsers(u || []);
+      setAudits(a || []);
+      setLedger(p || []);
+      setLogs(l || []);
+      setIssues(i || []);
+      setPresence(pr);
+      setMetrics(m);
+      setLiveAt(Date.now());
+    } catch (err) {
+      toast.error(err, 'Failed to load the admin console.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+    loadAll();
+  }, [loadAll]);
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(text);
-    setTimeout(() => setCopiedKey(null), 2000);
+  // Live polling (paused while the tab is hidden)
+  useEffect(() => {
+    if (!authorized) return;
+    const live = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return;
+      const [pr, m] = await Promise.all([fetchAdminPresence().catch(() => null), fetchAdminMetrics().catch(() => null)]);
+      if (pr) setPresence(pr);
+      if (m) setMetrics(m);
+      setLiveAt(Date.now());
+    }, LIVE_MS);
+    const slow = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return;
+      const i = await fetchAdminIssues().catch(() => null);
+      if (i) setIssues(i);
+    }, ISSUES_MS);
+    const clock = setInterval(() => tick((n) => n + 1), 5000); // keep "x ago" labels fresh
+    return () => {
+      clearInterval(live);
+      clearInterval(slow);
+      clearInterval(clock);
+    };
+  }, [authorized]);
+
+  const openIssues = issues.filter((i) => i.status === 'open').length;
+  const inProgress = issues.filter((i) => i.status === 'in_progress').length;
+  const isSuper = me?.role === 'super_admin';
+
+  const giveCreditsTo = (wallet: string) => {
+    setGrantWallet(wallet);
+    setTab('credits');
+    setTimeout(() => amountRef.current?.focus(), 350);
   };
 
-  const handleToggleStatus = async (targetWallet: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
-    try {
-      await updateUserStatusAdmin(targetWallet, nextStatus, 'Admin console status toggle');
-      setSuccessMsg(`Updated ${targetWallet.slice(0, 8)}... status to ${nextStatus}.`);
-      setTimeout(() => setSuccessMsg(''), 4000);
-      loadDashboardData();
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to update user status.');
-    }
-  };
+  /* -------------------------- gates -------------------------- */
 
-  const handleRoleChange = async (targetWallet: string, currentRole: string) => {
-    const nextRole = currentRole === 'admin' ? 'user' : 'admin';
-    try {
-      await updateUserRoleAdmin(targetWallet, nextRole, 'Admin console role adjustment');
-      setSuccessMsg(`Updated ${targetWallet.slice(0, 8)}... role to ${nextRole}.`);
-      setTimeout(() => setSuccessMsg(''), 4000);
-      loadDashboardData();
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to update user role.');
-    }
-  };
-
-  const openAdjustModal = (wallet: string) => {
-    setAdjustTargetWallet(wallet);
-    setAdjustAmount(3);
-    setAdjustReason('Operator balance grant');
-    setAdjustModalOpen(true);
-  };
-
-  const handleExecuteCreditAdjustment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adjustTargetWallet || !adjustAmount || !adjustReason) return;
-
-    setAdjustSubmitting(true);
-    try {
-      await adjustCreditsAdmin(adjustTargetWallet, adjustAmount, adjustReason);
-      setSuccessMsg(`Successfully adjusted credits for ${adjustTargetWallet.slice(0, 8)}... by ${adjustAmount}.`);
-      setTimeout(() => setSuccessMsg(''), 4000);
-      setAdjustModalOpen(false);
-      loadDashboardData();
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Credit adjustment failed.');
-    } finally {
-      setAdjustSubmitting(false);
-    }
-  };
-
-  // Filtered users
-  const filteredUsers = usersList.filter((u) => {
-    if (!userSearch) return true;
-    const term = userSearch.toLowerCase();
-    return u.wallet_address.toLowerCase().includes(term) || u.role.toLowerCase().includes(term);
-  });
-
-  // Guard: Not Authenticated or Non-Admin
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0e0e0e] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-xs font-mono text-slate-400">Verifying Server-Side Administrator Credentials...</span>
+      <div className="min-h-[calc(100vh-65px)] grid place-items-center bg-[#f2f2f0] dark:bg-[#0b0b0b]">
+        <div className="text-center">
+          <Orb active>
+            <ShieldCheck className="w-5 h-5 text-accent" />
+          </Orb>
+          <p className="mt-6 font-mono text-xs text-slate-500 tracking-wider">Verifying administrator session…</p>
         </div>
       </div>
     );
@@ -198,32 +228,22 @@ export default function AdminDashboardPage() {
 
   if (!authorized) {
     return (
-      <div className="min-h-screen bg-[#0e0e0e] text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#161616] rounded-3xl p-8 border border-red-900/60 text-center shadow-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-red-950/60 border border-red-800 text-red-400 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-7 h-7" />
-          </div>
-          <span className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-red-950/80 text-red-300 font-bold border border-red-800 uppercase tracking-wider">
-            Unauthorized
+      <div className="min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f2f2f0] dark:bg-[#0b0b0b] text-center">
+        <div className="w-full max-w-md rounded-[18px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] p-8">
+          <span className="mx-auto grid place-items-center w-11 h-11 rounded-xl bg-red-500/10 text-red-500">
+            <Lock className="w-5 h-5" />
           </span>
-          <h1 className="text-2xl font-black text-white mt-3 mb-2">Administrator Access Denied</h1>
-          <p className="text-xs text-slate-400 leading-relaxed mb-6 font-medium">
-            This protected dashboard requires an active administrator wallet session. Your currently connected key is not
-            authorized to access platform management.
+          <h1 className="mt-5 text-xl font-medium tracking-tight text-slate-900 dark:text-white">Administrators only</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            This console needs an administrator session. Your current account isn&apos;t authorised to manage the platform.
           </p>
-          <div className="flex flex-col gap-2.5">
-            <Link
-              href="/admin/login"
-              className="py-3 px-6 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition flex items-center justify-center gap-2"
-            >
+          <div className="mt-6 flex flex-col gap-2">
+            <Link href="/admin/login" className={btn.primary}>
               <ShieldCheck className="w-4 h-4" />
-              <span>Go to Admin Login</span>
+              Go to admin sign-in
             </Link>
-            <Link
-              href="/"
-              className="py-2.5 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-mono transition"
-            >
-              Return to Public Platform
+            <Link href="/" className={btn.secondary}>
+              Return to Solace
             </Link>
           </div>
         </div>
@@ -231,671 +251,973 @@ export default function AdminDashboardPage() {
     );
   }
 
+  /* -------------------------- render -------------------------- */
+
+  const TABS: { value: Tab; label: React.ReactNode }[] = [
+    { value: 'overview', label: <><Gauge className="w-3.5 h-3.5" />Overview</> },
+    {
+      value: 'issues',
+      label: (
+        <>
+          <Wrench className="w-3.5 h-3.5" />
+          Issues
+          {openIssues > 0 && <span className="ml-0.5 px-1.5 rounded bg-red-500 text-white text-[10px] leading-4">{openIssues}</span>}
+        </>
+      ),
+    },
+    { value: 'users', label: <><Users className="w-3.5 h-3.5" />Users</> },
+    { value: 'credits', label: <><Coins className="w-3.5 h-3.5" />Credits</> },
+    { value: 'audits', label: <><FileCode className="w-3.5 h-3.5" />Audits</> },
+    { value: 'logs', label: <><ScrollText className="w-3.5 h-3.5" />Activity log</> },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0e0e0e] text-slate-100 flex flex-col selection:bg-accent selection:text-white">
-      {/* Top Admin Header */}
-      <header className="sticky top-0 z-40 bg-[#161616]/90 backdrop-blur-xl border-b border-slate-800 px-4 sm:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center p-1 border border-accent/40 shadow-sm">
-                <Image src="/solace-logo.jpg" alt="Solace" width={32} height={32} className="w-full h-full object-cover" />
-              </div>
-              <span className="font-black text-white tracking-tight">SOLACE</span>
-            </Link>
-            <div className="h-4 w-[1px] bg-slate-800" />
-            <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <span>ADMIN CONSOLE</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={loadDashboardData}
-              disabled={refreshing}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition text-xs font-mono flex items-center gap-1.5"
-              title="Refresh ledger state"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Sync</span>
-            </button>
-
-            {/* Authenticated Admin Badge */}
-            <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="font-bold text-white">
-                {currentUser?.address ? `${currentUser.address.slice(0, 6)}...${currentUser.address.slice(-4)}` : ''}
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-bold uppercase">
-                {currentUser?.role || 'admin'}
+    <div className="relative w-full min-h-screen bg-[#f2f2f0] dark:bg-[#0b0b0b] text-slate-800 dark:text-slate-100 pb-24 md:pb-10">
+      <main className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-3 sm:space-y-4">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Pill tone="accent">
+                <ShieldCheck className="w-3 h-3" />
+                {isSuper ? 'Super admin' : 'Admin'}
+              </Pill>
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+                <span className="relative flex w-1.5 h-1.5">
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-500 animate-ping-soft" />
+                  <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                </span>
+                Live · updated {ago(liveAt)}
               </span>
             </div>
-
-            <button
-              type="button"
-              onClick={disconnect}
-              className="p-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/50 transition"
-              title="Logout Session"
-            >
-              <LogOut className="w-3.5 h-3.5" />
+            <h1 className="text-2xl sm:text-[28px] font-medium tracking-tight text-slate-900 dark:text-white">Admin console</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Signed in as <span className="font-mono text-slate-700 dark:text-slate-300">{me?.address ? short(me.address) : me?.email}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={loadAll} disabled={refreshing} className={`${btn.secondary} h-10`}>
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button type="button" onClick={disconnect} className={`${btn.secondary} h-10`}>
+              <LogOut className="w-4 h-4" />
+              Sign out
             </button>
           </div>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 space-y-6">
-        {/* Flash Notifications */}
-        {errorMsg && (
-          <div className="p-3.5 rounded-2xl bg-red-950/60 border border-red-800/80 text-xs text-red-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-            <button onClick={() => setErrorMsg('')} className="text-red-400 hover:text-white font-mono text-xs">
-              ✕
-            </button>
-          </div>
-        )}
+        <div className="overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+          <Segmented id="admin-tab" label="Admin sections" value={tab} onChange={setTab} options={TABS} />
+        </div>
 
-        {successMsg && (
-          <div className="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-xs text-emerald-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-            <button onClick={() => setSuccessMsg('')} className="text-emerald-400 hover:text-white font-mono text-xs">
-              ✕
-            </button>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.3, ease: EASE_OUT }}
+            className="space-y-3 sm:space-y-4"
+          >
+            {tab === 'overview' && (
+              <OverviewTab
+                stats={stats}
+                users={users}
+                presence={presence}
+                metrics={metrics}
+                issues={issues}
+                openIssues={openIssues}
+                inProgress={inProgress}
+                onOpenIssues={() => setTab('issues')}
+              />
+            )}
+            {tab === 'issues' && <IssuesTab issues={issues} setIssues={setIssues} />}
+            {tab === 'users' && (
+              <UsersTab users={users} isSuper={isSuper} meAddress={me?.address || undefined} onGiveCredits={giveCreditsTo} onChanged={loadAll} />
+            )}
+            {tab === 'credits' && (
+              <CreditsTab
+                wallet={grantWallet}
+                setWallet={setGrantWallet}
+                amountRef={amountRef}
+                ledger={ledger}
+                users={users}
+                onDone={loadAll}
+              />
+            )}
+            {tab === 'audits' && <AuditsTab audits={audits} />}
+            {tab === 'logs' && <LogsTab logs={logs} />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}
 
-        {/* Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#161616] border border-slate-800/80 overflow-x-auto">
-          {[
-            { id: 'overview', label: 'Platform Analytics', icon: Activity },
-            { id: 'users', label: `Users (${usersList.length})`, icon: Users },
-            { id: 'audits', label: `Audits (${auditsList.length})`, icon: FileCode },
-            { id: 'purchases', label: `XML Purchases (${purchasesList.length})`, icon: Coins },
-            { id: 'logs', label: `Audit Trail (${logsList.length})`, icon: Terminal },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = activeTab === tab.id;
+/* ------------------------------------------------------------------ */
+/* Overview                                                            */
+/* ------------------------------------------------------------------ */
+
+function OverviewTab({
+  stats,
+  users,
+  presence,
+  metrics,
+  issues,
+  openIssues,
+  inProgress,
+  onOpenIssues,
+}: {
+  stats: any;
+  users: any[];
+  presence: Presence | null;
+  metrics: Metrics | null;
+  issues: Issue[];
+  openIssues: number;
+  inProgress: number;
+  onOpenIssues: () => void;
+}) {
+  const credits = stats?.credits || {};
+  const admins = users.filter((u) => u.role === 'admin' || u.role === 'super_admin').length;
+  const suspended = users.filter((u) => u.status !== 'active').length;
+
+  const KPIS = [
+    {
+      label: 'Online now',
+      icon: Activity,
+      value: presence?.online ?? 0,
+      foot: presence ? `${presence.signedIn} signed in · ${presence.anonymous} visitors` : 'Waiting for heartbeats',
+      live: true,
+    },
+    { label: 'Registered users', icon: Users, value: users.length, foot: `${admins} admins · ${suspended} suspended` },
+    { label: 'Open issues', icon: Wrench, value: openIssues, foot: `${inProgress} in progress`, warn: openIssues > 0 },
+    {
+      label: 'Credits outstanding',
+      icon: Coins,
+      value: credits.activeOutstanding ?? 0,
+      foot: `${credits.totalIssued ?? 0} issued · ${credits.totalConsumed ?? 0} used`,
+    },
+  ];
+
+  const maxRpm = Math.max(1, ...(metrics?.perMinute.map((m) => m.requests) || [1]));
+  const errorPct = metrics ? (metrics.errorRate * 100).toFixed(metrics.errorRate < 0.01 ? 2 : 1) : '0';
+
+  return (
+    <>
+      <Tray>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+          {KPIS.map((k) => {
+            const Icon = k.icon;
             return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-                  isSelected
-                    ? 'bg-accent text-white shadow-lg shadow-accent/25'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
+              <Tile key={k.label} className="p-4 sm:p-5">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-slate-700 dark:text-slate-300">
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{k.label}</span>
+                  {k.live && (
+                    <span className="relative flex w-2 h-2" aria-hidden>
+                      <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-500 animate-ping-soft" />
+                      <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
+                    </span>
+                  )}
+                </div>
+                <p className={`mt-6 text-4xl font-medium tracking-tight tabular-nums leading-none ${k.warn ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
+                  {/* "Online now" updates every 10s; CountUp would restart from 0 each time */}
+                  {k.live ? k.value : <CountUp value={String(k.value)} />}
+                </p>
+                <p className="mt-4 pt-3 border-t border-slate-200/70 dark:border-white/[0.07] text-[11px] text-slate-500 truncate">{k.foot}</p>
+              </Tile>
             );
           })}
         </div>
+      </Tray>
 
-        {/* TAB 1: OVERVIEW & PLATFORM ANALYTICS */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
-                <div className="flex items-center justify-between text-slate-400 mb-2">
-                  <span className="text-xs font-mono uppercase font-bold tracking-wider">Registered Wallets</span>
-                  <Users className="w-4 h-4 text-accent" />
-                </div>
-                <div className="text-3xl font-black text-white">{stats?.users?.total || usersList.length}</div>
-                <div className="mt-2 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold">{stats?.users?.admins || 1} Admins</span>
-                  <span>•</span>
-                  <span>Server-Verified</span>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+        {/* Live visitors */}
+        <Tray className="lg:col-span-5">
+          <Tile className="h-full flex flex-col">
+            <TileHeader title="Who's on Solace" action={<Pill tone="ok">{presence?.online ?? 0} online</Pill>} />
+            <div className="px-4 sm:px-5 pt-4 pb-5 space-y-5 flex-1">
+              <div>
+                <p className="mb-2 text-xs text-slate-500">By page</p>
+                {presence && presence.byPage.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {presence.byPage.slice(0, 6).map((p) => (
+                      <li key={p.path} className="flex items-center gap-3 text-xs">
+                        <span className="w-24 shrink-0 font-mono text-slate-600 dark:text-slate-400 truncate">{p.path}</span>
+                        <span className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden">
+                          <motion.span
+                            className="block h-full rounded-full bg-accent"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(p.count / presence.online) * 100}%` }}
+                            transition={{ duration: 0.6, ease: EASE_OUT }}
+                          />
+                        </span>
+                        <span className="w-5 text-right tabular-nums text-slate-900 dark:text-white">{p.count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-slate-500">Nobody else is online right now.</p>
+                )}
               </div>
-
-              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
-                <div className="flex items-center justify-between text-slate-400 mb-2">
-                  <span className="text-xs font-mono uppercase font-bold tracking-wider">Audits Conducted</span>
-                  <FileCode className="w-4 h-4 text-accent" />
-                </div>
-                <div className="text-3xl font-black text-white">{stats?.audits?.totalConducted || auditsList.length}</div>
-                <div className="mt-2 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                  <span className="text-accent font-bold">Soroban Protocol 22</span>
-                  <span>•</span>
-                  <span>On-Chain AST</span>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
-                <div className="flex items-center justify-between text-slate-400 mb-2">
-                  <span className="text-xs font-mono uppercase font-bold tracking-wider">Estimated Volume</span>
-                  <Coins className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-3xl font-black text-white">{stats?.credits?.estimatedXLMVolume || 0} XLM</div>
-                <div className="mt-2 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold">{stats?.credits?.totalIssued || 0} Credits</span>
-                  <span>issued</span>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[#161616] border border-slate-800 relative overflow-hidden">
-                <div className="flex items-center justify-between text-slate-400 mb-2">
-                  <span className="text-xs font-mono uppercase font-bold tracking-wider">Active Credits</span>
-                  <Activity className="w-4 h-4 text-accent" />
-                </div>
-                <div className="text-3xl font-black text-white">{stats?.credits?.activeOutstanding || 0}</div>
-                <div className="mt-2 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                  <span>{stats?.credits?.totalConsumed || 0} consumed</span>
-                </div>
+              <div>
+                <p className="mb-1 text-xs text-slate-500">Visitors</p>
+                <ul className="divide-y divide-slate-200/70 dark:divide-white/[0.07] max-h-64 overflow-y-auto modern-code-scrollbar">
+                  {(presence?.visitors || []).slice(0, 25).map((v) => (
+                    <li key={v.id} className="py-2 flex items-center gap-3 text-xs">
+                      <span className="grid place-items-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-500 shrink-0">
+                        <UserIcon className="w-3.5 h-3.5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-slate-900 dark:text-white truncate">
+                          {v.wallet ? <span className="font-mono">{short(v.wallet)}</span> : v.email || 'Anonymous visitor'}
+                          {v.role && v.role !== 'user' && <span className="ml-1.5"><Pill tone="accent">{v.role}</Pill></span>}
+                        </p>
+                        <p className="text-slate-500 truncate">
+                          on <span className="font-mono">{v.path}</span> · {duration(v.sessionSeconds)} session
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-slate-400 shrink-0">{v.lastSeenSecondsAgo}s</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
+          </Tile>
+        </Tray>
 
-            {/* AI Diagnostics & System Health */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="p-6 rounded-3xl bg-[#161616] border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-accent" />
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                      AI Invariant Threat Engine
-                    </h2>
+        {/* System health */}
+        <Tray className="lg:col-span-7">
+          <Tile className="h-full flex flex-col">
+            <TileHeader
+              title="System health"
+              action={
+                <Pill tone={!metrics ? 'neutral' : metrics.errorRate > 0.05 ? 'bad' : metrics.errorRate > 0.01 ? 'warn' : 'ok'}>
+                  {!metrics ? 'No data' : metrics.errorRate > 0.05 ? 'Degraded' : 'Healthy'}
+                </Pill>
+              }
+            />
+            <div className="px-4 sm:px-5 pt-4 pb-5 space-y-5">
+              <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  ['Requests (15m)', metrics?.requests ?? 0],
+                  ['Server errors', `${metrics?.errors5xx ?? 0} · ${errorPct}%`],
+                  ['Latency p50 / p95', metrics ? `${metrics.latency.p50} / ${metrics.latency.p95} ms` : '—'],
+                  ['API uptime', metrics ? duration(metrics.uptimeSeconds) : '—'],
+                ].map(([k, v]) => (
+                  <div key={k as string} className="rounded-xl bg-white dark:bg-[#141414] border border-slate-200/70 dark:border-white/[0.07] p-3">
+                    <dt className="text-[11px] text-slate-500">{k}</dt>
+                    <dd className="mt-1 text-base font-medium tabular-nums text-slate-900 dark:text-white truncate">{v}</dd>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-                    HEALTHY 99.4%
-                  </span>
-                </div>
+                ))}
+              </dl>
 
-                <div className="space-y-2.5">
-                  {[
-                    { model: 'gemini-3.5-flash-lite', role: 'Primary AST Invariant Engine', latency: '380ms', status: 'Online' },
-                    { model: 'gemini-3.1-flash-lite', role: 'Storage TTL & Panic Trap Engine', latency: '410ms', status: 'Online' },
-                    { model: 'gemini-3.5-flash', role: 'Remediation & Patch Generator', latency: '460ms', status: 'Standby' },
-                  ].map((m) => (
-                    <div key={m.model} className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-mono font-bold text-white">{m.model}</div>
-                        <div className="text-[11px] text-slate-400">{m.role}</div>
-                      </div>
-                      <div className="text-right font-mono">
-                        <span className="text-accent font-bold">{m.latency}</span>
-                        <div className="text-[10px] text-emerald-400">{m.status}</div>
-                      </div>
+              <div>
+                <p className="mb-2 text-xs text-slate-500">Requests per minute · last 15 minutes</p>
+                <div className="flex items-end gap-1 h-24" role="img" aria-label="Requests per minute, last 15 minutes">
+                  {(metrics?.perMinute || Array.from({ length: 15 }, () => ({ requests: 0, errors: 0 }))).map((m, i) => (
+                    <div key={i} className="flex-1 h-full flex flex-col justify-end" title={`${m.requests} requests, ${m.errors} errors`}>
+                      <motion.div
+                        className="w-full rounded-t-[4px] bg-slate-300 dark:bg-white/20 relative overflow-hidden"
+                        initial={{ height: 0 }}
+                        animate={{ height: `${Math.max(2, (m.requests / maxRpm) * 100)}%` }}
+                        transition={{ duration: 0.6, delay: i * 0.02, ease: EASE_OUT }}
+                      >
+                        {m.errors > 0 && (
+                          <span className="absolute inset-x-0 bottom-0 bg-red-500" style={{ height: `${(m.errors / Math.max(1, m.requests)) * 100}%` }} />
+                        )}
+                      </motion.div>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-[#161616] border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-accent" />
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                      Persistence &amp; Ledger Architecture
-                    </h2>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30 font-bold">
-                    PROTOCOL 22
-                  </span>
-                </div>
-
-                <div className="space-y-3 text-xs font-mono">
-                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-1">
-                    <span className="text-slate-400 block text-[11px]">Database Layer:</span>
-                    <span className="font-bold text-white">Neon PostgreSQL (Serverless Ed25519 Tables)</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-1">
-                    <span className="text-slate-400 block text-[11px]">Stellar Network:</span>
-                    <span className="font-bold text-emerald-400">Testnet (Soroban Smart Contract CAC2TVMF5...6PNPN2)</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-1">
-                    <span className="text-slate-400 block text-[11px]">Admin Operator Policy:</span>
-                    <span className="font-bold text-accent">Server-Enforced Nonce Challenge • No Password Fallbacks</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: REGISTERED USERS MANAGEMENT */}
-        {activeTab === 'users' && (
-          <div className="space-y-4">
-            {/* Search & Actions Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-[#161616] border border-slate-800">
-              <div className="relative w-full sm:w-80">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search wallet address or role..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 font-mono focus:outline-hidden focus:border-accent"
-                />
-              </div>
-
-              <div className="text-xs font-mono text-slate-400">
-                Showing {filteredUsers.length} of {usersList.length} wallets
-              </div>
-            </div>
-
-            {/* Users Table */}
-            <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-[#121212] text-slate-400 border-b border-slate-800">
-                    <tr>
-                      <th className="py-3 px-4">Wallet Address</th>
-                      <th className="py-3 px-4">Role</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Available Credits</th>
-                      <th className="py-3 px-4">Joined</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-500 font-mono">
-                          No matching wallets found in registry.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map((u) => {
-                        const isSelf = u.wallet_address === currentUser?.address;
-                        const isSuper = u.role === 'super_admin';
-                        return (
-                          <tr key={u.id || u.wallet_address} className="hover:bg-slate-900/50 transition">
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-white">
-                                  {u.wallet_address.slice(0, 8)}...{u.wallet_address.slice(-6)}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopy(u.wallet_address)}
-                                  className="text-slate-500 hover:text-white"
-                                  title="Copy full key"
-                                >
-                                  {copiedKey === u.wallet_address ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                                {isSelf && (
-                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-accent/20 text-accent font-bold">
-                                    YOU
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                  u.role === 'super_admin'
-                                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                    : u.role === 'admin'
-                                    ? 'bg-accent/20 text-accent border border-accent/30'
-                                    : 'bg-slate-800 text-slate-300'
-                                }`}
-                              >
-                                {u.role}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                  u.status === 'active'
-                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                    : 'bg-red-500/20 text-red-400'
-                                }`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    u.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
-                                  }`}
-                                />
-                                {u.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <span className="font-bold text-accent text-sm">{u.credit_balance || 0}</span>
-                              <span className="text-slate-500 text-[10px] ml-1">audits</span>
-                            </td>
-                            <td className="py-3 px-4 text-slate-400 text-[11px]">
-                              {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => openAdjustModal(u.wallet_address)}
-                                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition"
-                                  title="Adjust user credits"
-                                >
-                                  Credits
-                                </button>
-                                {!isSelf && !isSuper && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRoleChange(u.wallet_address, u.role)}
-                                      className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition"
-                                    >
-                                      {u.role === 'admin' ? 'Demote' : 'Make Admin'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleToggleStatus(u.wallet_address, u.status)}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] transition ${
-                                        u.status === 'active'
-                                          ? 'bg-red-950/60 hover:bg-red-900 text-red-300'
-                                          : 'bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300'
-                                      }`}
-                                    >
-                                      {u.status === 'active' ? 'Suspend' : 'Activate'}
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: PLATFORM AUDITS */}
-        {activeTab === 'audits' && (
-          <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-[#121212] text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th className="py-3 px-4">Contract Name</th>
-                    <th className="py-3 px-4">Auditor Wallet</th>
-                    <th className="py-3 px-4">SHA-256 Fingerprint</th>
-                    <th className="py-3 px-4 text-center">Score</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {auditsList.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500 font-mono">
-                        No audits conducted yet. Launch audits via the Audit Studio.
-                      </td>
-                    </tr>
-                  ) : (
-                    auditsList.map((a) => (
-                      <tr key={a.id || a.contract_hash} className="hover:bg-slate-900/50 transition">
-                        <td className="py-3 px-4 font-bold text-white">{a.contract_name || 'SorobanContract.rs'}</td>
-                        <td className="py-3 px-4 text-slate-300">
-                          {a.wallet_address ? `${a.wallet_address.slice(0, 6)}...${a.wallet_address.slice(-4)}` : '—'}
-                        </td>
-                        <td className="py-3 px-4 text-slate-400">
-                          {a.contract_hash ? `${a.contract_hash.slice(0, 10)}...` : '—'}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span
-                            className={`font-bold ${
-                              (a.risk_score || 0) >= 80 ? 'text-emerald-400' : 'text-red-400'
-                            }`}
-                          >
-                            {a.risk_score || 0}/100
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              a.is_secure ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                            }`}
-                          >
-                            {a.is_secure ? 'SAFE' : 'FLAW IDENTIFIED'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-500 text-[11px]">
-                          {a.created_at ? new Date(a.created_at).toLocaleString() : '—'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: XML PURCHASES */}
-        {activeTab === 'purchases' && (
-          <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-[#121212] text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th className="py-3 px-4">Transaction Type</th>
-                    <th className="py-3 px-4">Wallet Address</th>
-                    <th className="py-3 px-4 text-right">Credits (+/-)</th>
-                    <th className="py-3 px-4">Reason / Package</th>
-                    <th className="py-3 px-4">Ledger Tx Hash</th>
-                    <th className="py-3 px-4">Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {purchasesList.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500 font-mono">
-                        No credit purchases or adjustments recorded.
-                      </td>
-                    </tr>
-                  ) : (
-                    purchasesList.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-900/50 transition">
-                        <td className="py-3 px-4 font-bold text-white">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] uppercase ${
-                              p.type === 'PURCHASE'
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : p.type === 'ADMIN_ADJUSTMENT'
-                                ? 'bg-accent/20 text-accent'
-                                : 'bg-slate-800 text-slate-300'
-                            }`}
-                          >
-                            {p.type}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-300">
-                          {p.wallet_address ? `${p.wallet_address.slice(0, 8)}...` : '—'}
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-accent">
-                          {p.amount > 0 ? `+${p.amount}` : p.amount}
-                        </td>
-                        <td className="py-3 px-4 text-slate-300">{p.reason || (p.package_id ? `Bundle #${p.package_id}` : '—')}</td>
-                        <td className="py-3 px-4 text-slate-400">
-                          {p.tx_hash ? (
-                            <a
-                              href={`https://stellar.expert/explorer/testnet/tx/${p.tx_hash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-accent hover:underline flex items-center gap-1"
-                            >
-                              <span>{p.tx_hash.slice(0, 10)}...</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          ) : (
-                            'Administrative Action'
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-slate-500 text-[11px]">
-                          {p.created_at ? new Date(p.created_at).toLocaleString() : '—'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: ADMINISTRATIVE AUDIT TRAIL LOGS */}
-        {activeTab === 'logs' && (
-          <div className="rounded-2xl bg-[#161616] border border-slate-800 overflow-hidden">
-            <div className="p-4 bg-[#121212] border-b border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-accent" />
-                <span>Immutable Administrative Action Log</span>
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">Showing last {logsList.length} actions</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-[#161616] text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th className="py-3 px-4">Timestamp</th>
-                    <th className="py-3 px-4">Actor</th>
-                    <th className="py-3 px-4">Action</th>
-                    <th className="py-3 px-4">Target Wallet</th>
-                    <th className="py-3 px-4">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {logsList.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-500 font-mono">
-                        No administrative actions recorded in log.
-                      </td>
-                    </tr>
-                  ) : (
-                    logsList.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-900/50 transition">
-                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
-                          {new Date(log.created_at).toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-white font-bold">
-                          {log.actor_wallet.length === 56
-                            ? `${log.actor_wallet.slice(0, 6)}...${log.actor_wallet.slice(-4)}`
-                            : log.actor_wallet}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-accent/20 text-accent uppercase">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-300">
-                          {log.target
-                            ? `${log.target.slice(0, 8)}...${log.target.slice(-6)}`
-                            : 'Platform'}
-                        </td>
-                        <td className="py-3 px-4 text-slate-400 max-w-xs truncate">
-                          {typeof log.details === 'object' ? JSON.stringify(log.details) : String(log.details || '—')}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Credit Adjustment Modal */}
-      {adjustModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-[#161616] rounded-3xl p-6 border border-slate-800 shadow-2xl relative">
-            <h2 className="text-lg font-black text-white tracking-tight mb-1">Adjust User Audit Credits</h2>
-            <p className="text-xs text-slate-400 font-mono mb-4">
-              Target: {adjustTargetWallet.slice(0, 8)}...{adjustTargetWallet.slice(-6)}
-            </p>
-
-            <form onSubmit={handleExecuteCreditAdjustment} className="space-y-4">
-              <div>
-                <label className="block text-xs font-mono text-slate-300 mb-1.5 font-bold">
-                  Credit Amount (+ to grant, - to deduct)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    step="1"
-                    value={adjustAmount}
-                    onChange={(e) => setAdjustAmount(parseInt(e.target.value, 10) || 0)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-sm font-mono text-white focus:outline-hidden focus:border-accent"
-                    required
-                  />
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setAdjustAmount(3)}
-                      className="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-white"
-                    >
-                      +3
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAdjustAmount(6)}
-                      className="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-white"
-                    >
-                      +6
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAdjustAmount(-1)}
-                      className="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-red-400"
-                    >
-                      -1
-                    </button>
-                  </div>
+                <div className="mt-1.5 flex justify-between font-mono text-[10px] text-slate-500">
+                  <span>15m ago</span>
+                  <span>now</span>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-mono text-slate-300 mb-1.5 font-bold">
-                  Administrative Reason (Audit Trail Required)
-                </label>
-                <textarea
-                  value={adjustReason}
-                  onChange={(e) => setAdjustReason(e.target.value)}
-                  placeholder="e.g. Protocol compensation for re-audit..."
-                  rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white placeholder-slate-500 focus:outline-hidden focus:border-accent"
-                  required
-                />
-              </div>
+              {metrics && metrics.topRoutes.length > 0 && (
+                <div>
+                  <p className="mb-1 text-xs text-slate-500">Busiest endpoints</p>
+                  <ul className="divide-y divide-slate-200/70 dark:divide-white/[0.07] text-xs">
+                    {metrics.topRoutes.map((r) => (
+                      <li key={r.route} className="py-2 flex items-center gap-3">
+                        <span className="flex-1 font-mono text-slate-700 dark:text-slate-300 truncate">{r.route}</span>
+                        <span className="tabular-nums text-slate-500">{r.count} req</span>
+                        <span className="tabular-nums text-slate-500 w-16 text-right">{r.avgMs} ms</span>
+                        {r.errors > 0 ? <Pill tone="bad">{r.errors} err</Pill> : <span className="w-11" />}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </Tile>
+        </Tray>
+      </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+      {/* Issues preview */}
+      <Tray>
+        <Tile>
+          <TileHeader
+            title="Needs attention"
+            action={
+              <button type="button" onClick={onOpenIssues} className={`${btn.secondary} h-8 px-3 text-xs rounded-full`}>
+                Open issues
+              </button>
+            }
+          />
+          <ul className="px-4 sm:px-5 pb-4 pt-2 divide-y divide-slate-200/70 dark:divide-white/[0.07]">
+            {issues.filter((i) => i.status !== 'resolved').slice(0, 4).map((i) => (
+              <li key={i.id} className="py-3 flex items-center gap-3">
+                <Pill tone={SEVERITY_TONE[i.severity]}>{i.severity}</Pill>
+                <span className="flex-1 text-sm text-slate-900 dark:text-white truncate">{i.title}</span>
+                {i.occurrences > 1 && <span className="text-[11px] text-slate-500">×{i.occurrences}</span>}
+                <span className="text-[11px] text-slate-500 shrink-0">{ago(i.last_seen_at)}</span>
+              </li>
+            ))}
+            {issues.filter((i) => i.status !== 'resolved').length === 0 && (
+              <li className="py-6 flex items-center gap-2 text-sm text-slate-500">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                Nothing needs attention. All issues are resolved.
+              </li>
+            )}
+          </ul>
+        </Tile>
+      </Tray>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Issues                                                              */
+/* ------------------------------------------------------------------ */
+
+function IssuesTab({ issues, setIssues }: { issues: Issue[]; setIssues: React.Dispatch<React.SetStateAction<Issue[]>> }) {
+  const toast = useToast();
+  const [filter, setFilter] = useState<IssueStatus | 'all'>('open');
+  const [q, setQ] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const counts = {
+    open: issues.filter((i) => i.status === 'open').length,
+    in_progress: issues.filter((i) => i.status === 'in_progress').length,
+    resolved: issues.filter((i) => i.status === 'resolved').length,
+  };
+
+  const shown = issues.filter(
+    (i) =>
+      (filter === 'all' || i.status === filter) &&
+      (!q || `${i.title} ${i.description || ''} ${i.page || ''} ${i.wallet_address || ''} ${i.email || ''}`.toLowerCase().includes(q.toLowerCase())),
+  );
+
+  const move = async (issue: Issue, status: IssueStatus) => {
+    const note = notes[issue.id]?.trim();
+    if (status === 'resolved' && (!note || note.length < 3)) {
+      toast.show({ tone: 'error', title: 'Add a resolution note', message: 'Say briefly what fixed it before resolving.' });
+      setExpanded(issue.id);
+      return;
+    }
+    setBusy(issue.id);
+    try {
+      const updated = await updateAdminIssue(issue.id, status, note || undefined);
+      setIssues((list) => list.map((i) => (i.id === updated.id ? updated : i)));
+      toast.success(status === 'resolved' ? 'Issue resolved' : `Marked ${STATUS_LABEL[status].toLowerCase()}`, updated.title);
+      if (status === 'resolved') setExpanded(null);
+    } catch (err) {
+      toast.error(err, 'Could not update the issue.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Tray>
+      <Tile>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-5 pt-4 sm:pt-5">
+          <h2 className="text-[15px] font-medium tracking-tight text-slate-900 dark:text-white flex-1">Issues queue</h2>
+          <div className="relative sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search issues" aria-label="Search issues" className={`${input} h-9 pl-9`} />
+          </div>
+          <Segmented
+            id="issue-filter"
+            label="Issue status"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: 'open', label: `Open ${counts.open}` },
+              { value: 'in_progress', label: `In progress ${counts.in_progress}` },
+              { value: 'resolved', label: `Resolved ${counts.resolved}` },
+              { value: 'all', label: 'All' },
+            ]}
+          />
+        </div>
+
+        <ul className="mt-3 divide-y divide-slate-200/70 dark:divide-white/[0.07]">
+          {shown.length === 0 && (
+            <li className="px-5 py-12 text-center text-sm text-slate-500">
+              {filter === 'open' ? 'No open issues. Nice.' : 'Nothing matches this filter.'}
+            </li>
+          )}
+          {shown.map((i) => {
+            const isOpen = expanded === i.id;
+            return (
+              <li key={i.id} className={isOpen ? 'bg-white/60 dark:bg-white/[0.02]' : ''}>
                 <button
                   type="button"
-                  onClick={() => setAdjustModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-mono text-slate-400 hover:text-white"
+                  onClick={() => setExpanded(isOpen ? null : i.id)}
+                  aria-expanded={isOpen}
+                  className="w-full text-left px-4 sm:px-5 py-3.5 flex items-start gap-3 hover:bg-white/70 dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
                 >
-                  Cancel
+                  <span
+                    className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                      i.status === 'resolved' ? 'bg-emerald-500' : i.status === 'in_progress' ? 'bg-sky-500' : i.severity === 'critical' ? 'bg-red-500' : 'bg-accent'
+                    }`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-900 dark:text-white">{i.title}</p>
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                      <Pill tone={i.source === 'system' ? 'info' : 'neutral'}>{i.source === 'system' ? 'System' : 'User report'}</Pill>
+                      <Pill tone={SEVERITY_TONE[i.severity]}>{i.severity}</Pill>
+                      <Pill tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Pill>
+                      {i.occurrences > 1 && <span>×{i.occurrences} occurrences</span>}
+                      {i.page && <span className="font-mono truncate max-w-[14rem]">{i.page}</span>}
+                      <span>· last {ago(i.last_seen_at)}</span>
+                    </p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
-                <button
-                  type="submit"
-                  disabled={adjustSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {adjustSubmitting ? 'Recording On-Chain...' : 'Confirm Adjustment'}
-                </button>
-              </div>
-            </form>
+
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: EASE_OUT }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 sm:px-5 pb-5 sm:pl-10 space-y-4">
+                        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <dt className="text-slate-500">Reported by</dt>
+                            <dd className="mt-0.5 text-slate-900 dark:text-white truncate font-mono">
+                              {i.wallet_address ? short(i.wallet_address) : i.email || (i.source === 'system' ? 'Server' : 'Anonymous')}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500">First seen</dt>
+                            <dd className="mt-0.5 text-slate-900 dark:text-white">{new Date(i.created_at).toLocaleString()}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500">Type</dt>
+                            <dd className="mt-0.5 text-slate-900 dark:text-white">{i.kind.replace('_', ' ')}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500">ID</dt>
+                            <dd className="mt-0.5 text-slate-900 dark:text-white font-mono truncate">{i.id}</dd>
+                          </div>
+                        </dl>
+                        {i.description && (
+                          <pre className="whitespace-pre-wrap break-words rounded-lg bg-white dark:bg-[#0e0e0e] border border-slate-200/70 dark:border-white/[0.07] p-3 text-xs text-slate-700 dark:text-slate-300 font-sans">
+                            {i.description}
+                          </pre>
+                        )}
+                        {i.status === 'resolved' ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/20 p-3">
+                            <p className="flex-1 text-xs text-slate-700 dark:text-slate-300">
+                              <span className="font-medium text-emerald-700 dark:text-emerald-400">Resolved</span>
+                              {i.resolved_by && <> by <span className="font-mono">{short(i.resolved_by) || i.resolved_by}</span></>}
+                              {i.resolution_note && <> · {i.resolution_note}</>}
+                            </p>
+                            <button type="button" disabled={busy === i.id} onClick={() => move(i, 'open')} className={`${btn.secondary} h-8 px-3 text-xs`}>
+                              Reopen
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <label htmlFor={`note-${i.id}`} className="block text-xs text-slate-500">
+                              Resolution note
+                            </label>
+                            <textarea
+                              id={`note-${i.id}`}
+                              rows={2}
+                              value={notes[i.id] || ''}
+                              onChange={(e) => setNotes((n) => ({ ...n, [i.id]: e.target.value }))}
+                              placeholder="What fixed it? (required to resolve)"
+                              className={`${input} h-auto py-2 resize-none`}
+                            />
+                            <div className="flex flex-wrap gap-2 justify-end">
+                              {i.status === 'open' && (
+                                <button type="button" disabled={busy === i.id} onClick={() => move(i, 'in_progress')} className={`${btn.secondary} h-8 px-3 text-xs`}>
+                                  Start working on it
+                                </button>
+                              )}
+                              <button type="button" disabled={busy === i.id} onClick={() => move(i, 'resolved')} className={`${btn.primary} h-8 px-3 text-xs`}>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Mark resolved
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+            );
+          })}
+        </ul>
+      </Tile>
+    </Tray>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Users                                                               */
+/* ------------------------------------------------------------------ */
+
+function UsersTab({
+  users,
+  isSuper,
+  meAddress,
+  onGiveCredits,
+  onChanged,
+}: {
+  users: any[];
+  isSuper: boolean;
+  meAddress?: string;
+  onGiveCredits: (wallet: string) => void;
+  onChanged: () => void;
+}) {
+  const toast = useToast();
+  const [q, setQ] = useState('');
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const shown = users.filter((u) => {
+    if (!q) return true;
+    const t = q.toLowerCase();
+    return [u.wallet_address, u.email, u.name, u.role, u.status].some((v) => (v || '').toLowerCase().includes(t));
+  });
+
+  const run = async (fn: () => Promise<unknown>, ok: string) => {
+    try {
+      await fn();
+      toast.success(ok);
+      onChanged();
+    } catch (err) {
+      toast.error(err, 'Action failed.');
+    }
+  };
+
+  return (
+    <Tray>
+      <Tile>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-5 pt-4 sm:pt-5">
+          <h2 className="text-[15px] font-medium tracking-tight text-slate-900 dark:text-white flex-1">
+            Users <span className="text-slate-500 font-normal">· {users.length}</span>
+          </h2>
+          <div className="relative sm:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search wallet, email, name, role" aria-label="Search users" className={`${input} h-9 pl-9`} />
           </div>
         </div>
-      )}
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[760px]">
+            <thead className="text-slate-500">
+              <tr className="border-b border-slate-200/70 dark:border-white/[0.07]">
+                <th className="px-4 sm:px-5 py-2.5 font-normal">User</th>
+                <th className="px-3 py-2.5 font-normal">Role</th>
+                <th className="px-3 py-2.5 font-normal">Status</th>
+                <th className="px-3 py-2.5 font-normal text-right">Credits</th>
+                <th className="px-3 py-2.5 font-normal">Last sign-in</th>
+                <th className="px-4 sm:px-5 py-2.5 font-normal text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200/70 dark:divide-white/[0.07]">
+              {shown.map((u) => {
+                const self = !!meAddress && u.wallet_address === meAddress;
+                const isAdminRole = u.role === 'admin' || u.role === 'super_admin';
+                return (
+                  <tr key={u.id || u.wallet_address || u.email} className="hover:bg-white/70 dark:hover:bg-white/[0.02]">
+                    <td className="px-4 sm:px-5 py-3">
+                      <p className="text-sm text-slate-900 dark:text-white">{u.name || (u.wallet_address ? 'Wallet user' : u.email)}</p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-slate-500">
+                        {u.wallet_address ? (
+                          <>
+                            <span className="font-mono">{short(u.wallet_address)}</span>
+                            <button
+                              type="button"
+                              aria-label="Copy wallet"
+                              onClick={() => {
+                                navigator.clipboard.writeText(u.wallet_address);
+                                setCopied(u.wallet_address);
+                                setTimeout(() => setCopied(null), 1500);
+                              }}
+                              className="text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                            >
+                              {copied === u.wallet_address ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                            </button>
+                          </>
+                        ) : (
+                          <span>No wallet linked</span>
+                        )}
+                        {u.email && u.wallet_address && <span>· {u.email}</span>}
+                        {self && <Pill tone="accent">You</Pill>}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <Pill tone={isAdminRole ? 'accent' : 'neutral'}>{u.role.replace('_', ' ')}</Pill>
+                    </td>
+                    <td className="px-3 py-3">
+                      <Pill tone={u.status === 'active' ? 'ok' : 'bad'}>{u.status}</Pill>
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums text-sm text-slate-900 dark:text-white">{u.credit_balance ?? 0}</td>
+                    <td className="px-3 py-3 text-slate-500">{ago(u.last_login_at)}</td>
+                    <td className="px-4 sm:px-5 py-3">
+                      <div className="flex justify-end gap-1.5">
+                        {u.wallet_address && (
+                          <button type="button" onClick={() => onGiveCredits(u.wallet_address)} className={`${btn.secondary} h-7 px-2.5 text-[11px]`}>
+                            <Coins className="w-3 h-3" />
+                            Give credits
+                          </button>
+                        )}
+                        {u.wallet_address && !self && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              run(
+                                () => updateUserStatusAdmin(u.wallet_address, u.status === 'active' ? 'suspended' : 'active', 'Admin console'),
+                                u.status === 'active' ? 'User suspended' : 'User reactivated',
+                              )
+                            }
+                            className={`${btn.secondary} h-7 px-2.5 text-[11px] ${u.status === 'active' ? 'hover:!text-red-500' : ''}`}
+                          >
+                            {u.status === 'active' ? 'Suspend' : 'Activate'}
+                          </button>
+                        )}
+                        {isSuper && u.wallet_address && !self && u.role !== 'super_admin' && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              run(
+                                () => updateUserRoleAdmin(u.wallet_address, u.role === 'admin' ? 'user' : 'admin', 'Admin console'),
+                                u.role === 'admin' ? 'Admin rights removed' : 'Promoted to admin',
+                              )
+                            }
+                            className={`${btn.secondary} h-7 px-2.5 text-[11px]`}
+                          >
+                            {u.role === 'admin' ? 'Remove admin' : 'Make admin'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {shown.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-500">
+                    No users match “{q}”.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Tile>
+    </Tray>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Credits                                                             */
+/* ------------------------------------------------------------------ */
+
+function CreditsTab({
+  wallet,
+  setWallet,
+  amountRef,
+  ledger,
+  users,
+  onDone,
+}: {
+  wallet: string;
+  setWallet: (w: string) => void;
+  amountRef: React.RefObject<HTMLInputElement>;
+  ledger: any[];
+  users: any[];
+  onDone: () => void;
+}) {
+  const toast = useToast();
+  const [amount, setAmount] = useState(3);
+  const [mode, setMode] = useState<'grant' | 'deduct'>('grant');
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [touched, setTouched] = useState(false);
+
+  const normalized = wallet.trim().toUpperCase();
+  const validKey = STELLAR_KEY.test(normalized);
+  const existing = useMemo(() => users.find((u) => u.wallet_address === normalized), [users, normalized]);
+  const delta = mode === 'grant' ? amount : -amount;
+  const canSubmit = validKey && amount > 0 && reason.trim().length >= 3 && !(mode === 'deduct' && !existing);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTouched(true);
+    if (!canSubmit) return;
+    setSubmitting(true);
+    try {
+      const res: any = await adjustCreditsAdmin(normalized, delta, reason.trim());
+      toast.success(
+        `${mode === 'grant' ? 'Granted' : 'Deducted'} ${amount} credit${amount === 1 ? '' : 's'}`,
+        `${short(normalized)} now has ${res?.newBalance ?? '?'}${res?.accountCreated ? ' · new account created' : ''}.`,
+      );
+      setReason('');
+      onDone();
+    } catch (err) {
+      toast.error(err, 'Credit adjustment failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+      <Tray className="lg:col-span-5">
+        <Tile>
+          <TileHeader title="Give or deduct credits" />
+          <form onSubmit={submit} className="px-4 sm:px-5 pt-4 pb-5 space-y-4" noValidate>
+            <Segmented
+              id="credit-mode"
+              label="Adjustment type"
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'grant', label: <><PlusCircle className="w-3.5 h-3.5" />Grant</> },
+                { value: 'deduct', label: <><MinusCircle className="w-3.5 h-3.5" />Deduct</> },
+              ]}
+            />
+            <div>
+              <label htmlFor="grant-wallet" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Stellar wallet
+              </label>
+              <input
+                id="grant-wallet"
+                value={wallet}
+                onChange={(e) => setWallet(e.target.value)}
+                placeholder="G…  (56 characters)"
+                spellCheck={false}
+                autoComplete="off"
+                className={`${input} font-mono text-xs ${touched && !validKey ? '!border-red-400' : ''}`}
+                aria-invalid={touched && !validKey}
+              />
+              <p className="mt-1.5 text-[11px] min-h-4">
+                {!wallet ? (
+                  <span className="text-slate-500">Paste any Stellar public key.</span>
+                ) : !validKey ? (
+                  <span className="text-red-500">Not a valid Stellar public key.</span>
+                ) : existing ? (
+                  <span className="text-slate-500">
+                    {existing.name || existing.email || 'Registered wallet'} · balance{' '}
+                    <span className="text-slate-900 dark:text-white tabular-nums">{existing.credit_balance ?? 0}</span>
+                  </span>
+                ) : mode === 'deduct' ? (
+                  <span className="text-red-500">This wallet has no account, so there is nothing to deduct.</span>
+                ) : (
+                  <span className="text-amber-600 dark:text-amber-400">New wallet: an account will be created with these credits.</span>
+                )}
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="grant-amount" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Credits <span className="text-slate-400 font-normal">(1 credit = 1 audit = 10 XLM)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="grant-amount"
+                  ref={amountRef}
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={amount}
+                  onChange={(e) => setAmount(Math.max(0, Math.min(1000, parseInt(e.target.value || '0', 10))))}
+                  className={`${input} w-24 tabular-nums`}
+                />
+                {[1, 3, 5, 10].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setAmount(n)}
+                    className={`flex-1 h-10 rounded-md border text-sm transition-colors cursor-pointer ${
+                      amount === n
+                        ? 'border-accent bg-accent-subtle text-accent'
+                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="grant-reason" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Reason <span className="text-slate-400 font-normal">(saved in the activity log)</span>
+              </label>
+              <input
+                id="grant-reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="e.g. Hackathon sponsor grant"
+                maxLength={200}
+                className={`${input} ${touched && reason.trim().length < 3 ? '!border-red-400' : ''}`}
+              />
+            </div>
+
+            <button type="submit" disabled={submitting || (touched && !canSubmit)} className={`${btn.primary} w-full`}>
+              {submitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Coins className="w-4 h-4" />}
+              {mode === 'grant' ? `Grant ${amount || 0} credit${amount === 1 ? '' : 's'}` : `Deduct ${amount || 0} credit${amount === 1 ? '' : 's'}`}
+            </button>
+          </form>
+        </Tile>
+      </Tray>
+
+      <Tray className="lg:col-span-7">
+        <Tile className="h-full">
+          <TileHeader title="Credit ledger" action={<Pill>{ledger.length} entries</Pill>} />
+          <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/[0.07] max-h-[520px] overflow-y-auto modern-code-scrollbar">
+            {ledger.length === 0 && <li className="px-5 py-12 text-center text-sm text-slate-500">No purchases or adjustments yet.</li>}
+            {ledger.map((p, i) => {
+              const adj = p.type === 'ADMIN_ADJUSTMENT';
+              const amt = Number(p.amount) || 0;
+              return (
+                <li key={p.id || i} className="px-4 sm:px-5 py-3 flex items-center gap-3 text-xs">
+                  <span className={`grid place-items-center w-8 h-8 rounded-lg shrink-0 ${adj ? 'bg-accent-subtle text-accent' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                    {adj ? <Wrench className="w-3.5 h-3.5" /> : <Coins className="w-3.5 h-3.5" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-900 dark:text-white truncate">
+                      {adj ? 'Admin adjustment' : `Purchase${p.package_id ? ` · ${p.package_id}` : ''}`}
+                      <span className="ml-2 font-mono text-xs text-slate-500">{short(p.wallet_address)}</span>
+                    </p>
+                    <p className="text-slate-500 truncate">
+                      {p.reason || (p.tx_hash ? `tx ${p.tx_hash.slice(0, 10)}…` : '—')} · {ago(p.created_at)}
+                    </p>
+                  </div>
+                  <span className={`tabular-nums text-sm ${amt < 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {amt > 0 ? '+' : ''}
+                    {amt}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Tile>
+      </Tray>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Audits & logs                                                       */
+/* ------------------------------------------------------------------ */
+
+function AuditsTab({ audits }: { audits: any[] }) {
+  return (
+    <Tray>
+      <Tile>
+        <TileHeader title="Platform audits" action={<Pill>{audits.length} latest</Pill>} />
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[640px]">
+            <thead className="text-slate-500">
+              <tr className="border-b border-slate-200/70 dark:border-white/[0.07]">
+                <th className="px-4 sm:px-5 py-2.5 font-normal">Contract</th>
+                <th className="px-3 py-2.5 font-normal">Auditor</th>
+                <th className="px-3 py-2.5 font-normal text-right">Score</th>
+                <th className="px-3 py-2.5 font-normal">Verdict</th>
+                <th className="px-4 sm:px-5 py-2.5 font-normal">When</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200/70 dark:divide-white/[0.07]">
+              {audits.map((a, i) => (
+                <tr key={a.id || i}>
+                  <td className="px-4 sm:px-5 py-3">
+                    <p className="text-sm text-slate-900 dark:text-white">{a.contract_name || 'Soroban contract'}</p>
+                    <p className="font-mono text-slate-500 truncate max-w-[16rem]">{a.contract_hash}</p>
+                  </td>
+                  <td className="px-3 py-3 font-mono text-slate-600 dark:text-slate-400">{short(a.wallet_address) || '—'}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-sm text-slate-900 dark:text-white">{a.risk_score ?? '—'}</td>
+                  <td className="px-3 py-3">
+                    <Pill tone={a.is_secure ? 'ok' : 'bad'}>{a.is_secure ? 'Secure' : 'Action required'}</Pill>
+                  </td>
+                  <td className="px-4 sm:px-5 py-3 text-slate-500">{ago(a.created_at)}</td>
+                </tr>
+              ))}
+              {audits.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-slate-500">
+                    No audits recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Tile>
+    </Tray>
+  );
+}
+
+function LogsTab({ logs }: { logs: any[] }) {
+  const tone = (a: string) =>
+    /CREDIT/.test(a) ? 'accent' : /RESOLVED/.test(a) ? 'ok' : /SUSPEND|REVOK|ROLE/.test(a) ? 'warn' : 'neutral';
+  return (
+    <Tray>
+      <Tile>
+        <TileHeader title="Admin activity log" action={<Pill>{logs.length} entries</Pill>} />
+        <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/[0.07]">
+          {logs.length === 0 && <li className="px-5 py-12 text-center text-sm text-slate-500">No admin actions recorded yet.</li>}
+          {logs.map((l, i) => {
+            let details = l.details;
+            if (typeof details === 'string') {
+              try {
+                details = JSON.parse(details);
+              } catch (_) {}
+            }
+            const summary =
+              details && typeof details === 'object'
+                ? Object.entries(details)
+                    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+                    .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                    .join(' · ')
+                : String(details || '');
+            return (
+              <li key={l.id || i} className="px-4 sm:px-5 py-3 flex items-start gap-3 text-xs">
+                <span className="mt-0.5">
+                  <Pill tone={tone(l.action || '') as any}>{(l.action || 'ACTION').replace(/_/g, ' ').toLowerCase()}</Pill>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-slate-900 dark:text-white">
+                    <span className="font-mono">{short(l.actor_wallet) || l.actor_wallet || 'admin'}</span>
+                    <span className="text-slate-500"> → </span>
+                    <span className="font-mono">{l.target?.startsWith?.('G') ? short(l.target) : l.target}</span>
+                  </p>
+                  {summary && <p className="mt-0.5 text-slate-500 break-words">{summary}</p>}
+                </div>
+                <span className="text-slate-500 shrink-0">{ago(l.created_at)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </Tile>
+    </Tray>
   );
 }

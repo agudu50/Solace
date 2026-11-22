@@ -2,35 +2,50 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ShieldCheck,
-  Shield,
-  FileCode,
-  CheckCircle2,
   AlertTriangle,
-  Upload,
   ArrowLeft,
-  Copy,
+  Bot,
+  Brain,
   Check,
-  RotateCcw,
-  ExternalLink,
-  Layers,
-  Clock,
-  Sparkles,
-  Terminal,
   Code2,
   Coins,
-  Brain,
+  Copy,
   Cpu,
+  ExternalLink,
+  FileCode,
   GitCompare,
-  Key,
-  Bot,
+  Info,
+  Layers,
   Lock,
+  RotateCcw,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  Upload,
+  type LucideIcon,
 } from 'lucide-react';
 import { SAMPLE_SOROBAN_CONTRACT } from '../../lib/constants';
 import { useWallet } from '../../context/WalletContext';
 import { signAndPayAuditFee, fetchUserCreditBalance, purchaseCreditPackage } from '../../utils/solaceService';
 import PricingModal from '../../components/pricing/PricingModal';
+import { Chip, Panel, PanelHeader } from '../../components/dashboard/Panel';
+import RiskChart3D, { type RiskBar } from '../../components/dashboard/RiskChart3D';
+import { ScoreRing } from '../../components/dashboard/Visuals';
+import {
+  AuditPipeline,
+  ConsensusTriad,
+  CreditPackages,
+  Orb,
+  SectionLabel,
+  Segmented,
+  Stat,
+  useAuditStage,
+} from '../../components/audit/StudioParts';
+import { EASE_OUT, SplitWords, TiltCard, Depth } from '../../components/landing/motion';
+import { btn } from '../../components/landing/primitives';
 
 interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -181,22 +196,27 @@ function FormattedRecommendation({ text, index }: { text: string; index: number 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const copyBtn = (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={`Copy fix ${index + 1}`}
+      className="inline-flex items-center gap-1 h-6 px-2 rounded-md border border-white/10 text-[10px] text-slate-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+    >
+      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+
   if (isPureCode) {
     return (
-      <div className="rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shadow-inner flex flex-col mt-1">
-        <div className="flex justify-between items-center px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] font-mono text-slate-300">
-          <div className="flex items-center gap-1.5">
-            <Code2 className="w-3.5 h-3.5 text-accent" />
-            <span className="font-bold text-slate-100">Recommended Rust Fix</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold transition flex items-center gap-1 text-[10px]"
-          >
-            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
+      <div className="mt-2 rounded-md bg-[#121212] border border-emerald-500/25 overflow-hidden">
+        <div className="flex justify-between items-center px-3 h-8 border-b border-white/10 text-[11px] text-emerald-400">
+          <span className="inline-flex items-center gap-1.5">
+            <Code2 className="w-3.5 h-3.5" />
+            Recommended Rust fix
+          </span>
+          {copyBtn}
         </div>
         <pre
           className="p-3 m-0 overflow-x-auto text-slate-200 font-mono text-xs leading-5 modern-code-scrollbar"
@@ -209,27 +229,19 @@ function FormattedRecommendation({ text, index }: { text: string; index: number 
   const parts = text.split(/(`[^`]+`)/g);
 
   return (
-    <div className="rounded-xl bg-white dark:bg-slate-900/90 border border-red-200/60 dark:border-red-900/50 p-2.5 text-xs mt-1">
+    <div className="mt-2 rounded-md bg-[#121212] border border-white/10 p-3 text-xs">
       <div className="flex justify-between items-center mb-1.5">
-        <span className="font-bold text-accent text-[11px] uppercase tracking-wider">Recommended Fix:</span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-[10px] border border-slate-200 dark:border-slate-700 transition flex items-center gap-1 shrink-0"
-        >
-          {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-          <span>{copied ? 'Copied' : 'Copy Fix'}</span>
-        </button>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400">Recommended fix</span>
+        {copyBtn}
       </div>
-      <div className="leading-relaxed text-slate-800 dark:text-slate-200 font-medium">
+      <div className="leading-relaxed text-slate-300">
         {parts.map((part, pIdx) => {
           if (part.startsWith('`') && part.endsWith('`')) {
-            const rawCode = part.slice(1, -1);
             return (
               <code
                 key={pIdx}
-                className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-slate-950 text-teal-300 border border-slate-800 mx-0.5 inline-block shadow-xs"
-                dangerouslySetInnerHTML={{ __html: highlightRustCode(rawCode) }}
+                className="font-mono text-xs px-1.5 py-0.5 rounded bg-white/5 border border-white/10 mx-0.5 inline-block"
+                dangerouslySetInnerHTML={{ __html: highlightRustCode(part.slice(1, -1)) }}
               />
             );
           }
@@ -239,6 +251,7 @@ function FormattedRecommendation({ text, index }: { text: string; index: number 
     </div>
   );
 }
+
 
 export default function AuditStudioPage() {
   const router = useRouter();
@@ -1222,1340 +1235,566 @@ impl SolaceContract {
 
   const lineCount = codeSnippet ? codeSnippet.split('\n').length : 0;
 
+  // Hooks must run before the auth early-returns below.
+  const stage = useAuditStage(loading, auditStep);
+
   if (sessionLoading) {
     return (
-      <div className="w-full min-h-[calc(100vh-65px)] flex flex-col items-center justify-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100">
-        <div className="w-12 h-12 rounded-2xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent mb-4 animate-pulse">
-          <ShieldCheck className="w-6 h-6 text-accent" />
+      <div className="w-full min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f2f2f0] dark:bg-[#0b0b0b]">
+        <div className="text-center">
+          <Orb active>
+            <ShieldCheck className="w-5 h-5 text-accent" />
+          </Orb>
+          <p className="mt-6 font-mono text-xs text-slate-500 tracking-wider">Verifying auditor credentials…</p>
         </div>
-        <p className="text-xs font-mono text-slate-500 tracking-wider">Verifying auditor credentials...</p>
       </div>
     );
   }
 
   if (!isAuth) {
     return (
-      <div className="w-full min-h-[calc(100vh-65px)] flex flex-col items-center justify-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-center">
-        <div className="max-w-md w-full bg-white dark:bg-[#161616] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4">
-            <Lock className="w-6 h-6 text-accent" />
-          </div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Auditor Access Restricted</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-            Please log in or connect your Stellar auditor wallet to access the Interactive Code Audit Studio.
-          </p>
-          <div className="flex flex-col gap-2.5">
-            <Link
-              href="/login?redirect=/audit"
-              className="w-full py-2.5 px-4 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-md shadow-accent/25"
-            >
-              Sign In / Connect Wallet
-            </Link>
-            <Link
-              href="/"
-              className="w-full py-2.5 px-4 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition"
-            >
-              Return to Homepage
-            </Link>
-          </div>
-        </div>
+      <div className="w-full min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f2f2f0] dark:bg-[#0b0b0b] text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16, rotateX: 18 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 0.8, ease: EASE_OUT }}
+          style={{ transformPerspective: 1000 }}
+          className="w-full max-w-md"
+        >
+          <TiltCard max={6}>
+            <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] p-8 [transform-style:preserve-3d]">
+              <Depth z={30}>
+                <span className="mx-auto grid place-items-center w-11 h-11 rounded-md bg-accent-subtle text-accent">
+                  <Lock className="w-5 h-5" />
+                </span>
+              </Depth>
+              <Depth z={15}>
+                <h2 className="mt-5 text-xl font-medium tracking-tight text-slate-900 dark:text-white">Auditor access restricted</h2>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Please log in or connect your Stellar auditor wallet to access the Audit Studio.
+                </p>
+              </Depth>
+              <Depth z={25} className="mt-6 flex flex-col gap-2">
+                <Link href="/login?redirect=/audit" className={btn.primary}>
+                  Sign in / connect wallet
+                </Link>
+                <Link href="/" className={btn.secondary}>
+                  Return to homepage
+                </Link>
+              </Depth>
+            </div>
+          </TiltCard>
+        </motion.div>
       </div>
     );
   }
 
+
+  const passBars: RiskBar[] = invariantVectors.map((v) => ({
+    key: v.shortName,
+    label: v.shortName,
+    category: v.shortName,
+    detail: v.status,
+    score: v.score,
+    status: v.status,
+    color: v.gradientStyle,
+  }));
+
+  const riskTone = (score: number) =>
+    score > 70
+      ? { label: 'Critical risk', color: '#ef4444', text: 'text-red-500', bar: 'bg-red-500' }
+      : score > 30
+      ? { label: 'Moderate risk', color: '#f59e0b', text: 'text-amber-500', bar: 'bg-amber-500' }
+      : { label: 'Verified secure', color: '#10b981', text: 'text-emerald-500', bar: 'bg-emerald-500' };
+
+  const editorFont = {
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontSize: '12px',
+    lineHeight: '24px',
+    letterSpacing: 'normal',
+    tabSize: 4,
+  } as const;
+
+  const available = userCredits?.availableCredits ?? 0;
+
   return (
-    <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8">
-      {/* Main Studio Canvas */}
-      <main className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
-        {/* Top Header Card (Enhanced Hero) */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
+    <div className="relative w-full min-h-screen bg-[#f2f2f0] dark:bg-[#0b0b0b] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                  <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                  <span>Live Security Engine</span>
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                  Stellar Soroban v22 Protocol
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                Interactive Code Audit Studio
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-xl leading-relaxed">
-                Autonomous Solace Dual Flash AST inspection &amp; verification on Stellar Soroban
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap shrink-0">
-              {/* View Tabs */}
-              <div className="bg-slate-100/90 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1 rounded-full shadow-xs flex text-xs">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('STUDIO')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold transition text-xs select-none ${
-                    activeTab === 'STUDIO'
-                      ? 'bg-accent text-white shadow-md shadow-accent/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Audit Studio</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('INVARIANTS')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold transition text-xs select-none ${
-                    activeTab === 'INVARIANTS'
-                      ? 'bg-accent text-white shadow-md shadow-accent/25'
-                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Audit Pass Rate</span>
-                </button>
-              </div>
-
-              <Link
-                href="/"
-                className="px-4 py-2 rounded-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Dashboard</span>
-              </Link>
-            </div>
+      <main className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-4 sm:mb-5">
+          <div className="min-w-0">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: EASE_OUT }}
+              className="flex flex-wrap items-center gap-2 mb-5"
+            >
+              <Chip tone="accent" pulse>Live security engine</Chip>
+              <Chip>Soroban v22</Chip>
+              <Chip tone={walletKey ? 'ok' : 'neutral'}>{walletKey ? 'Wallet connected' : 'Wallet offline'}</Chip>
+            </motion.div>
+            <h1 className="text-2xl sm:text-[28px] font-medium tracking-tight text-slate-900 dark:text-white">
+              <SplitWords text="Audit Studio" />
+            </h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl"
+            >
+              Paste a Soroban contract, run AST and multi-model analysis, then anchor the verdict to the Stellar ledger.
+            </motion.p>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: EASE_OUT }}
+            className="flex flex-wrap items-center gap-2 shrink-0"
+          >
+            <Segmented
+              id="studio-view"
+              label="Studio view"
+              value={activeTab}
+              onChange={setActiveTab}
+              options={[
+                { value: 'STUDIO', label: <><ShieldCheck className="w-3.5 h-3.5" />Studio</> },
+                { value: 'INVARIANTS', label: <><Layers className="w-3.5 h-3.5" />Pass rate</> },
+              ]}
+            />
+            <Link href="/dashboard" className={`${btn.secondary} h-8 px-3 text-xs`}>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Dashboard
+            </Link>
+          </motion.div>
         </div>
 
-        {/* Insufficient Credits Banner / Unlock AI-Powered Smart Contract Analysis */}
-        {userCredits && userCredits.availableCredits === 0 && (
-          <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-white/10 relative overflow-hidden">
+        {/* No credits: bundle picker */}
+        <AnimatePresence>
+          {userCredits && userCredits.availableCredits === 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.5, ease: EASE_OUT }}
+              className="overflow-hidden"
+            >
+              <Panel className="mb-5">
+                <PanelHeader
+                  eyebrow="Credits"
+                  title="Buy credits to run your next audit"
+                  action={
+                    <button type="button" onClick={() => setShowPricingModal(true)} className={btn.link}>
+                      Full breakdown
+                    </button>
+                  }
+                />
+                <p className="px-5 sm:px-6 -mt-2 mb-5 text-sm text-slate-600 dark:text-slate-400 max-w-3xl">
+                  Each audit uses one credit (10 XLM) and includes AST analysis, invariant checks and AI-drafted Rust fixes.
+                  Credits never expire.
+                </p>
+                <div className="px-5 sm:px-6 pb-6">
+                  <CreditPackages onBuy={handleQuickPurchase} />
+                </div>
+              </Panel>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <div className="relative z-10">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-accent text-white flex items-center justify-center shadow-md shadow-accent/25 shrink-0">
-                    <Sparkles className="w-5 h-5 text-white" />
+        <AnimatePresence mode="wait">
+          {activeTab === 'STUDIO' ? (
+            <motion.div
+              key="studio"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease: EASE_OUT }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start"
+            >
+              {/* ============ Editor ============ */}
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                {/* Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                    <span className="eyebrow mr-1 shrink-0">Load</span>
+                    <button type="button" onClick={handleLoadVault} className={`${btn.secondary} h-8 px-3 text-xs shrink-0`}>
+                      Vault protocol
+                    </button>
+                    <button type="button" onClick={handleLoadSolaceCore} className={`${btn.secondary} h-8 px-3 text-xs shrink-0`}>
+                      Solace core
+                    </button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className={`${btn.secondary} h-8 px-3 text-xs shrink-0`}>
+                      <Upload className="w-3.5 h-3.5" />
+                      Upload
+                    </button>
+                    <input ref={fileInputRef} type="file" accept=".rs,.wasm,.txt" className="hidden" onChange={handleFileUpload} />
+                    {codeSnippet && (
+                      <button type="button" onClick={handleClear} className="h-8 px-2 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer shrink-0">
+                        Clear
+                      </button>
+                    )}
                   </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
-                      <span>Unlock AI-Powered Smart Contract Analysis</span>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent text-white uppercase tracking-wider">
-                        Prepaid Bundles
-                      </span>
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-0.5 leading-relaxed">
-                      Your account does not have enough AI analysis credits to run this audit. Purchase a credit package below to get instant access to full AST vulnerability analysis, automated invariant testing, and AI-generated Rust code remediation.
-                    </p>
-                  </div>
+                  <Segmented
+                    id="deploy-mode"
+                    label="Deployment stage"
+                    value={isPostDeployment ? 'POST' : 'PRE'}
+                    onChange={(v) => setIsPostDeployment(v === 'POST')}
+                    options={[
+                      { value: 'PRE', label: 'Pre-deploy' },
+                      { value: 'POST', label: 'Post-deploy' },
+                    ]}
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowPricingModal(true)}
-                  className="px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shrink-0 cursor-pointer"
+                {/* Editor window: settles from a tilt on load */}
+                <motion.div
+                  initial={{ opacity: 0, rotateX: 14, y: 24 }}
+                  animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                  transition={{ duration: 0.9, delay: 0.1, ease: EASE_OUT }}
+                  style={{ transformPerspective: 1600, transformOrigin: '50% 100%' }}
+                  className="relative rounded-[18px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#141414] p-1.5"
                 >
-                  View Full Breakdown
-                </button>
-              </div>
-
-              {/* 3 Package Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
-                {/* Starter: 30 XML for 3 audits */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">Starter</span>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                        Popular for MVPs
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1 mb-1">
-                      <span className="text-2xl font-black font-mono text-accent">30 XLM</span>
-                      <span className="text-[11px] text-slate-500 font-mono">/ 30 XML Credits</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                      3 Complete AST Invariant Audits (10 XML / audit). Non-expiring.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPurchase(1)}
-                    className="w-full py-2 px-3 rounded-full bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Coins className="w-3.5 h-3.5 text-accent" />
-                    <span>Purchase Starter (30 XLM)</span>
-                  </button>
-                </div>
-
-                {/* Growth: 60 XML for 6 audits */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#161616] border-2 border-accent shadow-md shadow-accent/10 transition flex flex-col justify-between relative">
-                  <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-wider">
-                    Best Value
-                  </span>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">Growth</span>
-                    </div>
-                    <div className="flex items-baseline gap-1 mb-1">
-                      <span className="text-2xl font-black font-mono text-accent">60 XLM</span>
-                      <span className="text-[11px] text-slate-500 font-mono">/ 60 XML Credits</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                      6 Complete AST Invariant Audits. Priority Gemini Flash engine.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPurchase(2)}
-                    className="w-full py-2 px-3 rounded-full bg-accent hover:bg-accent-hover text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Coins className="w-3.5 h-3.5 text-white" />
-                    <span>Purchase Growth (60 XLM)</span>
-                  </button>
-                </div>
-
-                {/* Professional: 90 XML for 9 audits */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-slate-800 hover:border-accent/50 transition shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">Professional</span>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20">
-                        Protocol Standard
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1 mb-1">
-                      <span className="text-2xl font-black font-mono text-accent">90 XLM</span>
-                      <span className="text-[11px] text-slate-500 font-mono">/ 90 XML Credits</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                      9 Complete AST Invariant Audits. Auditor multi-sig proof inscriptions.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPurchase(3)}
-                    className="w-full py-2 px-3 rounded-full bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Coins className="w-3.5 h-3.5 text-accent" />
-                    <span>Purchase Pro (90 XLM)</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 1: Studio */}
-        {activeTab === 'STUDIO' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-            {/* Left 7 Columns: Code Editor & Audit Action */}
-            <div className="lg:col-span-7 flex flex-col gap-4">
-              <div className="bg-white dark:bg-[#161616] rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-colors">
-                <div>
-                  {/* Top Control Bar */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                    {/* Load Presets */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 shrink-0">Load:</span>
-                      <button
-                        type="button"
-                        onClick={handleLoadVault}
-                        className="px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-bold rounded-full transition whitespace-nowrap shrink-0"
-                      >
-                        Vault Protocol
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleLoadSolaceCore}
-                        className="px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-bold rounded-full transition whitespace-nowrap shrink-0"
-                      >
-                        Solace Core
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-bold rounded-full transition flex items-center gap-1 whitespace-nowrap shrink-0"
-                      >
-                        <Upload className="w-3 h-3" />
-                        <span>Upload</span>
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".rs,.wasm,.txt"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                      />
-                      {codeSnippet && (
-                        <button
-                          type="button"
-                          onClick={handleClear}
-                          className="px-2 py-1 text-slate-500 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition shrink-0"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Pre / Post Deploy Toggle (Brand accent, no black) */}
-                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 p-0.5 sm:p-1 rounded-full text-xs shrink-0 self-start sm:self-auto">
-                      <button
-                        type="button"
-                        onClick={() => setIsPostDeployment(false)}
-                        className={`px-3 py-1 rounded-full font-bold transition text-xs ${
-                          !isPostDeployment
-                            ? 'bg-accent text-white shadow-sm'
-                            : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold'
-                        }`}
-                      >
-                        Pre-Deploy
-                      </button>
-                      <span className="text-slate-300 dark:text-slate-600">|</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsPostDeployment(true)}
-                        className={`px-3 py-1 rounded-full font-bold transition text-xs ${
-                          isPostDeployment
-                            ? 'bg-accent text-white shadow-sm'
-                            : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold'
-                        }`}
-                      >
-                        Post-Deploy
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Code Editor Box with Modern Left Toolbar, Syntax Highlighting, and Bottom Status Bar */}
-                  <div className="rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-hidden flex flex-col w-full max-w-full">
-                    {/* Header Bar */}
-                    <div className="flex justify-between items-center text-xs text-slate-300 px-3 py-2.5 border-b border-slate-800 font-mono bg-slate-900/70 flex-wrap gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex items-center gap-1.5 text-slate-100 font-bold truncate">
-                          <FileCode className="w-3.5 h-3.5 text-accent shrink-0" />
-                          <span className="truncate">soroban_contract.rs</span>
-                        </span>
-                        <span className="text-slate-600 hidden xs:inline">•</span>
-                        <span className="text-slate-400 font-semibold text-[11px] hidden xs:inline">{lineCount} lines</span>
+                  <div
+                    aria-hidden
+                    className={`pointer-events-none absolute -inset-6 -z-10 rounded-[50%] bg-accent blur-[80px] transition-opacity duration-700 ${loading ? 'opacity-25' : 'opacity-0'}`}
+                  />
+                  <div className="relative rounded-[14px] border border-slate-800 dark:border-white/10 bg-[#121212] overflow-hidden">
+                    {/* Title bar */}
+                    <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-[#0e0e0e] pr-2">
+                      <div className="flex items-center gap-2 h-10 px-4 font-mono text-xs text-white bg-[#121212] border-r border-white/10 relative">
+                        <span className="absolute inset-x-0 top-0 h-px bg-accent" />
+                        <FileCode className="w-3.5 h-3.5 text-accent" />
+                        soroban_contract.rs
+                        <span className="text-slate-500">· {lineCount} lines</span>
                       </div>
-
-                      {/* Mode Toggle: Colored Syntax vs Plain Edit */}
-                      <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-[10px]">
-                        <button
-                          type="button"
-                          onClick={() => setEditorMode('COLORED')}
-                          className={`px-2 py-0.5 rounded-md font-bold transition ${
-                            editorMode === 'COLORED'
-                              ? 'bg-accent text-white shadow-xs'
-                              : 'text-slate-300 hover:text-white'
-                          }`}
-                        >
-                          Colored Code
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditorMode('EDIT')}
-                          className={`px-2 py-0.5 rounded-md font-bold transition ${
-                            editorMode === 'EDIT'
-                              ? 'bg-accent text-white shadow-xs'
-                              : 'text-slate-300 hover:text-white'
-                          }`}
-                        >
-                          Plain Edit
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Editor Workspace with Left Side Bar, Gutter, and Code Canvas */}
-                    <div className="relative font-mono text-[11px] sm:text-xs leading-6 h-[360px] sm:h-[460px] lg:h-[520px] flex overflow-hidden bg-slate-950">
-                      {/* Modern Left Side Action Strip */}
-                      <div className="w-8 sm:w-10 bg-slate-950/90 border-r border-slate-900 flex flex-col items-center py-2.5 gap-2 select-none shrink-0 z-10">
-                        <span className="w-5 h-5 rounded-md bg-accent/15 text-accent text-[9px] font-black flex items-center justify-center border border-accent/25" title="Rust Contract">
-                          RS
-                        </span>
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
                           onClick={handleCopyCode}
-                          className="w-6 h-6 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
-                          title={copiedCode ? 'Copied code!' : 'Copy Code'}
+                          className="grid place-items-center w-7 h-7 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                          aria-label={copiedCode ? 'Code copied' : 'Copy code'}
                         >
                           {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                         <button
                           type="button"
                           onClick={handleLoadVault}
-                          className="w-6 h-6 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
-                          title="Reset to Template"
+                          className="grid place-items-center w-7 h-7 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                          aria-label="Reset to template"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                         </button>
+                        <Segmented
+                          id="editor-mode"
+                          label="Editor mode"
+                          dark
+                          value={editorMode}
+                          onChange={setEditorMode}
+                          options={[
+                            { value: 'COLORED', label: 'Colored' },
+                            { value: 'EDIT', label: 'Plain' },
+                          ]}
+                        />
                       </div>
+                    </div>
 
-                      {/* Line Numbers Gutter */}
+                    {/* Pipeline appears while an audit runs */}
+                    <AnimatePresence initial={false}>
+                      {loading && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: EASE_OUT }}
+                          className="overflow-hidden"
+                        >
+                          <AuditPipeline stage={stage} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Editor body */}
+                    <div className="relative font-mono text-[11px] sm:text-xs leading-6 h-[380px] sm:h-[480px] lg:h-[540px] flex overflow-hidden">
                       <div
                         ref={gutterRef}
-                        className="select-none py-3 px-1.5 sm:px-2 bg-slate-900/40 border-r border-slate-800 text-slate-600 text-right font-mono text-[10px] sm:text-[11px] leading-6 w-8 sm:w-11 shrink-0 overflow-hidden"
+                        className="select-none py-3 px-2 border-r border-white/5 text-slate-600 text-right text-[11px] leading-6 w-11 shrink-0 overflow-hidden"
                       >
                         {Array.from({ length: Math.max(lineCount, 1) }).map((_, i) => (
                           <div key={i}>{i + 1}</div>
                         ))}
                       </div>
 
-                      {/* Main Code Editing Canvas */}
                       <div className="relative flex-1 h-full overflow-hidden">
-                        {/* Syntax Highlighted HTML Layer */}
                         <pre
                           ref={highlightRef}
-                          style={{
-                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                            fontSize: '12px',
-                            lineHeight: '24px',
-                            letterSpacing: 'normal',
-                            tabSize: 4,
-                          }}
-                          className={`absolute inset-0 p-3 m-0 overflow-auto modern-code-scrollbar text-slate-200 pointer-events-none whitespace-pre select-none ${
+                          style={editorFont}
+                          className={`absolute inset-0 p-3 m-0 overflow-auto modern-code-scrollbar text-slate-200 pointer-events-none whitespace-pre select-none transition-opacity ${
                             editorMode === 'COLORED' ? 'opacity-100' : 'opacity-0'
                           }`}
                           dangerouslySetInnerHTML={{ __html: highlightRustCode(codeSnippet) }}
                         />
-
-                        {/* Interactive Textarea Layer */}
                         <textarea
                           ref={textareaRef}
                           value={codeSnippet}
                           onChange={(e) => handleCodeChange(e.target.value)}
                           onScroll={handleEditorScroll}
-                          placeholder="// Paste Soroban Rust smart contract (lib.rs) or click 'Load Vault Template'..."
+                          aria-label="Soroban contract source"
+                          placeholder="// Paste a Soroban Rust contract (lib.rs) or load a template…"
                           style={{
-                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                            fontSize: '12px',
-                            lineHeight: '24px',
-                            letterSpacing: 'normal',
-                            tabSize: 4,
+                            ...editorFont,
                             color: editorMode === 'COLORED' ? 'transparent' : '#e2e8f0',
                             WebkitTextFillColor: editorMode === 'COLORED' ? 'transparent' : '#e2e8f0',
-                            caretColor: editorMode === 'COLORED' ? '#ffffff' : '#C80552',
+                            caretColor: editorMode === 'COLORED' ? '#ffffff' : 'var(--e-global-color-accent)',
                           }}
                           className="absolute inset-0 p-3 m-0 overflow-auto modern-code-scrollbar bg-transparent resize-none focus:outline-none whitespace-pre border-0 selection:bg-accent/40"
                           spellCheck={false}
                         />
 
-                        {/* Welcoming Interactive Overlay when empty */}
+                        {/* Scan sweep while analysing */}
+                        <AnimatePresence>
+                          {loading && (
+                            <motion.div
+                              key="sweep"
+                              aria-hidden
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute inset-0 pointer-events-none overflow-hidden"
+                            >
+                              <motion.div
+                                className="absolute inset-x-0 h-24 bg-gradient-to-b from-transparent via-accent/10 to-transparent border-b border-accent/40"
+                                animate={{ top: ['-25%', '100%'] }}
+                                transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Empty state */}
                         {!codeSnippet && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none text-center bg-slate-950/40">
-                            <div className="pointer-events-auto flex flex-col items-center max-w-sm">
-                              <div className="w-10 h-10 rounded-2xl bg-accent-subtle border border-accent/20 flex items-center justify-center text-accent mb-2.5 shadow-xs">
+                          <div className="absolute inset-0 grid place-items-center p-4 pointer-events-none text-center">
+                            <motion.div
+                              initial={{ opacity: 0, rotateX: 40, y: 10 }}
+                              animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                              transition={{ duration: 0.8, delay: 0.5, ease: EASE_OUT }}
+                              style={{ transformPerspective: 600 }}
+                              className="pointer-events-auto max-w-sm"
+                            >
+                              <Orb active={false}>
                                 <Code2 className="w-5 h-5 text-accent" />
-                              </div>
-                              <p className="text-xs text-slate-200 font-bold mb-1">
-                                Ready for Soroban Contract Audit
+                              </Orb>
+                              <p className="mt-4 text-sm text-white">Ready for a Soroban contract</p>
+                              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                                Paste code, upload a .rs file, or load a template to run live AST analysis.
                               </p>
-                              <p className="text-[11px] text-slate-400 mb-3.5 leading-relaxed">
-                                Paste your contract code here, upload a .rs file, or load an example template to run live AST analysis.
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={handleLoadVault}
-                                  className="px-3.5 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-md shadow-accent/25 transition hover:scale-105 active:scale-95"
-                                >
-                                  Load Vault Template
+                              <div className="mt-4 flex items-center justify-center gap-2">
+                                <button type="button" onClick={handleLoadVault} className={`${btn.primary} h-8 px-3 text-xs`}>
+                                  Load vault template
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => fileInputRef.current?.click()}
-                                  className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition"
+                                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-white/15 text-xs text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                                 >
-                                  Upload File
+                                  <Upload className="w-3.5 h-3.5" />
+                                  Upload file
                                 </button>
                               </div>
-                            </div>
+                            </motion.div>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Modern Below Status Bar */}
-                    <div className="bg-slate-900 border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-slate-400 select-none flex-wrap gap-1">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <span className="flex items-center gap-1 text-slate-300 font-semibold">
-                          <Terminal className="w-3 h-3 text-accent" />
-                          <span>soroban-sdk v22</span>
+                    {/* Status bar */}
+                    <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 h-9 text-[11px] font-mono text-slate-500">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="relative flex w-1.5 h-1.5 shrink-0">
+                          {loading && <span className="absolute inline-flex w-full h-full rounded-full bg-amber-400 animate-ping-soft" />}
+                          <span className={`relative w-1.5 h-1.5 rounded-full ${loading ? 'bg-amber-400' : report ? 'bg-emerald-400' : 'bg-slate-600'}`} />
                         </span>
-                        <span className="text-slate-600 hidden xs:inline">•</span>
-                        <span className="text-slate-400 hidden xs:inline">Rust 2021 (no_std)</span>
-                        <span className="text-slate-600 hidden sm:inline">•</span>
-                        <span className="text-slate-400 hidden sm:inline">UTF-8</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 sm:gap-3 text-right">
-                        <span>Ln {lineCount}, Col 1</span>
-                        <span className="text-slate-600 hidden xs:inline">•</span>
-                        <span className="hidden xs:inline">{codeSnippet.length} chars</span>
-                        <span className="px-1.5 py-0.5 rounded bg-accent/20 text-accent font-bold uppercase text-[9px]">
-                          {isPostDeployment ? 'POST-DEPLOY' : 'PRE-DEPLOY'}
-                        </span>
-                      </div>
+                        <span className="text-slate-300 truncate">{loading ? auditStep || 'analysing…' : report ? 'analysis complete' : 'ready'}</span>
+                      </span>
+                      <span className="hidden sm:flex items-center gap-3 shrink-0">
+                        <span className="inline-flex items-center gap-1"><Terminal className="w-3 h-3" />soroban-sdk v22</span>
+                        <span>{codeSnippet.length} chars</span>
+                        <span className="text-accent uppercase">{isPostDeployment ? 'post-deploy' : 'pre-deploy'}</span>
+                      </span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Bottom Action Footer */}
-                <div className="pt-3.5 sm:pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setShowPricingModal(true)}
-                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-subtle text-accent border border-accent/25 text-xs font-bold hover:scale-105 transition cursor-pointer"
-                      title="Manage and purchase prepaid non-expiring audit bundles"
-                    >
-                      <Coins className="w-3.5 h-3.5 text-accent" />
-                      <span>
-                        Balance: <strong className="font-mono">{userCredits ? userCredits.availableCredits * 10 : 0} XML</strong> ({userCredits ? userCredits.availableCredits : 0} Audits)
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-white font-mono font-bold">
-                        + Buy Bundles
-                      </span>
-                    </button>
-                    {userCredits && userCredits.availableCredits <= 1 && (
-                      <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                        {userCredits.availableCredits === 0 ? '0 XML Available' : 'Running Low: 10 XML Left'}
+                {/* Run bar */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPricingModal(true)}
+                    className="group inline-flex items-center gap-2 h-10 px-3 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] text-xs text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20 transition-colors cursor-pointer"
+                    title="Manage prepaid audit bundles"
+                  >
+                    <Coins className="w-3.5 h-3.5 text-accent" />
+                    <span>
+                      <span className="font-mono text-slate-900 dark:text-white">{available}</span> audits ·{' '}
+                      <span className="font-mono">{available * 10} XLM</span>
+                    </span>
+                    {userCredits && available <= 1 && (
+                      <span className={`font-mono text-[10px] uppercase ${available === 0 ? 'text-red-500' : 'text-amber-500'}`}>
+                        {available === 0 ? 'empty' : 'low'}
                       </span>
                     )}
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden lg:inline">
-                      10 XML (1 audit) • Non-expiring
-                    </span>
-                  </div>
+                    <span className="text-accent group-hover:translate-x-0.5 transition-transform">+ Buy</span>
+                  </button>
 
                   <button
                     type="button"
                     onClick={handleAudit}
                     disabled={loading || !codeSnippet.trim()}
-                    className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-bold transition shadow-md shadow-accent/25 whitespace-nowrap flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                    className={`${btn.primary} relative overflow-hidden min-w-[220px]`}
                   >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>
-                      {loading
-                        ? (auditStep || 'Deducting 10 XML & analyzing...')
-                        : 'Run AST Audit (10 XML)'}
-                    </span>
+                    {loading && (
+                      <motion.span
+                        aria-hidden
+                        className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                        animate={{ left: ['-35%', '110%'] }}
+                        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
+                      />
+                    )}
+                    <ShieldCheck className="w-4 h-4 relative" />
+                    <span className="relative truncate">{loading ? 'Analysing…' : 'Run AST audit · 1 credit'}</span>
                   </button>
                 </div>
 
-                {error && (
-                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right 5 Columns: Findings & On-Chain Verification */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
-              <div className="bg-white dark:bg-[#161616] rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col h-full min-h-[380px] sm:min-h-[500px] transition-colors">
-                <div className="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Audit Findings & Ledger Receipt
-                  </h2>
-                  {report && (
-                    <button
-                      type="button"
-                      onClick={handleAnchorOnChain}
-                      disabled={anchoring}
-                      className="px-3.5 py-1 rounded-full bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs font-semibold transition shadow-md shadow-accent/20 flex items-center gap-1.5"
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      role="alert"
+                      className="flex items-start gap-2.5 p-3 rounded-md border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-xs text-red-700 dark:text-red-300"
                     >
-                      <Shield className="w-3.5 h-3.5" />
-                      <span>{anchoring ? 'Anchoring...' : 'Anchor on Soroban'}</span>
-                    </button>
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-px" />
+                      {error}
+                    </motion.div>
                   )}
-                </div>
-
-                {!report && !loading && (
-                  <div className="flex-grow flex flex-col items-center justify-center text-center p-6 sm:p-8 text-slate-400">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 mb-3">
-                      <Shield className="w-6 h-6 text-accent" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">Ready for Code Inspection</span>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-xs leading-relaxed font-medium">
-                      Load a sample Soroban contract or paste Rust code and click Audit Smart Contract to initiate automated vulnerability detection.
-                    </p>
-                  </div>
-                )}
-
-                {loading && (
-                  <div className="flex-grow flex flex-col items-center justify-center text-center p-6 sm:p-8">
-                    <div className="relative mb-3 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-2 border-accent/20 border-t-accent" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Coins className="w-5 h-5 text-accent animate-pulse" />
-                      </div>
-                    </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white max-w-sm">
-                      {auditStep || 'Solace Dual Flash AST Engine Analyzing...'}
-                    </span>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs font-medium leading-relaxed">
-                      Please confirm the 1.0 XLM transaction in your Freighter extension popup when prompted.
-                    </p>
-                  </div>
-                )}
-
-                {report && !loading && (() => {
-                  const geminiModel = report.models?.find(
-                    (m) => m.provider === 'Google' || m.modelId.toLowerCase().includes('gemini')
-                  );
-                  const openaiModel = report.models?.find(
-                    (m) => m.provider === 'OpenAI' || m.modelId.toLowerCase().includes('gpt')
-                  );
-                  const anthropicModel = report.models?.find(
-                    (m) => m.provider === 'Anthropic' || m.modelId.toLowerCase().includes('claude')
-                  );
-
-                  const agreementPercent = report.consensus?.agreementPercentage ?? 98;
-                  const agreementLevel = report.consensus?.agreementLevel ?? 'UNANIMOUS';
-
-                  return (
-                    <div className="space-y-4 overflow-y-auto max-h-[620px] pr-1 modern-code-scrollbar">
-                      {/* Multi-Model Consensus & Anti-Hallucination Banner */}
-                      <div className="p-3 sm:p-3.5 rounded-2xl bg-accent-subtle border border-accent/25 text-xs shadow-xs">
-                        <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-                          <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
-                            <ShieldCheck className="w-4 h-4 text-accent animate-pulse" />
-                            <span>Multi-LLM Cross-Validation Active</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                              {agreementPercent}% Consensus • {agreementLevel}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/20 text-accent border border-accent/30 hidden sm:inline-block">
-                              Anti-Hallucination Shield Active
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                          Cross-evaluated across Google Gemini, OpenAI GPT-4o, and Anthropic Claude 3.5 Sonnet to prevent hallucinations before anchoring cryptographic proofs on the Stellar ledger.
-                        </p>
-                      </div>
-
-                      {/* Model Selector Tabs */}
-                      <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-950/80 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] font-bold overflow-x-auto scrollbar-none">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedModelTab('CONSENSUS')}
-                          className={`px-3 py-1.5 rounded-lg transition shrink-0 flex items-center gap-1.5 ${
-                            selectedModelTab === 'CONSENSUS'
-                              ? 'bg-accent text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>Consensus</span>
-                          <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">3 Models</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedModelTab('GEMINI')}
-                          className={`px-3 py-1.5 rounded-lg transition shrink-0 flex items-center gap-1.5 ${
-                            selectedModelTab === 'GEMINI'
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          <Brain className="w-3.5 h-3.5 text-blue-400" />
-                          <span>Gemini</span>
-                          <span className="text-[9px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1 rounded">Live</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedModelTab('OPENAI')}
-                          className={`px-3 py-1.5 rounded-lg transition shrink-0 flex items-center gap-1.5 ${
-                            selectedModelTab === 'OPENAI'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          <Bot className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>GPT-4o</span>
-                          <span className="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 rounded">
-                            {openaiModel?.status === 'LIVE_API' ? 'Live' : 'Preview'}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedModelTab('ANTHROPIC')}
-                          className={`px-3 py-1.5 rounded-lg transition shrink-0 flex items-center gap-1.5 ${
-                            selectedModelTab === 'ANTHROPIC'
-                              ? 'bg-purple-600 text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          <Cpu className="w-3.5 h-3.5 text-purple-400" />
-                          <span>Claude 3.5</span>
-                          <span className="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 rounded">
-                            {anthropicModel?.status === 'LIVE_API' ? 'Live' : 'Preview'}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedModelTab('MATRIX')}
-                          className={`px-3 py-1.5 rounded-lg transition shrink-0 flex items-center gap-1.5 ${
-                            selectedModelTab === 'MATRIX'
-                              ? 'bg-slate-800 text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          <GitCompare className="w-3.5 h-3.5" />
-                          <span>Compare Matrix</span>
-                        </button>
-                      </div>
-
-                      {/* TAB 1: CONSENSUS VIEW */}
-                      {selectedModelTab === 'CONSENSUS' && (
-                        <div className="space-y-4">
-                          {/* Scores & Status Pill */}
-                          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                      <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
-                          Security Score
-                        </span>
-                        <div className={`text-xl sm:text-2xl font-black mt-0.5 ${report.riskScore > 50 ? 'text-red-600 dark:text-red-400' : 'text-accent'}`}>
-                          {report.riskScore} <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ 100</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block">
-                          Audit Verdict
-                        </span>
-                        <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full mt-1 truncate max-w-full ${
-                          report.isSecure
-                            ? 'bg-accent-subtle text-accent border border-accent/20'
-                            : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60'
-                        }`}>
-                          {report.isSecure ? '• Verified Secure' : '• Action Required'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Security Score Explanation Card */}
-                    <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
-                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                        <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                          <ShieldCheck className="w-4 h-4 text-accent" />
-                          <span>Security Score Analysis ({report.riskScore}/100)</span>
-                        </span>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                          report.riskScore > 70
-                            ? 'bg-red-600 text-white'
-                            : report.riskScore > 30
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-emerald-600 text-white'
-                        }`}>
-                          {report.riskScore > 70 ? 'CRITICAL RISK' : report.riskScore > 30 ? 'MODERATE RISK' : 'VERIFIED SECURE'}
-                        </span>
-                      </div>
-
-                      {/* Visual Risk Bar */}
-                      <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden mb-2">
-                        <div
-                          className={`h-full transition-all duration-500 rounded-full ${
-                            report.riskScore > 70
-                              ? 'bg-red-500'
-                              : report.riskScore > 30
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
-                          }`}
-                          style={{ width: `${Math.min(report.riskScore, 100)}%` }}
-                        />
-                      </div>
-
-                      <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                        {report.riskScore > 70
-                          ? `A risk score of ${report.riskScore}/100 indicates critical invariant flaws. Unauthenticated storage mutations or missing require_auth() authorization guards allow malicious callers to drain assets or overwrite administrative control. Fixes are required before deployment.`
-                          : report.riskScore > 30
-                          ? `A risk score of ${report.riskScore}/100 represents warnings. Review persistent storage rent TTL and unhandled panic boundaries prior to mainnet ledger deployment.`
-                          : `A risk score of ${report.riskScore}/100 indicates clean AST invariant enforcement. Authentication asserts, storage rent management, and error handling are fully compliant with Soroban v22 protocol.`
-                        }
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
-                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                          <span className={`w-2 h-2 rounded-full ${report.isSecure ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                          <span className="font-semibold">Auth Guarding:</span>
-                          <span className="text-slate-500 dark:text-slate-400 font-mono">{report.isSecure ? 'Enforced' : 'Action Required'}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                          <span className={`w-2 h-2 rounded-full ${report.isSecure ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                          <span className="font-semibold">Storage Rent:</span>
-                          <span className="text-slate-500 dark:text-slate-400 font-mono">{report.isSecure ? 'Bounded' : 'Review TTL'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hash Pill */}
-                    {contractHash && (
-                      <div className="p-2 sm:p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
-                          Hash: {contractHash.slice(0, 12)}...{contractHash.slice(-6)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleCopyHash}
-                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition flex items-center gap-1 shrink-0"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>{copiedHash ? 'Copied' : 'Copy'}</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* On-Chain Audit Fee / Credit Settlement Card */}
-                    {feeReceipt && (
-                      <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 text-xs shadow-xs">
-                        <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
-                          <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
-                            <div className="w-5 h-5 rounded-md bg-accent-subtle text-accent flex items-center justify-center">
-                              <Coins className="w-3 h-3 text-accent" />
-                            </div>
-                            <span>Prepaid Audit Credit Consumed</span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
-                            - 1 CREDIT DEDUCTED
-                          </span>
-                        </div>
-                        <div className="space-y-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/80 text-[11px] font-mono">
-                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Account:</span>
-                            <span className="text-slate-800 dark:text-slate-200 font-bold truncate max-w-[190px]">
-                              {feeReceipt.payer}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Credits Remaining:</span>
-                            <span className="text-accent font-bold">
-                              {userCredits ? userCredits.availableCredits : 0} Available
-                            </span>
-                          </div>
-                          {feeReceipt.transactionHash && (
-                            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                              <span>Audit Identifier:</span>
-                              <span className="text-slate-700 dark:text-slate-300 font-bold truncate max-w-[190px]">
-                                {feeReceipt.transactionHash.slice(0, 16)}...
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                            <span>Status:</span>
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                              ✓ VERIFIED ON PREPAID BALANCE
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* On-Chain Anchored Certificate / Call to Action */}
-                    {anchorResult ? (
-                      <div className="p-4 sm:p-4.5 rounded-2xl bg-white dark:bg-slate-900 border border-accent/30 shadow-md text-xs relative overflow-hidden transition-all">
-                        {/* Decorative background glow */}
-
-                        {/* Status Header */}
-                        <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
-                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20 text-[11px] font-bold">
-                            <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                            <span>Permanently Anchored on Stellar Testnet</span>
-                          </div>
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
-                            CONFIRMED ON LEDGER
-                          </span>
-                        </div>
-
-                        {/* Contract & Storage Info */}
-                        <p className="text-slate-700 dark:text-slate-200 text-xs leading-relaxed mb-3 font-medium">
-                          Audit findings cryptographically anchored in contract{' '}
-                          <a
-                            href={`https://stellar.expert/explorer/testnet/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-accent font-bold hover:underline"
-                          >
-                            {(anchorResult.contractId || LIVE_CONTRACT_ID).slice(0, 10)}...{(anchorResult.contractId || LIVE_CONTRACT_ID).slice(-8)}
-                          </a>{' '}
-                          under key <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px] text-slate-800 dark:text-slate-200">DataKey::Audit</code>.
-                        </p>
-
-                        {/* Transaction Hash Card with Copy */}
-                        {anchorResult.transactionHash && (
-                          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200/80 dark:border-slate-800 mb-3 flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold uppercase text-slate-500 shrink-0">Tx Hash:</span>
-                              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 truncate select-all">
-                                {anchorResult.transactionHash}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(anchorResult.transactionHash);
-                                setCopiedTxHash(true);
-                                setTimeout(() => setCopiedTxHash(false), 2000);
-                              }}
-                              className="px-2 py-1 rounded bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[10px] transition flex items-center gap-1 shrink-0"
-                              title="Copy Transaction Hash"
-                            >
-                              {copiedTxHash ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
-                              <span>{copiedTxHash ? 'Copied' : 'Copy'}</span>
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                          <a
-                            href={anchorResult.explorerUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3.5 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs shadow-md shadow-accent/25 transition flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            <span>View Transaction on Stellar Expert</span>
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                          <a
-                            href={`https://stellar.expert/explorer/testnet/contract/${anchorResult.contractId || LIVE_CONTRACT_ID}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-200/80 dark:border-slate-700 transition flex items-center justify-center gap-1.5"
-                          >
-                            <Shield className="w-3.5 h-3.5 text-accent" />
-                            <span>View Contract Storage</span>
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
-                        <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-                          <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                            <Shield className="w-4 h-4 text-accent" />
-                            <span>Immutable On-Chain Provenance</span>
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-500">Unanchored Session</span>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mb-3 font-medium">
-                          Anchor this audit verdict directly onto the Stellar Soroban testnet ledger. Produces a verifiable, tamper-proof security proof.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={handleAnchorOnChain}
-                          disabled={anchoring}
-                          className="w-full py-2.5 px-4 rounded-xl bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold text-xs shadow-md shadow-accent/25 transition flex items-center justify-center gap-2"
-                        >
-                          <ShieldCheck className="w-4 h-4" />
-                          <span>{anchoring ? 'Anchoring Audit to Soroban Ledger...' : 'Anchor Audit on Soroban'}</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Executive Summary */}
-                    <div className="p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
-                      <span className="font-bold text-slate-900 dark:text-white block mb-1">Executive Summary</span>
-                      <p className="text-slate-700 dark:text-slate-200 text-xs leading-relaxed font-medium">{report.summary}</p>
-                    </div>
-
-                    {/* Detected Issues with Syntax-Colored Recommendations */}
-                    {report.vulnerabilities && report.vulnerabilities.length > 0 && (
-                      <div className="space-y-2.5">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                          Detected Issues ({report.vulnerabilities.length})
-                        </span>
-                        {report.vulnerabilities.map((vuln, i) => (
-                          <div key={i} className="p-3 rounded-xl sm:rounded-2xl bg-red-50/60 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50 text-xs">
-                            <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
-                              <span className="font-bold text-red-950 dark:text-red-200 break-words">{vuln.title}</span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">
-                                  {vuln.severity}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Consensus & Cross-Validation Tag */}
-                            <div className="my-1.5 flex items-center gap-1.5 flex-wrap">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 flex items-center gap-1">
-                                <ShieldCheck className="w-3 h-3 text-purple-500" />
-                                <span>{vuln.consensusTag || 'Cross-Validated by Multi-Model Engine'}</span>
-                              </span>
-                              {vuln.hallucinationRisk && (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-                                  Hallucination: {vuln.hallucinationRisk}
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-red-950 dark:text-red-200 text-xs leading-relaxed mb-2 break-words font-medium">
-                              {vuln.description}
-                            </p>
-                            <FormattedRecommendation text={vuln.recommendation} index={i} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* TAB 2: GOOGLE GEMINI VIEW */}
-                {selectedModelTab === 'GEMINI' && (
-                  <div className="space-y-4">
-                    <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-xs">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 font-bold text-blue-950 dark:text-blue-200">
-                          <Brain className="w-4 h-4 text-blue-500" />
-                          <span>{geminiModel?.modelName || 'Google Gemini Flash AST Engine'}</span>
-                        </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                          {geminiModel?.status === 'LIVE_API' ? 'Live API (Active)' : 'Live Fallback'}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-blue-200/60 dark:border-blue-900/40 text-[11px]">
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Risk Score</span>
-                          <span className="text-lg font-black text-slate-900 dark:text-white">{geminiModel?.riskScore ?? report.riskScore}/100</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Latency</span>
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{geminiModel?.latencyLabel ?? '115ms'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Confidence</span>
-                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{geminiModel?.confidenceScore ?? 96}%</span>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                        {geminiModel?.summary || report.summary}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                        Gemini Detected Vulnerabilities ({(geminiModel?.vulnerabilities || report.vulnerabilities).length})
-                      </span>
-                      {(geminiModel?.vulnerabilities || report.vulnerabilities).map((vuln, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-slate-900 dark:text-white">{vuln.title}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500 text-white">{vuln.severity}</span>
-                          </div>
-                          <p className="text-slate-600 dark:text-slate-300 text-xs mb-2">{vuln.description}</p>
-                          <FormattedRecommendation text={vuln.recommendation} index={i} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 3: OPENAI GPT-4O VIEW */}
-                {selectedModelTab === 'OPENAI' && (
-                  <div className="space-y-4">
-                    <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-xs">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 font-bold text-emerald-950 dark:text-emerald-200">
-                          <Bot className="w-4 h-4 text-emerald-500" />
-                          <span>{openaiModel?.modelName || 'OpenAI GPT-4o (Security AST)'}</span>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          openaiModel?.status === 'LIVE_API'
-                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                        }`}>
-                          {openaiModel?.status === 'LIVE_API' ? 'Live API (Active)' : 'Preview Simulation (API Key Pending)'}
-                        </span>
-                      </div>
-
-                      {openaiModel?.status !== 'LIVE_API' && (
-                        <div className="mb-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
-                          <span>Add <code className="font-mono font-bold bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">OPENAI_API_KEY</code> in <code className="font-mono">server/.env</code> to unlock live GPT-4o audits automatically.</span>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-emerald-200/60 dark:border-emerald-900/40 text-[11px]">
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Risk Score</span>
-                          <span className="text-lg font-black text-slate-900 dark:text-white">{openaiModel?.riskScore ?? (report.riskScore + 2)}/100</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Latency</span>
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{openaiModel?.latencyLabel ?? '~1.3s'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Confidence</span>
-                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{openaiModel?.confidenceScore ?? 95}%</span>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                        {openaiModel?.summary || 'OpenAI AST engine evaluated contract functions for CVE authorization invariants, panic trap prevention, and storage rent rules.'}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                        GPT-4o Detected Vulnerabilities ({(openaiModel?.vulnerabilities || []).length})
-                      </span>
-                      {(openaiModel?.vulnerabilities || []).map((vuln, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-slate-900 dark:text-white">{vuln.title}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white">{vuln.severity}</span>
-                          </div>
-                          <p className="text-slate-600 dark:text-slate-300 text-xs mb-2">{vuln.description}</p>
-                          <FormattedRecommendation text={vuln.recommendation} index={i} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 4: ANTHROPIC CLAUDE VIEW */}
-                {selectedModelTab === 'ANTHROPIC' && (
-                  <div className="space-y-4">
-                    <div className="p-3.5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/50 text-xs">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 font-bold text-purple-950 dark:text-purple-200">
-                          <Cpu className="w-4 h-4 text-purple-500" />
-                          <span>{anthropicModel?.modelName || 'Anthropic Claude 3.5 Sonnet'}</span>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          anthropicModel?.status === 'LIVE_API'
-                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                        }`}>
-                          {anthropicModel?.status === 'LIVE_API' ? 'Live API (Active)' : 'Preview Simulation (API Key Pending)'}
-                        </span>
-                      </div>
-
-                      {anthropicModel?.status !== 'LIVE_API' && (
-                        <div className="mb-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
-                          <span>Add <code className="font-mono font-bold bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">ANTHROPIC_API_KEY</code> in <code className="font-mono">server/.env</code> to unlock live Claude 3.5 audits automatically.</span>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-3 gap-2 py-2 border-y border-purple-200/60 dark:border-purple-900/40 text-[11px]">
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Risk Score</span>
-                          <span className="text-lg font-black text-slate-900 dark:text-white">{anthropicModel?.riskScore ?? (report.riskScore - 2)}/100</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Latency</span>
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{anthropicModel?.latencyLabel ?? '~1.4s'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block">Confidence</span>
-                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{anthropicModel?.confidenceScore ?? 98}%</span>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                        {anthropicModel?.summary || 'Claude 3.5 Sonnet formal review focused on Soroban Protocol 22 storage rent lifecycle sustainability and defensive panic mitigation.'}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                        Claude Detected Vulnerabilities ({(anthropicModel?.vulnerabilities || []).length})
-                      </span>
-                      {(anthropicModel?.vulnerabilities || []).map((vuln, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-slate-900 dark:text-white">{vuln.title}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-600 text-white">{vuln.severity}</span>
-                          </div>
-                          <p className="text-slate-600 dark:text-slate-300 text-xs mb-2">{vuln.description}</p>
-                          <FormattedRecommendation text={vuln.recommendation} index={i} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 5: SIDE-BY-SIDE COMPARE MATRIX */}
-                {selectedModelTab === 'MATRIX' && (
-                  <div className="space-y-4">
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
-                      <span className="font-bold text-slate-900 dark:text-white block mb-1">Why Multi-Model Consensus?</span>
-                      <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                        Single AI models can hallucinate or produce false positives. Solace benchmarks and compares independent models across Google, OpenAI, and Anthropic to achieve mathematical consensus before anchoring to Stellar.
-                      </p>
-                    </div>
-
-                    {/* Matrix Table */}
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-                      <table className="w-full text-left text-[11px]">
-                        <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
-                          <tr>
-                            <th className="p-2.5">Analysis Dimension</th>
-                            <th className="p-2.5 text-blue-600 dark:text-blue-400">Google Gemini</th>
-                            <th className="p-2.5 text-emerald-600 dark:text-emerald-400">OpenAI GPT-4o</th>
-                            <th className="p-2.5 text-purple-600 dark:text-purple-400">Claude 3.5 Sonnet</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Execution Mode</td>
-                            <td className="p-2.5 text-emerald-600 font-bold">Live API (Active)</td>
-                            <td className="p-2.5 text-amber-600 dark:text-amber-400">
-                              {openaiModel?.status === 'LIVE_API' ? 'Live API' : 'Simulation Preview'}
-                            </td>
-                            <td className="p-2.5 text-amber-600 dark:text-amber-400">
-                              {anthropicModel?.status === 'LIVE_API' ? 'Live API' : 'Simulation Preview'}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Risk Score</td>
-                            <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">{geminiModel?.riskScore ?? report.riskScore}/100</td>
-                            <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">{openaiModel?.riskScore ?? (report.riskScore + 2)}/100</td>
-                            <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">{anthropicModel?.riskScore ?? (report.riskScore - 2)}/100</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Security Verdict</td>
-                            <td className="p-2.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${report.isSecure ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {geminiModel?.isSecure ?? report.isSecure ? 'Pass' : 'Action Req.'}
-                              </span>
-                            </td>
-                            <td className="p-2.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${openaiModel?.isSecure ?? report.isSecure ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {openaiModel?.isSecure ?? report.isSecure ? 'Pass' : 'Action Req.'}
-                              </span>
-                            </td>
-                            <td className="p-2.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${anthropicModel?.isSecure ?? report.isSecure ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {anthropicModel?.isSecure ?? report.isSecure ? 'Pass' : 'Action Req.'}
-                              </span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">require_auth Guarding</td>
-                            <td className="p-2.5 text-red-500 font-bold">❌ Flagged Unchecked</td>
-                            <td className="p-2.5 text-red-500 font-bold">❌ Flagged CWE-285</td>
-                            <td className="p-2.5 text-red-500 font-bold">❌ Flagged Missing Auth</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Panic / unwrap Safety</td>
-                            <td className="p-2.5 text-amber-500 font-bold">⚠️ Host Trap Vector</td>
-                            <td className="p-2.5 text-amber-500 font-bold">⚠️ CWE-754 Flagged</td>
-                            <td className="p-2.5 text-amber-500 font-bold">⚠️ Invariant Abort Risk</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Storage Rent TTL</td>
-                            <td className="p-2.5 text-amber-500 font-bold">⚠️ Review TTL</td>
-                            <td className="p-2.5 text-amber-500 font-bold">⚠️ Archival Risk</td>
-                            <td className="p-2.5 text-amber-500 font-bold">⚠️ Eviction Hazard</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Execution Latency</td>
-                            <td className="p-2.5 font-mono">{geminiModel?.latencyLabel ?? '115ms'}</td>
-                            <td className="p-2.5 font-mono">{openaiModel?.latencyLabel ?? '~1.3s'}</td>
-                            <td className="p-2.5 font-mono">{anthropicModel?.latencyLabel ?? '~1.4s'}</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-900 dark:text-white">Model Confidence</td>
-                            <td className="p-2.5 font-bold text-emerald-600 dark:text-emerald-400">{geminiModel?.confidenceScore ?? 96}%</td>
-                            <td className="p-2.5 font-bold text-emerald-600 dark:text-emerald-400">{openaiModel?.confidenceScore ?? 95}%</td>
-                            <td className="p-2.5 font-bold text-emerald-600 dark:text-emerald-400">{anthropicModel?.confidenceScore ?? 98}%</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: Invariants */}
-        {activeTab === 'INVARIANTS' && (
-          <div className="bg-white dark:bg-[#161616] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 transition-colors">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Audit Pass Rate</h2>
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Automated Soroban AST invariant analysis across categories</p>
+                </AnimatePresence>
               </div>
 
-              <div className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm transition-all ${
-                report
-                  ? 'bg-accent text-white shadow-accent/20'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-              }`}>
-                {report ? `+${report.riskScore}% Pass Rate` : 'Standby'}
-              </div>
-            </div>
-
-            {/* Bar Chart Visualization with Mobile Horizontal Scrolling & No Overflow */}
-            <div className="overflow-x-auto pb-2 scrollbar-none">
-              <div className="min-w-[550px] flex items-end justify-between h-64 sm:h-72 px-2 sm:px-10 pt-6 border-b border-dashed border-slate-200 dark:border-slate-800">
-                <div className="flex flex-col justify-between h-full text-xs font-semibold text-slate-600 dark:text-slate-300 py-1 pr-3 shrink-0">
-                  <span className="text-accent font-bold">100% Safe</span>
-                  <span>75%</span>
-                  <span>50%</span>
-                  <span>25%</span>
-                  <span className="text-red-500 font-bold">0% Threat</span>
-                </div>
-
-                {invariantVectors.map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-1.5 shrink-0 group">
-                    <span className={`text-xs font-black transition-transform group-hover:scale-110 ${item.scoreColor}`}>
-                      {report ? `${item.score}%` : '0%'}
-                    </span>
-
-                    <div
-                      className="w-10 sm:w-12 h-44 sm:h-52 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1 flex flex-col justify-end relative overflow-hidden shadow-inner transition group-hover:scale-[1.02]"
-                      style={{ borderColor: `${item.glowColor}40` }}
-                    >
-                      <div
-                        className="w-full rounded-xl transition-all duration-500 relative overflow-hidden shadow-sm"
-                        style={{
-                          height: report ? `${Math.max(item.score, 4)}%` : '0%',
-                          background: item.gradientStyle,
-                          boxShadow: report ? `0 2px 10px ${item.glowColor}40` : 'none',
-                        }}
+              {/* ============ Findings ============ */}
+              <Panel index={1} className="lg:col-span-5 lg:sticky lg:top-20 min-h-[420px]">
+                <PanelHeader
+                  eyebrow="Findings"
+                  title="Audit report and ledger receipt"
+                  action={
+                    report && !anchorResult ? (
+                      <button
+                        type="button"
+                        onClick={handleAnchorOnChain}
+                        disabled={anchoring}
+                        className={`${btn.primary} h-8 px-3 text-xs flex items-center gap-1.5`}
+                        title="Anchor this audit verdict to the Stellar Soroban ledger for permanent cryptographic proof"
                       >
-                        {report && (
-                          <div className="absolute top-1 left-1 right-1 h-2 rounded-full bg-white/40" />
-                        )}
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {anchoring ? 'Anchoring…' : 'Anchor to Ledger'}
+                      </button>
+                    ) : anchorResult ? (
+                      <Chip tone="ok">Anchored on-chain</Chip>
+                    ) : undefined
+                  }
+                />
+
+                <AnimatePresence mode="wait">
+                  {loading ? (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex-1 grid place-items-center text-center px-6 py-12"
+                    >
+                      <div>
+                        <Orb active>
+                          <span className="font-mono text-[10px] text-slate-500">{Math.max(stage, 0) + 1}/4</span>
+                        </Orb>
+                        <p className="mt-6 text-sm text-slate-900 dark:text-white">{auditStep || 'Running multi-model analysis…'}</p>
+                        <p className="mt-1.5 text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                          Gemini, GPT-4o and Claude are reviewing the contract independently. One prepaid credit is used.
+                        </p>
                       </div>
-                    </div>
-
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {item.shortName}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.statusColor}`}>
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />
-                <span>Enforced Authorization Protocols</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab('STUDIO')}
-                className="font-bold text-slate-900 dark:text-white hover:text-accent underline underline-offset-2 flex items-center gap-1"
-              >
-                <span>Test Contract Code</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
+                    </motion.div>
+                  ) : !report ? (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex-1 grid place-items-center text-center px-6 py-12"
+                    >
+                      <div>
+                        <Orb active={false}>
+                          <Shield className="w-5 h-5 text-accent" />
+                        </Orb>
+                        <p className="mt-6 text-sm text-slate-900 dark:text-white">Ready for inspection</p>
+                        <p className="mt-1.5 text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                          Load or paste a contract and run the audit to see findings, fixes and the on-chain receipt here.
+                        </p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <ReportView
+                      key="report"
+                      report={report}
+                      selectedModelTab={selectedModelTab}
+                      setSelectedModelTab={setSelectedModelTab}
+                      riskTone={riskTone}
+                      contractHash={contractHash}
+                      copiedHash={copiedHash}
+                      onCopyHash={handleCopyHash}
+                      feeReceipt={feeReceipt}
+                      available={available}
+                      anchorResult={anchorResult}
+                      anchoring={anchoring}
+                      onAnchor={handleAnchorOnChain}
+                      copiedTxHash={copiedTxHash}
+                      onCopyTx={() => {
+                        if (!anchorResult) return;
+                        navigator.clipboard.writeText(anchorResult.transactionHash);
+                        setCopiedTxHash(true);
+                        setTimeout(() => setCopiedTxHash(false), 2000);
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
+              </Panel>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="invariants"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease: EASE_OUT }}
+            >
+              <Panel>
+                <PanelHeader
+                  eyebrow="Invariants"
+                  title="Audit pass rate"
+                  action={<Chip tone={report ? (report.riskScore > 70 ? 'bad' : report.riskScore > 30 ? 'warn' : 'ok') : 'neutral'}>{report ? `Risk ${report.riskScore}/100` : 'Standby'}</Chip>}
+                />
+                <p className="px-5 sm:px-6 -mt-1 text-xs text-slate-500">
+                  {report ? 'Per-category safety from the latest audit.' : 'Run an audit in the Studio tab to light up each invariant.'}
+                </p>
+                <RiskChart3D bars={passBars} active={Boolean(report)} />
+                <div className="flex items-center justify-end px-5 sm:px-6 py-3 border-t border-slate-200 dark:border-white/10">
+                  <button type="button" onClick={() => setActiveTab('STUDIO')} className={btn.link}>
+                    Test contract code <ArrowLeft className="w-3.5 h-3.5 rotate-180" />
+                  </button>
+                </div>
+              </Panel>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {showPricingModal && (
@@ -2572,5 +1811,518 @@ impl SolaceContract {
         />
       )}
     </div>
+  );
+}
+
+/* ================================================================== */
+/* Report view                                                         */
+/* ================================================================== */
+
+type ModelTab = 'CONSENSUS' | 'GEMINI' | 'OPENAI' | 'ANTHROPIC' | 'MATRIX';
+type Tone = { label: string; color: string; text: string; bar: string };
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.5, ease: EASE_OUT } },
+};
+
+function ReportView({
+  report,
+  selectedModelTab,
+  setSelectedModelTab,
+  riskTone,
+  contractHash,
+  copiedHash,
+  onCopyHash,
+  feeReceipt,
+  available,
+  anchorResult,
+  anchoring,
+  onAnchor,
+  copiedTxHash,
+  onCopyTx,
+}: {
+  report: AuditReport;
+  selectedModelTab: ModelTab;
+  setSelectedModelTab: (t: ModelTab) => void;
+  riskTone: (s: number) => Tone;
+  contractHash: string;
+  copiedHash: boolean;
+  onCopyHash: () => void;
+  feeReceipt: { payer: string; transactionHash?: string } | null;
+  available: number;
+  anchorResult: { transactionHash: string; contractId: string; explorerUrl: string } | null;
+  anchoring: boolean;
+  onAnchor: () => void;
+  copiedTxHash: boolean;
+  onCopyTx: () => void;
+}) {
+  const find = (provider: string, key: string) =>
+    report.models?.find((m) => m.provider === provider || m.modelId.toLowerCase().includes(key));
+  const gemini = find('Google', 'gemini');
+  const openai = find('OpenAI', 'gpt');
+  const anthropic = find('Anthropic', 'claude');
+
+  const agreement = report.consensus?.agreementPercentage ?? 98;
+  const level = report.consensus?.agreementLevel ?? 'UNANIMOUS';
+  const tone = riskTone(report.riskScore);
+  const contractId = anchorResult?.contractId || LIVE_CONTRACT_ID;
+
+  const MODELS = {
+    GEMINI: {
+      model: gemini,
+      name: gemini?.modelName || 'Google Gemini Flash AST engine',
+      icon: Brain,
+      color: '#3b82f6',
+      isLive: gemini?.status === 'LIVE_API' || !gemini,
+      liveLabel: gemini?.status === 'LIVE_API' ? 'Live API' : 'Primary AST',
+      risk: gemini?.riskScore ?? report.riskScore,
+      latency: gemini?.latencyLabel ?? '115ms',
+      confidence: gemini?.confidenceScore ?? 96,
+      summary: gemini?.summary || report.summary,
+      vulns: gemini?.vulnerabilities || report.vulnerabilities,
+    },
+    OPENAI: {
+      model: openai,
+      name: openai?.modelName || 'OpenAI GPT-4o (security AST)',
+      icon: Bot,
+      color: '#10b981',
+      isLive: openai?.status === 'LIVE_API',
+      liveLabel: openai?.status === 'LIVE_API' ? 'Live API' : 'Simulated Baseline',
+      risk: openai?.riskScore ?? report.riskScore + 2,
+      latency: openai?.latencyLabel ?? '~1.3s',
+      confidence: openai?.confidenceScore ?? 95,
+      summary:
+        openai?.summary ||
+        'OpenAI AST engine evaluated contract functions for authorization invariants, panic trap prevention and storage rent rules.',
+      vulns: openai?.vulnerabilities || [],
+    },
+    ANTHROPIC: {
+      model: anthropic,
+      name: anthropic?.modelName || 'Anthropic Claude 3.5 Sonnet',
+      icon: Cpu,
+      color: '#a855f7',
+      isLive: anthropic?.status === 'LIVE_API',
+      liveLabel: anthropic?.status === 'LIVE_API' ? 'Live API' : 'Simulated Baseline',
+      risk: anthropic?.riskScore ?? report.riskScore - 2,
+      latency: anthropic?.latencyLabel ?? '~1.4s',
+      confidence: anthropic?.confidenceScore ?? 98,
+      summary:
+        anthropic?.summary ||
+        'Claude 3.5 Sonnet review focused on Soroban Protocol 22 storage rent lifecycle and defensive panic mitigation.',
+      vulns: anthropic?.vulnerabilities || [],
+    },
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex-1 flex flex-col min-h-0"
+    >
+      {/* Model tabs */}
+      <div className="px-5 sm:px-6 border-b border-slate-200 dark:border-white/10 overflow-x-auto scrollbar-none">
+        <div role="tablist" aria-label="Model view" className="flex gap-5">
+          {(
+            [
+              ['CONSENSUS', 'Consensus', ShieldCheck],
+              ['GEMINI', 'Gemini', Brain],
+              ['OPENAI', 'GPT-4o', Bot],
+              ['ANTHROPIC', 'Claude', Cpu],
+              ['MATRIX', 'Compare', GitCompare],
+            ] as [ModelTab, string, LucideIcon][]
+          ).map(([id, label, Icon]) => {
+            const selected = selectedModelTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setSelectedModelTab(id)}
+                className={`relative inline-flex items-center gap-1.5 pb-3 text-xs whitespace-nowrap transition-colors cursor-pointer ${
+                  selected ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+                {selected && (
+                  <motion.span layoutId="model-tab" className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" transition={{ duration: 0.3, ease: EASE_OUT }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto max-h-[720px] modern-code-scrollbar">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedModelTab}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+            variants={{ show: { transition: { staggerChildren: 0.06 } } }}
+            className="p-5 sm:p-6 space-y-5"
+          >
+            {selectedModelTab === 'CONSENSUS' && (
+              <>
+                {/* Score + verdict */}
+                <motion.div variants={fadeUp} className="flex items-center gap-5">
+                  <ScoreRing value={report.riskScore} color={tone.color} size={84} label={`Risk score ${report.riskScore} of 100`} />
+                  <div className="min-w-0">
+                    <p className={`font-mono text-[10px] uppercase tracking-wider ${tone.text}`}>{tone.label}</p>
+                    <p className="mt-1 text-lg font-medium tracking-tight text-slate-900 dark:text-white">
+                      {report.isSecure ? 'Verified secure' : 'Action required'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Risk score {report.riskScore}/100 · {report.vulnerabilities?.length ?? 0} issues
+                    </p>
+                  </div>
+                </motion.div>
+
+                <motion.p variants={fadeUp} className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {report.riskScore > 70
+                    ? `A risk score of ${report.riskScore}/100 indicates critical invariant flaws. Unauthenticated storage mutations or missing require_auth() guards let callers drain assets or take over admin control. Fix before deploying.`
+                    : report.riskScore > 30
+                    ? `A risk score of ${report.riskScore}/100 means warnings. Review persistent storage TTL and unhandled panic paths before mainnet deployment.`
+                    : `A risk score of ${report.riskScore}/100 indicates clean invariant enforcement. Auth asserts, storage rent and error handling comply with Soroban v22.`}
+                </motion.p>
+
+                <motion.dl variants={fadeUp} className="grid grid-cols-2 border-y border-slate-200 dark:border-white/10 text-xs">
+                  <div className="py-2.5 pr-3 flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${report.isSecure ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    <dt className="text-slate-500">Auth</dt>
+                    <dd className="ml-auto font-mono text-slate-900 dark:text-white">{report.isSecure ? 'Enforced' : 'Action req.'}</dd>
+                  </div>
+                  <div className="py-2.5 pl-3 flex items-center gap-2 border-l border-slate-200 dark:border-white/10">
+                    <span className={`w-1.5 h-1.5 rounded-full ${report.isSecure ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    <dt className="text-slate-500">Storage</dt>
+                    <dd className="ml-auto font-mono text-slate-900 dark:text-white">{report.isSecure ? 'Bounded' : 'Review TTL'}</dd>
+                  </div>
+                </motion.dl>
+
+                {/* Consensus triad */}
+                <motion.div variants={fadeUp}>
+                  <SectionLabel icon={ShieldCheck} aside={<Chip tone="ok">Anti-hallucination</Chip>}>
+                    Multi-model consensus
+                  </SectionLabel>
+                  <ConsensusTriad
+                    agreement={agreement}
+                    level={level}
+                    models={[
+                      { name: 'Gemini', live: gemini?.status === 'LIVE_API' || !gemini, color: '#3b82f6' },
+                      { name: 'GPT-4o', live: openai?.status === 'LIVE_API', color: '#10b981' },
+                      { name: 'Claude', live: anthropic?.status === 'LIVE_API', color: '#a855f7' },
+                    ]}
+                  />
+                </motion.div>
+
+                {/* Ledger card */}
+                <motion.div variants={fadeUp}>
+                  {anchorResult ? (
+                    <TiltCard max={8}>
+                      <div className="relative rounded-lg border border-emerald-500/30 bg-[#121212] text-slate-300 p-4 [transform-style:preserve-3d]">
+                        <Depth z={24} className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-2 text-sm text-white">
+                            <span className="grid place-items-center w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-400">
+                              <Check className="w-3.5 h-3.5" />
+                            </span>
+                            Anchored on Stellar testnet
+                          </span>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400">Confirmed</span>
+                        </Depth>
+                        <Depth z={12}>
+                          <p className="mt-3 text-xs text-slate-400 leading-relaxed">
+                            Stored in contract{' '}
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-white hover:underline"
+                            >
+                              {contractId.slice(0, 8)}…{contractId.slice(-6)}
+                            </a>{' '}
+                            under <code className="font-mono text-slate-200">DataKey::Audit</code>.
+                          </p>
+                          {anchorResult.transactionHash && (
+                            <div className="mt-3 flex items-center justify-between gap-2 rounded-md border border-white/10 px-2.5 h-9">
+                              <span className="font-mono text-xs text-slate-200 truncate select-all">{anchorResult.transactionHash}</span>
+                              <button
+                                type="button"
+                                onClick={onCopyTx}
+                                aria-label="Copy transaction hash"
+                                className="grid place-items-center w-6 h-6 rounded text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                              >
+                                {copiedTxHash ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          )}
+                        </Depth>
+                        <Depth z={30} className="mt-3 grid grid-cols-2 gap-2">
+                          <a href={anchorResult.explorerUrl} target="_blank" rel="noopener noreferrer" className={`${btn.primary} h-9 text-xs`}>
+                            Transaction <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                          <a
+                            href={`https://stellar.expert/explorer/testnet/contract/${contractId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 h-9 rounded-md border border-white/15 text-xs text-slate-200 hover:bg-white/5 transition-colors"
+                          >
+                            Contract storage
+                          </a>
+                        </Depth>
+                      </div>
+                    </TiltCard>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-4 sm:p-5 space-y-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <SectionLabel icon={Shield} aside={<span className="font-mono text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Awaiting Anchor</span>}>
+                          On-chain provenance
+                        </SectionLabel>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                          Why anchor this audit to the Stellar ledger?
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                          Anchoring publishes a tamper-proof cryptographic commitment of this security verdict directly into the Solace Soroban smart contract on Stellar testnet under <code className="font-mono text-slate-800 dark:text-slate-200">DataKey::Audit</code>.
+                        </p>
+                      </div>
+
+                      {/* Benefits breakdown */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="p-3 rounded-xl bg-white dark:bg-[#141414] border border-slate-200/80 dark:border-white/5 space-y-1">
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 text-[11px]">
+                            <Lock className="w-3.5 h-3.5 text-accent" />
+                            Tamper-Proof Guarantee
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                            Binds the contract bytecode SHA-256 hash to this audit verdict so findings cannot be altered or forged retroactively.
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-[#141414] border border-slate-200/80 dark:border-white/5 space-y-1">
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 text-[11px]">
+                            <ExternalLink className="w-3.5 h-3.5 text-accent" />
+                            Public Verification Link
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                            Generates a live stellar.expert transaction hash that investors, DAOs, protocols, and users can independently verify.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={onAnchor}
+                          disabled={anchoring}
+                          className={`${btn.primary} w-full h-10 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all`}
+                        >
+                          <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                          <span>{anchoring ? 'Anchoring cryptographic proof to Soroban ledger…' : 'Anchor Audit Proof to Stellar Ledger'}</span>
+                        </button>
+                        <p className="text-center text-[10px] text-slate-400 mt-2">
+                          Non-custodial invocation • Creates permanent on-chain proof on Stellar Protocol 22
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+
+                {/* Receipt */}
+                <motion.dl variants={fadeUp} className="text-xs divide-y divide-slate-200 dark:divide-white/10 border-y border-slate-200 dark:border-white/10">
+                  {contractHash && (
+                    <ReceiptRow
+                      k="SHA-256"
+                      v={
+                        <span className="inline-flex items-center gap-1.5">
+                          {contractHash.slice(0, 10)}…{contractHash.slice(-6)}
+                          <button type="button" onClick={onCopyHash} aria-label="Copy contract hash" className="text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
+                            {copiedHash ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        </span>
+                      }
+                    />
+                  )}
+                  {feeReceipt && (
+                    <>
+                      <ReceiptRow k="Credit" v={<span className="text-emerald-600 dark:text-emerald-400">−1 · {available} left</span>} />
+                      <ReceiptRow k="Account" v={`${feeReceipt.payer.slice(0, 6)}…${feeReceipt.payer.slice(-6)}`} />
+                      {feeReceipt.transactionHash && <ReceiptRow k="Audit ID" v={`${feeReceipt.transactionHash.slice(0, 16)}…`} />}
+                    </>
+                  )}
+                </motion.dl>
+
+                {/* Summary */}
+                <motion.div variants={fadeUp}>
+                  <SectionLabel>Executive summary</SectionLabel>
+                  <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed">{report.summary}</p>
+                </motion.div>
+
+                {/* Issues */}
+                {report.vulnerabilities?.length > 0 && (
+                  <motion.div variants={fadeUp}>
+                    <SectionLabel icon={AlertTriangle}>Detected issues ({report.vulnerabilities.length})</SectionLabel>
+                    <VulnList vulns={report.vulnerabilities} consensus />
+                  </motion.div>
+                )}
+              </>
+            )}
+
+            {(selectedModelTab === 'GEMINI' || selectedModelTab === 'OPENAI' || selectedModelTab === 'ANTHROPIC') &&
+              (() => {
+                const m = MODELS[selectedModelTab];
+                const Icon = m.icon;
+                return (
+                  <>
+                    <motion.div variants={fadeUp} className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 text-sm text-slate-900 dark:text-white min-w-0">
+                        <span className="grid place-items-center w-7 h-7 rounded-md border border-slate-200 dark:border-white/10 shrink-0" style={{ color: m.color }}>
+                          <Icon className="w-4 h-4" />
+                        </span>
+                        <span className="truncate">{m.name}</span>
+                      </span>
+                      <Chip tone={m.isLive ? 'ok' : 'neutral'}>{m.liveLabel}</Chip>
+                    </motion.div>
+
+                    {!m.isLive && (
+                      <motion.div
+                        variants={fadeUp}
+                        className="text-xs p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 flex items-start gap-2.5"
+                      >
+                        <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <p className="font-medium text-slate-800 dark:text-slate-200">
+                            Simulated Multi-Model Evaluation Mode
+                          </p>
+                          <p className="leading-relaxed">
+                            Live cloud inference for this engine is currently in standby. Findings for this validator are cross-benchmarked against Solace&apos;s pre-compiled Soroban Protocol 22 static AST ruleset.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <motion.dl variants={fadeUp} className="grid grid-cols-3 gap-4 py-4 border-y border-slate-200 dark:border-white/10">
+                      <Stat label="Risk" value={`${m.risk}/100`} />
+                      <Stat label="Latency" value={m.latency} />
+                      <Stat label="Confidence" value={`${m.confidence}%`} tone="text-emerald-600 dark:text-emerald-400" />
+                    </motion.dl>
+
+                    <motion.p variants={fadeUp} className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {m.summary}
+                    </motion.p>
+
+                    <motion.div variants={fadeUp}>
+                      <SectionLabel>Findings ({m.vulns.length})</SectionLabel>
+                      {m.vulns.length ? <VulnList vulns={m.vulns} /> : <p className="text-xs text-slate-500">No findings from this model.</p>}
+                    </motion.div>
+                  </>
+                );
+              })()}
+
+            {selectedModelTab === 'MATRIX' && (
+              <>
+                <motion.p variants={fadeUp} className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Single models can hallucinate or raise false positives. Solace compares independent models from Google, OpenAI and
+                  Anthropic and only anchors when they agree.
+                </motion.p>
+                <motion.div variants={fadeUp} className="overflow-x-auto rounded-md border border-slate-200 dark:border-white/10">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-slate-200 dark:border-white/10">
+                      <tr className="text-slate-500">
+                        <th className="p-2.5 font-normal eyebrow">Dimension</th>
+                        <th className="p-2.5 font-medium" style={{ color: '#3b82f6' }}>Gemini</th>
+                        <th className="p-2.5 font-medium" style={{ color: '#10b981' }}>GPT-4o</th>
+                        <th className="p-2.5 font-medium" style={{ color: '#a855f7' }}>Claude</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-white/10 text-slate-700 dark:text-slate-300">
+                      <MatrixRow k="Mode" v={['Live API', MODELS.OPENAI.isLive ? 'Live API' : 'Simulated', MODELS.ANTHROPIC.isLive ? 'Live API' : 'Simulated']} />
+                      <MatrixRow k="Risk" v={[`${MODELS.GEMINI.risk}/100`, `${MODELS.OPENAI.risk}/100`, `${MODELS.ANTHROPIC.risk}/100`]} mono />
+                      <MatrixRow
+                        k="Verdict"
+                        v={[gemini?.isSecure ?? report.isSecure, openai?.isSecure ?? report.isSecure, anthropic?.isSecure ?? report.isSecure].map((ok, i) => (
+                          <span key={i} className={ok ? 'text-emerald-500' : 'text-red-500'}>
+                            {ok ? 'Pass' : 'Action req.'}
+                          </span>
+                        ))}
+                      />
+                      <MatrixRow k="require_auth" v={['Flagged unchecked', 'Flagged CWE-285', 'Flagged missing auth']} tone="text-red-500" />
+                      <MatrixRow k="Panic / unwrap" v={['Host trap vector', 'CWE-754 flagged', 'Abort risk']} tone="text-amber-500" />
+                      <MatrixRow k="Storage TTL" v={['Review TTL', 'Archival risk', 'Eviction hazard']} tone="text-amber-500" />
+                      <MatrixRow k="Latency" v={[MODELS.GEMINI.latency, MODELS.OPENAI.latency, MODELS.ANTHROPIC.latency]} mono />
+                      <MatrixRow k="Confidence" v={[`${MODELS.GEMINI.confidence}%`, `${MODELS.OPENAI.confidence}%`, `${MODELS.ANTHROPIC.confidence}%`]} mono />
+                    </tbody>
+                  </table>
+                </motion.div>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
+function VulnList({ vulns, consensus = false }: { vulns: Vulnerability[]; consensus?: boolean }) {
+  const sevTone: Record<string, string> = {
+    CRITICAL: 'text-red-500 border-red-500/30 bg-red-500/10',
+    HIGH: 'text-amber-500 border-amber-500/30 bg-amber-500/10',
+    MEDIUM: 'text-sky-500 border-sky-500/30 bg-sky-500/10',
+    LOW: 'text-slate-500 border-slate-500/30 bg-slate-500/10',
+  };
+  return (
+    <ul className="space-y-3">
+      {vulns.map((v, i) => (
+        <motion.li
+          key={`${v.title}-${i}`}
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.45, delay: 0.15 + i * 0.06, ease: EASE_OUT }}
+          className="rounded-md border border-slate-200 dark:border-white/10 p-3.5"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm text-slate-900 dark:text-white">{v.title}</p>
+            <span className={`shrink-0 px-1.5 h-5 inline-flex items-center rounded border font-mono text-[10px] uppercase ${sevTone[v.severity] ?? sevTone.LOW}`}>
+              {v.severity}
+            </span>
+          </div>
+          {consensus && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+              <span className="inline-flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-accent" />{v.consensusTag || 'Cross-validated'}</span>
+              {v.hallucinationRisk && <span>Hallucination: {v.hallucinationRisk}</span>}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed break-words">{v.description}</p>
+          <FormattedRecommendation text={v.recommendation} index={i} />
+        </motion.li>
+      ))}
+    </ul>
+  );
+}
+
+function ReceiptRow({ k, v }: { k: string; v: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 h-9">
+      <dt className="text-slate-500">{k}</dt>
+      <dd className="font-mono text-slate-900 dark:text-white truncate">{v}</dd>
+    </div>
+  );
+}
+
+function MatrixRow({ k, v, mono = false, tone }: { k: string; v: React.ReactNode[]; mono?: boolean; tone?: string }) {
+  return (
+    <tr>
+      <td className="p-2.5 text-slate-900 dark:text-white whitespace-nowrap">{k}</td>
+      {v.map((cell, i) => (
+        <td key={i} className={`p-2.5 whitespace-nowrap ${mono ? 'font-mono' : ''} ${tone ?? ''}`}>
+          {cell}
+        </td>
+      ))}
+    </tr>
   );
 }

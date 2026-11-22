@@ -1,24 +1,28 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Activity,
-  ShieldCheck,
-  Search,
-  ExternalLink,
-  Clock,
-  Layers,
-  CheckCircle2,
   AlertTriangle,
-  Database,
-  Lock,
-  RefreshCw,
-  Copy,
+  ArrowUpRight,
   Check,
-  Radio,
+  Clock,
+  Copy,
+  Database,
+  ExternalLink,
+  Hourglass,
+  Layers,
+  RefreshCw,
+  Search,
+  ShieldCheck,
   Wifi,
-  Zap,
+  X,
 } from 'lucide-react';
+import { Tile, TileHeader, Tray, hatch } from '../../components/dashboard/Overview';
+// Live values are shown as plain numbers: CountUp restarts from 0 on every change.
+import { EASE_OUT } from '../../components/landing/motion';
+import { btn } from '../../components/landing/primitives';
 
 interface LiveTelemetry {
   contractId: string;
@@ -42,23 +46,26 @@ const DEFAULT_CONTRACT_ID =
   process.env.NEXT_PUBLIC_SOLACE_CONTRACT_ID || 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+/** ~7 days of ledgers at ~5s per ledger; used to scale the TTL gauge. */
+const TTL_SCALE = 120960;
+const LATENCY_SAMPLES = 24;
+
+const PASSPHRASE = {
+  testnet: 'Test SDF Network ; September 2015',
+  mainnet: 'Public Global Stellar Network ; September 2015',
+};
+
 export default function MonitorPage() {
   const [contractId, setContractId] = useState<string>(DEFAULT_CONTRACT_ID);
   const [monitoring, setMonitoring] = useState<boolean>(true);
-  const [metrics, setMetrics] = useState<LiveTelemetry | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('solace-last-telemetry');
-        if (cached) return JSON.parse(cached);
-      } catch (_) {}
-    }
-    return null;
-  });
+  // Cache is read after mount (not during render) to avoid a hydration mismatch.
+  const [metrics, setMetrics] = useState<LiveTelemetry | null>(null);
   const [error, setError] = useState<string>('');
   const [isAutoPolling, setIsAutoPolling] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<boolean>(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string>('');
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
+  const [latencies, setLatencies] = useState<number[]>([]);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const [auditedContracts, setAuditedContracts] = useState<any[]>([]);
@@ -75,11 +82,9 @@ export default function MonitorPage() {
       const latency = Date.now() - startTime;
 
       if (data.success) {
-        const fullMetrics = {
-          ...data,
-          latencyMs: latency,
-        };
+        const fullMetrics = { ...data, latencyMs: latency };
         setMetrics(fullMetrics);
+        setLatencies((l) => [...l, latency].slice(-LATENCY_SAMPLES));
         setLastRefreshedAt(new Date().toLocaleTimeString());
         try {
           localStorage.setItem('solace-last-telemetry', JSON.stringify(fullMetrics));
@@ -95,6 +100,14 @@ export default function MonitorPage() {
       if (!isSilent) setMonitoring(false);
     }
   };
+
+  // Show the last cached snapshot immediately while the live fetch runs.
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('solace-last-telemetry');
+      if (cached) setMetrics((m) => m ?? JSON.parse(cached));
+    } catch (_) {}
+  }, []);
 
   // Synchronize audited contracts from local storage across pages
   useEffect(() => {
@@ -172,6 +185,7 @@ export default function MonitorPage() {
 
     window.addEventListener('solace-network-updated', handleNetworkEvent);
     return () => window.removeEventListener('solace-network-updated', handleNetworkEvent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Live Auto-Polling Interval (real-time stream every 5s)
@@ -188,10 +202,18 @@ export default function MonitorPage() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAutoPolling, contractId, network]);
+
+  const selectContract = (id: string) => {
+    setContractId(id);
+    setLatencies([]);
+    fetchLiveTelemetry(id);
+  };
 
   const handleStartMonitor = (e: React.FormEvent) => {
     e.preventDefault();
+    setLatencies([]);
     fetchLiveTelemetry(contractId);
   };
 
@@ -202,359 +224,455 @@ export default function MonitorPage() {
     setTimeout(() => setCopiedId(false), 2000);
   };
 
+  const netLabel = network === 'mainnet' ? 'Mainnet' : 'Testnet';
+  const ttl = metrics?.ttlRemainingLedgers ?? 0;
+  const ttlTone = ttl > 20000 ? 'ok' : ttl > 5000 ? 'warn' : 'bad';
+  const avgLatency = latencies.length ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : metrics?.latencyMs ?? 0;
+
   return (
-    <div className="w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 transition-colors duration-200 pb-24 md:pb-8 overflow-x-hidden">
-      <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {/* Top Header Card */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#161616] rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800 mb-6 transition-colors">
-
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-accent-subtle text-accent border border-accent/20 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-accent animate-ping inline-block" />
-                  <Activity className="w-3.5 h-3.5 text-accent" />
-                  <span>Live Post-Deployment Telemetry</span>
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                  Stellar Soroban v22 Protocol
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                Live Contract Monitor
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium mt-1 max-w-xl leading-relaxed">
-                Real-time health monitoring, storage TTL tracking, and post-deployment security checks for live Soroban contracts.
-              </p>
+    <div className="w-full min-h-screen bg-[#f2f2f0] dark:bg-[#0b0b0b] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
+      <main className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 space-y-3 sm:space-y-4">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 pb-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <LiveDot on={isAutoPolling} />
+              <span className="text-[11px] text-slate-500">
+                {isAutoPolling ? 'Streaming every 5s' : 'Polling paused'}
+                {lastRefreshedAt && ` · updated ${lastRefreshedAt}`}
+              </span>
             </div>
-
-            <div className="flex items-center gap-3 flex-wrap shrink-0">
-              <Link
-                href="/reports"
-                className="text-xs px-4 py-2 rounded-full bg-slate-100/90 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap font-bold"
-              >
-                <span>Ledger Reports</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </Link>
-              <Link
-                href="/audit"
-                className="text-xs px-5 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white shadow-md shadow-accent/25 transition flex items-center gap-2 whitespace-nowrap font-bold hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Launch Audit Studio</span>
-              </Link>
-            </div>
+            <h1 className="text-2xl sm:text-[28px] font-medium tracking-tight text-slate-900 dark:text-white">Contract monitor</h1>
+            <p className="mt-1.5 text-sm text-slate-500 max-w-lg">
+              Live health, storage-rent TTL and ledger state for deployed Soroban contracts on Stellar {netLabel}.
+            </p>
           </div>
-        </div>
-
-        {/* Live Stream Bar & Quick Sample Contract Pill */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">Monitored instances:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setContractId(DEFAULT_CONTRACT_ID);
-                fetchLiveTelemetry(DEFAULT_CONTRACT_ID);
-              }}
-              className={`text-xs font-mono px-3 py-1 rounded-full border shadow-sm transition font-bold ${
-                contractId === DEFAULT_CONTRACT_ID
-                  ? 'bg-accent text-white border-accent'
-                  : 'bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-accent border-slate-200/80 dark:border-slate-800'
-              }`}
-            >
-              # Solace Core (CAC2TV...NPN2)
-            </button>
-            {auditedContracts.map((item, idx) => (
-              <button
-                key={item.hash || idx}
-                type="button"
-                onClick={() => {
-                  setContractId(item.contractId);
-                  fetchLiveTelemetry(item.contractId);
-                }}
-                className={`text-xs px-3 py-1 rounded-full border shadow-sm transition font-bold flex items-center gap-1.5 ${
-                  contractId === item.contractId && contractId !== DEFAULT_CONTRACT_ID
-                    ? 'bg-accent text-white border-accent'
-                    : 'bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
-                }`}
-                title={`Monitor ${item.name} (${item.hash})`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                <span>{item.name}</span>
-                <span className="text-[10px] opacity-75 font-mono">({item.hash.slice(0, 8)}...)</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Real-Time Polling Controls */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsAutoPolling(!isAutoPolling)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 border shadow-xs ${
+              aria-pressed={isAutoPolling}
+              className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-xs transition-colors cursor-pointer ${
                 isAutoPolling
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                  : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-slate-600 dark:text-slate-400'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${isAutoPolling ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-              <span>{isAutoPolling ? 'Live Polling (5s Stream)' : 'Polling Paused'}</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${isAutoPolling ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              {isAutoPolling ? 'Live' : 'Paused'}
             </button>
-
             <button
               type="button"
               onClick={() => fetchLiveTelemetry(contractId)}
               disabled={monitoring}
-              className="p-1.5 sm:px-3 sm:py-1 rounded-full bg-white dark:bg-[#161616] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
-              title="Refresh telemetry"
+              className={`${btn.secondary} h-10 rounded-xl`}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${monitoring ? 'animate-spin text-accent' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <RefreshCw className={`w-4 h-4 ${monitoring ? 'animate-spin' : ''}`} />
+              Refresh
             </button>
+            <Link href="/audit" className={`${btn.primary} h-10 rounded-xl`}>
+              <ShieldCheck className="w-4 h-4" />
+              Audit Studio
+            </Link>
           </div>
         </div>
 
-        {/* Monitor Search Bar */}
-        <form onSubmit={handleStartMonitor} className="mb-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={contractId}
-                onChange={(e) => setContractId(e.target.value)}
-                placeholder="Enter Deployed Soroban Contract ID (e.g. CBXV73FFYM...)..."
-                className="w-full bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:border-accent shadow-sm transition"
+        {/* Contract picker */}
+        <Tray index={0}>
+          <Tile flat className="p-3 sm:p-4 space-y-3">
+            <form onSubmit={handleStartMonitor} className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={contractId}
+                  onChange={(e) => setContractId(e.target.value)}
+                  aria-label="Soroban contract ID"
+                  placeholder="Deployed Soroban contract ID, e.g. CBXV73FFYM…"
+                  spellCheck={false}
+                  className="w-full h-11 rounded-xl border border-slate-200 dark:border-white/10 bg-[#fafaf9] dark:bg-[#1a1a1a] pl-10 pr-3 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-sans focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                />
+              </div>
+              <button type="submit" disabled={monitoring || !contractId.trim()} className={`${btn.primary} h-11 rounded-xl`}>
+                <Activity className="w-4 h-4" />
+                {monitoring ? 'Inspecting…' : 'Inspect contract'}
+              </button>
+            </form>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-slate-500 mr-1">Monitored</span>
+              <ContractChip
+                active={contractId === DEFAULT_CONTRACT_ID}
+                onClick={() => selectContract(DEFAULT_CONTRACT_ID)}
+                label="Solace core"
+                sub={`${DEFAULT_CONTRACT_ID.slice(0, 4)}…${DEFAULT_CONTRACT_ID.slice(-4)}`}
+                tone="accent"
               />
+              {auditedContracts.map((item, idx) => (
+                <ContractChip
+                  key={item.hash || idx}
+                  active={contractId === item.contractId && contractId !== DEFAULT_CONTRACT_ID}
+                  onClick={() => selectContract(item.contractId)}
+                  label={item.name}
+                  sub={item.hash?.slice(0, 6)}
+                  tone={item.isSecure ? 'ok' : 'bad'}
+                />
+              ))}
             </div>
-            <button
-              type="submit"
-              disabled={monitoring || !contractId.trim()}
-              className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold rounded-2xl text-sm shadow-md shadow-accent/25 transition flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <Activity className="w-4 h-4" />
-              <span>{monitoring ? 'Inspecting Live Contract...' : 'Inspect Live Contract'}</span>
-            </button>
-          </div>
-        </form>
+          </Tile>
+        </Tray>
 
-        {/* Error notification if contract not found */}
-        {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-200 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setError('')}
-              className="font-bold underline text-amber-900 dark:text-amber-100 hover:text-amber-700"
+        {/* Error banner */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
             >
-              Dismiss
-            </button>
-          </div>
-        )}
+              <div role="alert" className="flex items-center gap-3 p-3.5 rounded-[14px] border border-amber-500/30 bg-amber-500/10 text-sm text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span className="flex-1">{error}</span>
+                <button type="button" onClick={() => setError('')} aria-label="Dismiss" className="grid place-items-center w-7 h-7 rounded-md hover:bg-amber-500/10 cursor-pointer">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Loading Skeleton */}
+        {/* Skeleton */}
         {monitoring && !metrics && (
-          <div className="space-y-6 animate-pulse mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="h-32 bg-slate-200/80 dark:bg-slate-800/80 rounded-3xl" />
-              <div className="h-32 bg-slate-200/80 dark:bg-slate-800/80 rounded-3xl" />
-              <div className="h-32 bg-slate-200/80 dark:bg-slate-800/80 rounded-3xl" />
+          <Tray>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 animate-pulse">
+              {[0, 1, 2, 3].map((i) => (
+                <Tile key={i} className="h-40">
+                  <span />
+                </Tile>
+              ))}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
-              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
-              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
-              <div className="h-24 bg-slate-200/60 dark:bg-slate-800/60 rounded-2xl" />
-            </div>
-          </div>
+          </Tray>
         )}
 
-        {/* Real-Time Live Monitor Dashboard */}
         {metrics && (
-          <div className="space-y-6 transition-all duration-300">
-            {/* Top 3 Live Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Network Status Card */}
-              <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                    Network Status
-                  </span>
-                  <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
-                    <Wifi className="w-3 h-3 text-emerald-500" />
-                    <span>{metrics.latencyMs ? `${metrics.latencyMs}ms` : 'Fast'}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`w-2.5 h-2.5 rounded-full ${metrics.exists ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
-                  <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                    {metrics.status}
-                  </p>
-                </div>
-
-                <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold mt-1.5 block">
-                  {metrics.exists ? 'Contract footprint verified on Stellar Testnet' : 'No active storage entry on network'}
-                </span>
+          <>
+            {/* KPI tray */}
+            <Tray index={1}>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+                <KpiTile
+                  icon={Wifi}
+                  label="Network status"
+                  value={<span className="capitalize">{metrics.status?.toLowerCase()}</span>}
+                  foot={metrics.exists ? `Footprint verified on ${netLabel}` : 'No storage entry on network'}
+                  pill={{ text: metrics.exists ? 'Online' : 'Not found', tone: metrics.exists ? 'ok' : 'warn' }}
+                />
+                <KpiTile
+                  icon={Layers}
+                  label={`${netLabel} ledger`}
+                  value={<span className="font-mono">#{metrics.latestLedger.toLocaleString()}</span>}
+                  foot={`Closed ${new Date(metrics.closeTime * 1000).toLocaleTimeString()}`}
+                  pill={{ text: `Protocol ${metrics.protocolVersion}`, tone: 'neutral' }}
+                />
+                <KpiTile
+                  icon={Hourglass}
+                  label="Rent TTL"
+                  value={ttl.toLocaleString()}
+                  foot="ledgers remaining"
+                  pill={{ text: ttlTone === 'ok' ? 'Secure' : ttlTone === 'warn' ? 'Extend soon' : 'Critical', tone: ttlTone }}
+                />
+                <KpiTile
+                  icon={Clock}
+                  label="RPC response"
+                  value={
+                    <>
+                      {avgLatency}
+                      <span className="text-lg text-slate-400 ml-1">ms</span>
+                    </>
+                  }
+                  foot={`average of ${Math.max(1, latencies.length)} sample${latencies.length === 1 ? '' : 's'}`}
+                  pill={{ text: metrics.rpcHealth || 'healthy', tone: 'ok' }}
+                />
               </div>
+            </Tray>
 
-              {/* Live Storage Rent TTL Card */}
-              <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                    Live Storage Rent TTL
-                  </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    metrics.ttlRemainingLedgers > 20000
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                      : metrics.ttlRemainingLedgers > 5000
-                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400'
-                      : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400'
-                  }`}>
-                    {metrics.ttlRemainingLedgers > 20000 ? 'SECURE' : metrics.ttlRemainingLedgers > 5000 ? 'WARNING' : 'CRITICAL'}
-                  </span>
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+              {/* TTL gauge */}
+              <Tray index={2} className="lg:col-span-4">
+                <Tile className="h-full flex flex-col">
+                  <TileHeader title="Storage rent" action={<Pill tone={ttlTone}>{metrics.storageType}</Pill>} />
+                  <div className="px-4 sm:px-5 pt-5 pb-5 flex-1 flex flex-col">
+                    <TtlGauge remaining={ttl} />
+                    <p className="mt-5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{metrics.rentStatus}</p>
+                    <dl className="mt-4 pt-4 border-t border-slate-200/70 dark:border-white/[0.07] grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <dt className="text-slate-500">Expires at ledger</dt>
+                        <dd className="mt-0.5 font-mono text-slate-900 dark:text-white">
+                          {metrics.liveUntilLedgerSeq > 0 ? `#${metrics.liveUntilLedgerSeq.toLocaleString()}` : 'Unbounded'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">≈ time left</dt>
+                        <dd className="mt-0.5 text-slate-900 dark:text-white">{ttlToTime(ttl)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </Tile>
+              </Tray>
 
-                <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-                  {metrics.ttlRemainingLedgers.toLocaleString()}{' '}
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">ledgers remaining</span>
-                </p>
-
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-2 mb-1.5">
-                  <div
-                    className="h-full bg-accent rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(Math.max((metrics.ttlRemainingLedgers / 120960) * 100, 10), 100)}%` }}
+              {/* Latency + parameters */}
+              <Tray index={3} className="lg:col-span-8">
+                <Tile flat className="h-full flex flex-col">
+                  <TileHeader
+                    title="Live telemetry"
+                    action={
+                      <a
+                        href={`https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${metrics.contractId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 h-7 px-3 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      >
+                        Stellar Expert <ExternalLink className="w-3 h-3" />
+                      </a>
+                    }
                   />
-                </div>
-
-                <span className="text-xs text-accent font-bold block truncate">
-                  {metrics.rentStatus}
-                </span>
-              </div>
-
-              {/* Current Ledger Sequence Card */}
-              <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl shadow-sm transition-colors relative overflow-hidden">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                    Current Testnet Ledger
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    Protocol v{metrics.protocolVersion}
-                  </span>
-                </div>
-
-                <p className="text-xl sm:text-2xl font-black text-accent mt-1 font-mono">
-                  #{metrics.latestLedger.toLocaleString()}
-                </p>
-
-                <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-semibold mt-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Closed: {new Date(metrics.closeTime * 1000).toLocaleTimeString()}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Live On-Chain Parameters Table */}
-            <div className="bg-white dark:bg-[#161616] border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-sm transition-colors">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Database className="w-4 h-4 text-accent" />
-                    <span>Real-Time Ledger Storage Telemetry</span>
-                  </h3>
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Direct on-chain parameters queried from Stellar Soroban RPC node
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono text-slate-500">
-                    Last update: {lastRefreshedAt || 'Live'}
-                  </span>
-                  <a
-                    href={`https://stellar.expert/explorer/testnet/contract/${metrics.contractId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs px-3 py-1.5 rounded-full bg-accent hover:bg-accent-hover text-white font-bold transition flex items-center gap-1 shadow-xs"
-                  >
-                    <span>Stellar Expert (Testnet)</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Target Contract Address</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-slate-900 dark:text-white font-bold text-xs truncate max-w-[200px]" title={metrics.contractId}>
-                      {metrics.contractId}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyId}
-                      className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition"
-                      title="Copy Contract Address"
-                    >
-                      {copiedId ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
-                    </button>
+                  <div className="px-4 sm:px-5 pt-5 pb-5 space-y-6">
+                    <section>
+                      <p className="mb-2.5 text-xs text-slate-500">RPC response time · last {LATENCY_SAMPLES} polls</p>
+                      <LatencyBars samples={latencies} />
+                    </section>
+                    <section>
+                      <p className="mb-1 text-xs text-slate-500 flex items-center gap-1.5">
+                        <Database className="w-3.5 h-3.5" />
+                        On-chain parameters
+                      </p>
+                      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-xs">
+                        <Param label="Contract address">
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <span className="font-mono truncate max-w-[180px]" title={metrics.contractId}>
+                              {metrics.contractId}
+                            </span>
+                            <button type="button" onClick={handleCopyId} aria-label="Copy contract address" className="text-slate-400 hover:text-slate-900 dark:hover:text-white shrink-0 cursor-pointer">
+                              {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </span>
+                        </Param>
+                        <Param label="Storage class">{metrics.storageType}</Param>
+                        <Param label="Last modified ledger">
+                          <span className="font-mono">
+                            {metrics.lastModifiedLedgerSeq ? `#${metrics.lastModifiedLedgerSeq.toLocaleString()}` : 'Genesis / pre-deploy'}
+                          </span>
+                        </Param>
+                        <Param label="RPC node health">
+                          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 capitalize">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            {metrics.rpcHealth}
+                          </span>
+                        </Param>
+                        <Param label="Network passphrase">
+                          <span className="font-mono truncate max-w-[220px]">{PASSPHRASE[network]}</span>
+                        </Param>
+                        <Param label="Snapshot time">{metrics.timestamp ? new Date(metrics.timestamp).toLocaleTimeString() : lastRefreshedAt || '—'}</Param>
+                      </dl>
+                    </section>
                   </div>
-                </div>
-
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Storage Class Footprint</span>
-                  <span className="font-bold text-slate-900 dark:text-white text-xs">{metrics.storageType}</span>
-                </div>
-
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Expiration Ledger Boundary</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
-                    {metrics.liveUntilLedgerSeq > 0 ? `#${metrics.liveUntilLedgerSeq.toLocaleString()}` : 'Unbounded'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Last Modified Ledger Sequence</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
-                    {metrics.lastModifiedLedgerSeq ? `#${metrics.lastModifiedLedgerSeq.toLocaleString()}` : 'Genesis / Pre-deploy'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">RPC Node Health</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1 uppercase">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                    <span>{metrics.rpcHealth}</span>
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs">Network Passphrase</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white text-xs truncate max-w-[200px]">
-                    Test SDF Network ; September 2015
-                  </span>
-                </div>
-              </div>
+                </Tile>
+              </Tray>
             </div>
-          </div>
+          </>
         )}
 
         {!metrics && !monitoring && (
-          <div className="p-12 text-center bg-white dark:bg-[#161616] border border-dashed border-slate-200/80 dark:border-slate-800 rounded-3xl text-slate-400 dark:text-slate-500 shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 mx-auto mb-3">
-              <Activity className="w-6 h-6 text-accent" />
-            </div>
-            <p className="font-bold text-slate-900 dark:text-white text-base">No live contract monitored yet.</p>
-            <p className="text-xs mt-1 text-slate-600 dark:text-slate-300 font-medium max-w-md mx-auto">
-              Provide a deployed Stellar Soroban contract ID or click the sample instance above to inspect real-time TTL rent, access controls, and invariants.
-            </p>
-          </div>
+          <Tray>
+            <Tile className={`py-14 text-center ${hatch}`}>
+              <span className="mx-auto grid place-items-center w-11 h-11 rounded-xl bg-accent-subtle text-accent">
+                <Activity className="w-5 h-5" />
+              </span>
+              <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">No contract monitored yet</p>
+              <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
+                Enter a deployed Soroban contract ID or pick a monitored contract above to stream its TTL rent and ledger state.
+              </p>
+            </Tile>
+          </Tray>
         )}
+
+        <div className="flex justify-end">
+          <Link href="/reports" className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+            Ledger reports <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </main>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Pieces                                                              */
+/* ------------------------------------------------------------------ */
+
+type Tone = 'neutral' | 'ok' | 'warn' | 'bad';
+
+function Pill({ tone, children }: { tone: Tone; children: React.ReactNode }) {
+  const cls = {
+    neutral: 'bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300',
+    ok: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    warn: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+    bad: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  }[tone];
+  return <span className={`shrink-0 inline-flex items-center h-5 px-2 rounded-md text-[10px] font-medium whitespace-nowrap capitalize ${cls}`}>{children}</span>;
+}
+
+function LiveDot({ on }: { on: boolean }) {
+  return (
+    <span className="relative flex w-2 h-2" aria-hidden>
+      {on && <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-500 animate-ping-soft" />}
+      <span className={`relative w-2 h-2 rounded-full ${on ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+    </span>
+  );
+}
+
+function KpiTile({
+  icon: Icon,
+  label,
+  value,
+  foot,
+  pill,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: React.ReactNode;
+  foot: string;
+  pill: { text: string; tone: Tone };
+}) {
+  return (
+    <Tile className="p-4 sm:p-5">
+      <div className="flex items-center gap-3">
+        <span className="grid place-items-center w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-slate-700 dark:text-slate-300">
+          <Icon className="w-4 h-4" />
+        </span>
+        <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{label}</span>
+      </div>
+      <p className="mt-6 text-3xl sm:text-4xl font-medium tracking-tight tabular-nums text-slate-900 dark:text-white leading-none truncate">{value}</p>
+      <div className="mt-5 pt-3 border-t border-slate-200/70 dark:border-white/[0.07] flex items-center justify-between gap-2">
+        <span className="text-[11px] text-slate-500 truncate">{foot}</span>
+        <Pill tone={pill.tone}>{pill.text}</Pill>
+      </div>
+    </Tile>
+  );
+}
+
+function ContractChip({
+  active,
+  onClick,
+  label,
+  sub,
+  tone,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  sub?: string;
+  tone: 'accent' | 'ok' | 'bad';
+}) {
+  const dot = { accent: 'bg-accent', ok: 'bg-emerald-500', bad: 'bg-red-500' }[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs transition-colors cursor-pointer ${
+        active
+          ? 'border-accent bg-accent-subtle text-accent'
+          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+      {label}
+      {sub && <span className="font-mono text-[10px] opacity-60">{sub}</span>}
+    </button>
+  );
+}
+
+function Param({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5 border-b border-slate-200/70 dark:border-white/[0.07] min-w-0">
+      <dt className="text-slate-500 shrink-0">{label}</dt>
+      <dd className="text-slate-900 dark:text-white text-right min-w-0 truncate">{children}</dd>
+    </div>
+  );
+}
+
+/** Half-donut showing remaining rent as a share of ~7 days of ledgers. */
+function TtlGauge({ remaining }: { remaining: number }) {
+  const reduce = useReducedMotion();
+  const pct = Math.max(0, Math.min(1, remaining / TTL_SCALE));
+  const C = Math.PI * 80;
+  const color = remaining > 20000 ? '#10b981' : remaining > 5000 ? '#f59e0b' : '#ef4444';
+  return (
+    <div className="relative mx-auto w-full max-w-[260px] [perspective:600px]">
+      <motion.svg
+        viewBox="0 0 200 112"
+        className="w-full"
+        aria-label={`${Math.round(pct * 100)}% of a 7-day rent window remaining`}
+        role="img"
+        initial={{ rotateX: reduce ? 0 : 35, opacity: 0 }}
+        animate={{ rotateX: 0, opacity: 1 }}
+        transition={{ duration: 0.9, ease: EASE_OUT }}
+      >
+        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" strokeWidth="22" strokeLinecap="round" className="stroke-slate-100 dark:stroke-white/[0.06]" />
+        <motion.path
+          d="M 20 100 A 80 80 0 0 1 180 100"
+          fill="none"
+          strokeWidth="22"
+          strokeLinecap="round"
+          stroke={color}
+          initial={{ strokeDasharray: `${reduce ? pct * C : 0} ${C * 2}` }}
+          animate={{ strokeDasharray: `${pct * C} ${C * 2}` }}
+          transition={{ duration: 1.1, delay: 0.2, ease: EASE_OUT }}
+        />
+      </motion.svg>
+      <div className="absolute inset-x-0 bottom-0 text-center">
+        <p className="text-3xl font-medium tabular-nums tracking-tight text-slate-900 dark:text-white leading-none">{Math.round(pct * 100)}%</p>
+        <p className="mt-1 text-xs text-slate-500">of 7-day window</p>
+      </div>
+    </div>
+  );
+}
+
+function LatencyBars({ samples }: { samples: number[] }) {
+  const max = Math.max(200, ...samples);
+  const padded = [...Array(Math.max(0, LATENCY_SAMPLES - samples.length)).fill(null), ...samples] as (number | null)[];
+  return (
+    <div>
+      <div className={`flex items-end gap-1 h-24 rounded-xl px-2 pt-2 bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/[0.07] ${hatch}`} role="img" aria-label={`Latest RPC response times: ${samples.join(', ')} ms`}>
+        {padded.map((v, i) => (
+          <div key={i} className="flex-1 h-full flex flex-col justify-end">
+            {v !== null && (
+              <motion.div
+                title={`${v} ms`}
+                className={`w-full rounded-t-[4px] ${v > 1500 ? 'bg-red-500' : v > 700 ? 'bg-amber-400' : 'bg-accent'}`}
+                initial={{ height: 0 }}
+                animate={{ height: `${Math.max(4, (v / max) * 100)}%` }}
+                transition={{ duration: 0.5, ease: EASE_OUT }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1.5 flex justify-between font-mono text-[10px] text-slate-500">
+        <span>older</span>
+        <span>{samples.length ? `latest ${samples[samples.length - 1]} ms` : 'waiting for first poll'}</span>
+      </div>
+    </div>
+  );
+}
+
+/** ~5 seconds per ledger on Stellar. */
+function ttlToTime(ledgers: number) {
+  const s = ledgers * 5;
+  if (s <= 0) return 'Expired';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  if (d > 0) return `${d}d ${h}h`;
+  const m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }

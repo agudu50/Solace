@@ -8,6 +8,10 @@ import {
   getPurchasesHandler,
   adjustCreditsHandler,
   getLogsHandler,
+  getIssuesHandler,
+  updateIssueHandler,
+  getPresenceHandler,
+  getMetricsHandler,
 } from '../controllers/adminController.js';
 import { requireAdmin, requireSuperAdmin } from '../middleware/authMiddleware.js';
 
@@ -33,5 +37,11 @@ router.post('/credits/adjust', adjustCreditsHandler);
 
 // Audit Trail Logs
 router.get('/logs', getLogsHandler);
+
+// Issues queue, live presence and request metrics
+router.get('/issues', getIssuesHandler);
+router.patch('/issues/:id', updateIssueHandler);
+router.get('/presence', getPresenceHandler);
+router.get('/metrics', getMetricsHandler);
 
 export default router;

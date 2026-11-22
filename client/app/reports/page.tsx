@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Chip, Panel, PanelHeader } from '../../components/dashboard/Panel';
 import { ScoreRing } from '../../components/dashboard/Visuals';
+import { Tile, Tray } from '../../components/dashboard/Overview';
 import { Segmented } from '../../components/audit/StudioParts';
 import ReportDeck3D from '../../components/reports/ReportDeck3D';
 import { CountUp, EASE_OUT, SplitWords } from '../../components/landing/motion';
@@ -379,18 +380,14 @@ function ReportsContent() {
   const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${LIVE_CONTRACT_ID}`;
 
   const KPIS = [
-    { label: 'Total proofs', value: String(reportsList.length), sub: 'recorded audits' },
-    { label: 'Verified secure', value: String(secureCount), sub: 'passed every invariant' },
-    { label: 'Action required', value: String(reportsList.length - secureCount), sub: 'need fixes before deploy' },
-    { label: 'Issues found', value: String(issueCount), sub: 'with AI-drafted fixes' },
+    { label: 'Total proofs', icon: FileCode, value: String(reportsList.length), sub: 'recorded audits' },
+    { label: 'Verified secure', icon: ShieldCheck, value: String(secureCount), sub: 'passed every invariant' },
+    { label: 'Action required', icon: AlertTriangle, value: String(reportsList.length - secureCount), sub: 'need fixes before deploy' },
+    { label: 'Issues found', icon: BrainCircuit, value: String(issueCount), sub: 'with AI-drafted fixes' },
   ];
 
   return (
-    <div className="relative w-full min-h-screen bg-[#f7f7f6] dark:bg-[#0e0e0e] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-[420px] grid-lines pointer-events-none [mask-image:radial-gradient(ellipse_70%_100%_at_50%_0%,#000_30%,transparent_100%)]"
-      />
+    <div className="relative w-full min-h-screen bg-[#f2f2f0] dark:bg-[#0b0b0b] text-slate-800 dark:text-slate-100 pb-24 md:pb-10 overflow-x-hidden">
 
       <main className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
         {/* Header */}
@@ -405,7 +402,7 @@ function ReportsContent() {
               <Chip tone="accent" pulse>Ledger provenance</Chip>
               <Chip>{network === 'mainnet' ? 'Mainnet' : 'Testnet'} · Protocol 22</Chip>
             </motion.div>
-            <h1 className="text-3xl sm:text-5xl font-medium tracking-tightest leading-[1.05] text-slate-900 dark:text-white">
+            <h1 className="text-2xl sm:text-[28px] font-medium tracking-tight text-slate-900 dark:text-white">
               <SplitWords text="Verified audit reports" />
             </h1>
             <motion.p
@@ -443,25 +440,28 @@ function ReportsContent() {
           </motion.div>
         </div>
 
-        {/* KPI strip */}
-        <Panel index={0} className="mt-8 sm:mt-10">
-          <dl className="grid grid-cols-2 lg:grid-cols-4">
-            {KPIS.map((k, i) => (
-              <div
-                key={k.label}
-                className={`px-5 sm:px-6 py-5 ${i % 2 === 1 ? 'border-l' : ''} ${i >= 2 ? 'border-t lg:border-t-0' : ''} ${
-                  i === 2 ? 'lg:border-l' : ''
-                } border-slate-200 dark:border-white/10`}
-              >
-                <dt className="eyebrow">{k.label}</dt>
-                <dd className="mt-2 text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
-                  <CountUp value={k.value} />
-                </dd>
-                <dd className="mt-1 text-xs text-slate-500">{k.sub}</dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
+        {/* KPI tray (same tiles as the dashboard) */}
+        <Tray index={0} className="mt-6 sm:mt-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+            {KPIS.map((k) => {
+              const Icon = k.icon;
+              return (
+                <Tile key={k.label} className="p-4 sm:p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="grid place-items-center w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] text-slate-700 dark:text-slate-300">
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{k.label}</span>
+                  </div>
+                  <p className="mt-6 text-4xl font-medium tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
+                    <CountUp value={k.value} />
+                  </p>
+                  <p className="mt-4 pt-3 border-t border-slate-200/70 dark:border-white/[0.07] text-[11px] text-slate-500 truncate">{k.sub}</p>
+                </Tile>
+              );
+            })}
+          </div>
+        </Tray>
 
         {/* Search */}
         <Panel index={1} className="mt-4 sm:mt-5">
@@ -605,6 +605,7 @@ function ReportsContent() {
                     <RecommendationBody
                       summary={searchResult.summary}
                       vulns={searchResult.vulnerabilities || []}
+                      contractHash={searchResult.hash}
                       action={
                         <Link href="/audit" className={`${btn.secondary} h-8 px-3 text-xs`}>
                           <ShieldCheck className="w-3.5 h-3.5" />
@@ -747,6 +748,7 @@ function ReportsContent() {
                             <RecommendationBody
                               summary={item.summary}
                               vulns={item.vulnerabilities || []}
+                              contractHash={item.hash}
                               action={
                                 <div className="flex items-center gap-2">
                                   <button
@@ -817,10 +819,12 @@ function RecommendationBody({
   summary,
   vulns,
   action,
+  contractHash,
 }: {
   summary?: string;
   vulns: VulnerabilityDetail[];
   action: React.ReactNode;
+  contractHash?: string;
 }) {
   return (
     <div className="space-y-5">
@@ -844,7 +848,7 @@ function RecommendationBody({
           <p className="eyebrow mb-2.5">Issues and fixes ({vulns.length})</p>
           <ul className="space-y-3">
             {vulns.map((v, i) => (
-              <VulnBlock key={`${v.title}-${i}`} vuln={v} index={i} />
+              <VulnBlock key={`${v.title}-${i}`} vuln={v} index={i} contractHash={contractHash} />
             ))}
           </ul>
         </div>
@@ -870,21 +874,95 @@ const SEV_TONE: Record<string, string> = {
   LOW: 'text-slate-500 border-slate-500/30 bg-slate-500/10',
 };
 
-function VulnBlock({ vuln, index }: { vuln: VulnerabilityDetail; index: number }) {
+function VulnBlock({ vuln, index, contractHash }: { vuln: VulnerabilityDetail; index: number; contractHash?: string }) {
   const [copied, setCopied] = useState(false);
+  const [isResolved, setIsResolved] = useState(false);
+  const issueKey = `${contractHash || ''}::${vuln.title}`;
+
+  useEffect(() => {
+    const checkResolved = () => {
+      try {
+        const stored = localStorage.getItem('solace_resolved_issues');
+        if (stored) {
+          const list = JSON.parse(stored);
+          if (Array.isArray(list)) {
+            setIsResolved(list.includes(issueKey));
+          }
+        }
+      } catch (_) {}
+    };
+    checkResolved();
+    window.addEventListener('storage', checkResolved);
+    window.addEventListener('solace-resolved-issues-updated', checkResolved);
+    return () => {
+      window.removeEventListener('storage', checkResolved);
+      window.removeEventListener('solace-resolved-issues-updated', checkResolved);
+    };
+  }, [issueKey]);
+
+  const handleToggleResolved = () => {
+    try {
+      const stored = localStorage.getItem('solace_resolved_issues');
+      let list: string[] = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(list)) list = [];
+      const nextResolved = !isResolved;
+      if (nextResolved) {
+        if (!list.includes(issueKey)) list.push(issueKey);
+      } else {
+        list = list.filter((k) => k !== issueKey);
+      }
+      localStorage.setItem('solace_resolved_issues', JSON.stringify(list));
+      setIsResolved(nextResolved);
+      window.dispatchEvent(new Event('solace-resolved-issues-updated'));
+    } catch (_) {}
+  };
+
   return (
     <motion.li
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.45, delay: 0.1 + index * 0.06, ease: EASE_OUT }}
-      className="rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] overflow-hidden"
+      className={`rounded-md border ${isResolved ? 'border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/10' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616]'} overflow-hidden transition-colors`}
     >
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm text-slate-900 dark:text-white">{vuln.title}</p>
-          <span className={`shrink-0 px-1.5 h-5 inline-flex items-center rounded border font-mono text-[10px] uppercase ${SEV_TONE[vuln.severity] ?? SEV_TONE.LOW}`}>
-            {vuln.severity}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className={`text-sm ${isResolved ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'} font-medium`}>
+              {vuln.title}
+            </p>
+            {isResolved && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                Resolved
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleToggleResolved}
+              className={`inline-flex items-center gap-1.5 h-6 px-2 rounded text-[10px] font-medium border transition-colors cursor-pointer ${
+                isResolved
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30'
+                  : 'bg-slate-100 dark:bg-white/[0.05] border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-accent hover:text-accent'
+              }`}
+              title={isResolved ? 'Reopen finding' : 'Mark recommendation as resolved'}
+            >
+              {isResolved ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-500" />
+                  <span>Resolved</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full border border-slate-400" />
+                  <span>Mark resolved</span>
+                </>
+              )}
+            </button>
+            <span className={`shrink-0 px-1.5 h-5 inline-flex items-center rounded border font-mono text-[10px] uppercase ${SEV_TONE[vuln.severity] ?? SEV_TONE.LOW}`}>
+              {vuln.severity}
+            </span>
+          </div>
         </div>
         <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed break-words">{vuln.description}</p>
       </div>

@@ -237,7 +237,30 @@ async function createTablesPostgres() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    -- Issues: user-reported problems and auto-captured server errors
+    CREATE TABLE IF NOT EXISTS issues (
+      id VARCHAR(64) PRIMARY KEY,
+      source VARCHAR(16) NOT NULL,               -- 'user' | 'system'
+      kind VARCHAR(48) NOT NULL DEFAULT 'bug',
+      severity VARCHAR(16) NOT NULL DEFAULT 'medium',
+      title VARCHAR(256) NOT NULL,
+      description TEXT,
+      page VARCHAR(512),
+      wallet_address VARCHAR(56),
+      email VARCHAR(256),
+      fingerprint VARCHAR(256),                  -- groups repeats of the same system error
+      occurrences INTEGER NOT NULL DEFAULT 1,
+      status VARCHAR(16) NOT NULL DEFAULT 'open', -- 'open' | 'in_progress' | 'resolved'
+      resolution_note TEXT,
+      resolved_by VARCHAR(256),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     -- Create performance indexes
+    CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
+    CREATE INDEX IF NOT EXISTS idx_issues_fingerprint ON issues(fingerprint);
     CREATE INDEX IF NOT EXISTS idx_users_wallet ON users(wallet_address);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_challenges_nonce ON auth_challenges(nonce);
@@ -348,6 +371,7 @@ const TABLES = [
   'contract_audits',
   'payments',
   'ai_analysis_jobs',
+  'issues',
 ];
 
 function getTableFile(table) {

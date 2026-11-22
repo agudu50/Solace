@@ -13,6 +13,7 @@ interface Toast {
   message?: string;
   detail?: string;
   duration: number;
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastApi {
@@ -51,7 +52,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       dismiss,
       error: (err, fallback) => {
         const f = friendlyError(err, fallback);
-        return show({ tone: f.kind === 'info' ? 'info' : 'error', title: f.title, message: f.message, detail: f.detail });
+        const isError = f.kind !== 'info';
+        return show({
+          tone: isError ? 'error' : 'info',
+          title: f.title,
+          message: f.message,
+          detail: f.detail,
+          // Real errors (not cancellations) can be reported straight to the admins.
+          action: isError
+            ? {
+                label: 'Report problem',
+                onClick: () =>
+                  window.dispatchEvent(
+                    new CustomEvent('solace:report-issue', {
+                      detail: { title: f.title, context: [f.message, f.detail].filter(Boolean).join(' | ') },
+                    }),
+                  ),
+              }
+            : undefined,
+        });
       },
       success: (title, message) => show({ tone: 'success', title, message }),
       info: (title, message) => show({ tone: 'info', title, message }),
@@ -163,6 +182,18 @@ function ToastCard({ toast, onClose }: { toast: Toast; onClose: () => void }) {
               </span>
               <span className="text-slate-800 dark:text-slate-200">{toast.detail}</span>
             </div>
+          )}
+          {toast.action && (
+            <button
+              type="button"
+              onClick={() => {
+                toast.action?.onClick();
+                onClose();
+              }}
+              className="mt-2 text-xs font-medium text-accent hover:underline cursor-pointer"
+            >
+              {toast.action.label}
+            </button>
           )}
         </div>
       </div>

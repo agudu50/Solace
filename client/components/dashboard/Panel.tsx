@@ -4,8 +4,9 @@ import { motion } from 'framer-motion';
 import { EASE_OUT } from '../landing/motion';
 
 /**
- * Dashboard surface: the landing page's hairline panel plus a cursor-following
- * accent spotlight (CSS variables only, no re-renders) and a blur-up entrance.
+ * App surface, matching the dashboard: a white tray holding a softer inner
+ * card, plus a cursor-following accent spotlight (CSS variables only, no
+ * re-renders) and a blur-up entrance.
  */
 export function Panel({
   children,
@@ -32,17 +33,19 @@ export function Panel({
       initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
       transition={{ duration: 0.7, delay: 0.08 + index * 0.07, ease: EASE_OUT }}
-      className={`group/panel relative rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#161616] transition-colors hover:border-slate-300 dark:hover:border-white/20 ${className}`}
+      className={`group/panel relative rounded-[18px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#141414] p-1.5 ${className}`}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover/panel:opacity-100"
-        style={{
-          background:
-            'radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgb(var(--e-global-color-accent-rgb) / 0.06), transparent 45%)',
-        }}
-      />
-      <div className="relative h-full flex flex-col">{children}</div>
+      <div className="relative h-full flex flex-col rounded-[14px] border border-slate-200/70 dark:border-white/[0.07] bg-[#fafaf9] dark:bg-[#1a1a1a] overflow-hidden transition-colors group-hover/panel:border-slate-300/80 dark:group-hover/panel:border-white/[0.12]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/panel:opacity-100"
+          style={{
+            background:
+              'radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgb(var(--e-global-color-accent-rgb) / 0.06), transparent 45%)',
+          }}
+        />
+        <div className="relative h-full flex flex-col">{children}</div>
+      </div>
     </Comp>
   );
 }
@@ -57,13 +60,10 @@ export function PanelHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <header className="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5 sm:pt-6 pb-4">
+    <header className="flex items-start justify-between gap-4 px-4 sm:px-5 pt-4 sm:pt-5 pb-4">
       <div className="min-w-0">
-        <p className="eyebrow inline-flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-[1px] bg-accent" aria-hidden />
-          {eyebrow}
-        </p>
-        <h2 className="mt-2 text-base sm:text-lg font-medium tracking-tight text-slate-900 dark:text-white leading-snug">
+        <p className="text-[11px] text-slate-500">{eyebrow}</p>
+        <h2 className="mt-0.5 text-[15px] font-medium tracking-tight text-slate-900 dark:text-white leading-snug">
           {title}
         </h2>
       </div>

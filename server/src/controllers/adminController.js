@@ -1,4 +1,14 @@
-import { getAllUsers, updateUserStatus, updateUserRole, findUserByWallet } from '../services/userService.js';
+import {
+  getAllUsers,
+  updateUserStatus,
+  updateUserRole,
+  findUserByWallet,
+  createUser,
+  isValidStellarAddress,
+  normalizeWallet,
+} from '../services/userService.js';
+import { listIssues, updateIssue, ISSUE_STATUSES } from '../services/issueService.js';
+import { getPresence, getMetrics } from '../services/telemetryService.js';
 import { logAdminAction, getAdminAuditLogs } from '../services/auditLogService.js';
 import { readTable, query, usePostgres } from '../db/db.js';
 import { getUserBalance } from '../services/creditStore.js';
@@ -241,7 +251,8 @@ export async function getPurchasesHandler(req, res) {
  */
 export async function adjustCreditsHandler(req, res) {
   try {
-    const { walletAddress, amount, reason } = req.body;
+    const { amount, reason } = req.body;
+    const walletAddress = normalizeWallet(req.body.walletAddress);
 
     if (!walletAddress || amount === undefined || !reason) {
       return res.status(400).json({
@@ -255,9 +266,20 @@ export async function adjustCreditsHandler(req, res) {
       return res.status(400).json({ success: false, error: 'Adjustment amount must be a non-zero integer.' });
     }
 
-    const user = await findUserByWallet(walletAddress);
+    if (!isValidStellarAddress(walletAddress)) {
+      return res.status(400).json({ success: false, error: 'Not a valid Stellar public key (56 characters starting with G).' });
+    }
+
+    // Wallets that have never signed in get an account now, so the credits are
+    // waiting for them on first connect. Granting credits never creates admins.
+    let user = await findUserByWallet(walletAddress);
+    let accountCreated = false;
     if (!user) {
-      return res.status(404).json({ success: false, error: 'User wallet not registered.' });
+      if (delta < 0) {
+        return res.status(404).json({ success: false, error: 'Cannot deduct credits from a wallet with no account.' });
+      }
+      user = await createUser(walletAddress, 'user');
+      accountCreated = true;
     }
 
     const now = new Date().toISOString();
@@ -322,7 +344,7 @@ export async function adjustCreditsHandler(req, res) {
       actorWallet: req.user.address,
       action: 'CREDIT_ADJUSTMENT',
       target: walletAddress,
-      details: { amount: delta, newBalance: updatedBalance, reason },
+      details: { amount: delta, newBalance: updatedBalance, reason, accountCreated },
       ipAddress: req.ip,
     });
 
@@ -331,6 +353,7 @@ export async function adjustCreditsHandler(req, res) {
       walletAddress,
       adjustedBy: delta,
       newBalance: updatedBalance,
+      accountCreated,
       reason,
       message: `Successfully adjusted credits for ${walletAddress} by ${delta > 0 ? '+' : ''}${delta}. New balance: ${updatedBalance}`,
     });
@@ -355,4 +378,64 @@ export async function getLogsHandler(req, res) {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
+}
+
+/**
+ * Issues queue (user reports + captured server errors)
+ * GET /api/admin/issues?status=open
+ */
+export async function getIssuesHandler(req, res) {
+  try {
+    const status = ISSUE_STATUSES.includes(req.query.status) ? req.query.status : null;
+    const issues = await listIssues({ status });
+    res.json({ success: true, issues });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * Move an issue through open → in_progress → resolved
+ * PATCH /api/admin/issues/:id  { status, note }
+ */
+export async function updateIssueHandler(req, res) {
+  try {
+    const { status, note } = req.body || {};
+    if (!ISSUE_STATUSES.includes(status)) {
+      return res.status(400).json({ success: false, error: `status must be one of ${ISSUE_STATUSES.join(', ')}` });
+    }
+    if (status === 'resolved' && (!note || String(note).trim().length < 3)) {
+      return res.status(400).json({ success: false, error: 'Add a short resolution note before resolving.' });
+    }
+    const actor = req.user.address || req.user.email || req.user.id;
+    const issue = await updateIssue(req.params.id, { status, note, actor });
+    if (!issue) return res.status(404).json({ success: false, error: 'Issue not found.' });
+
+    await logAdminAction({
+      actorWallet: actor,
+      action: status === 'resolved' ? 'ISSUE_RESOLVED' : 'ISSUE_STATUS_CHANGED',
+      target: issue.id,
+      details: { status, note: note || null, title: issue.title },
+      ipAddress: req.ip,
+    });
+    res.json({ success: true, issue });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * Live presence: who has Solace open right now
+ * GET /api/admin/presence
+ */
+export async function getPresenceHandler(req, res) {
+  res.json({ success: true, presence: getPresence() });
+}
+
+/**
+ * Real request metrics for the last 15 minutes
+ * GET /api/admin/metrics
+ */
+export async function getMetricsHandler(req, res) {
+  res.json({ success: true, metrics: getMetrics() });
 }

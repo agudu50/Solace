@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { openReportIssue } from './ReportIssueDialog';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
@@ -99,6 +100,10 @@ export default function Footer() {
             <Link href="/monitor" className="hover:text-accent transition">
               Monitor
             </Link>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <button type="button" onClick={() => openReportIssue()} className="hover:text-accent transition cursor-pointer">
+              Report a problem
+            </button>
           </div>
         </div>
       </footer>

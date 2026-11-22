@@ -172,14 +172,16 @@ export function ScoreStrip({ items }: { items: { id: string; score: number; labe
 /* Surface gauge: half donut in accent tints                            */
 /* ------------------------------------------------------------------ */
 
-const TINTS = [1, 0.62, 0.38, 0.22, 0.13, 0.07];
+const TINTS = [1, 0.75, 0.55, 0.40, 0.28, 0.18, 0.10];
 
 export function SurfaceGauge({
   segments,
   centerLabel,
+  onSelectSegment,
 }: {
-  segments: { label: string; value: number }[];
+  segments: { label: string; value: number; description?: string }[];
   centerLabel: string;
+  onSelectSegment?: (segment: { label: string; value: number }) => void;
 }) {
   const reduce = useReducedMotion();
   const total = segments.reduce((n, s) => n + s.value, 0);
@@ -213,30 +215,57 @@ export function SurfaceGauge({
                   d="M 20 100 A 80 80 0 0 1 180 100"
                   fill="none"
                   strokeWidth="26"
-                  style={{ stroke: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.07})` }}
+                  style={{ stroke: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.1})` }}
                   strokeDashoffset={offset}
                   initial={{ strokeDasharray: reduce ? `${seg} ${C * 2}` : `0 ${C * 2}` }}
                   animate={{ strokeDasharray: `${seg} ${C * 2}` }}
                   transition={{ duration: 0.8, delay: 0.3 + i * 0.12, ease: EASE_OUT }}
+                  className="cursor-pointer hover:opacity-80 transition-opacity focus:outline-none"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Inspect ${s.label}: ${s.value} findings`}
+                  onClick={() => onSelectSegment?.(s)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectSegment?.(s);
+                    }
+                  }}
                 />
               );
             })}
         </motion.svg>
-        <div className="absolute inset-x-0 bottom-0 text-center">
+        <div className="absolute inset-x-0 bottom-0 text-center pointer-events-none">
           <p className="text-3xl font-medium tabular-nums tracking-tight text-slate-900 dark:text-white leading-none">{total}</p>
           <p className="mt-1 text-xs text-slate-500">{centerLabel}</p>
         </div>
       </div>
 
-      <ul className="mt-5 space-y-2.5">
+      <ul className="mt-5 space-y-1">
         {segments.map((s, i) => (
-          <li key={s.label} className="flex items-center gap-3 text-sm">
-            <span
-              className="w-3.5 h-3.5 rounded-[4px] shrink-0"
-              style={{ background: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.07})` }}
-            />
-            <span className="text-slate-600 dark:text-slate-400 flex-1">{s.label}</span>
-            <span className="tabular-nums text-slate-900 dark:text-white">{s.value}</span>
+          <li key={s.label}>
+            <button
+              type="button"
+              onClick={() => onSelectSegment?.(s)}
+              className="group/item w-full flex flex-col gap-0.5 text-left p-2 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.04] active:bg-slate-100 dark:active:bg-white/[0.08] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              title={`Click to inspect ${s.label} rules & remediation code`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="w-3 h-3 rounded-[3px] shrink-0"
+                  style={{ background: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.1})` }}
+                />
+                <span className="text-slate-800 dark:text-slate-200 font-medium flex-1 text-xs sm:text-sm group-hover/item:text-accent transition-colors">
+                  {s.label}
+                </span>
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">{s.value}</span>
+              </div>
+              {s.description && (
+                <p className="pl-5 text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                  {s.description}
+                </p>
+              )}
+            </button>
           </li>
         ))}
       </ul>
@@ -254,6 +283,8 @@ export interface FeedItem {
   meta: React.ReactNode;
   tone: 'ink' | 'accent' | 'amber' | 'emerald' | 'sky' | 'slate';
   href?: string;
+  action?: React.ReactNode;
+  resolved?: boolean;
 }
 
 const EDGE: Record<FeedItem['tone'], string> = {
@@ -277,25 +308,42 @@ export function FeedList({ items, empty }: { items: FeedItem[]; empty: string })
       className="px-4 sm:px-5 pb-4 divide-y divide-slate-200/70 dark:divide-white/[0.07]"
     >
       {items.map((it) => {
-        const body = (
-          <div className={`pl-3 border-l-2 ${EDGE[it.tone]}`}>
-            <p className="text-sm text-slate-900 dark:text-white truncate group-hover:text-accent transition-colors">{it.title}</p>
+        const bodyContent = (
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className={`text-sm ${it.resolved ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'} truncate group-hover:text-accent transition-colors`}>
+                {it.title}
+              </p>
+              {it.resolved && (
+                <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Resolved
+                </span>
+              )}
+            </div>
             <p className="mt-0.5 text-[11px] text-slate-500 truncate">{it.meta}</p>
           </div>
         );
+
         return (
           <motion.li
             key={it.id}
             variants={{ hidden: { opacity: 0, x: -6 }, show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE_OUT } } }}
             className="py-3"
           >
-            {it.href ? (
-              <Link href={it.href} className="group block">
-                {body}
-              </Link>
-            ) : (
-              body
-            )}
+            <div className={`pl-3 border-l-2 ${EDGE[it.tone]} flex items-center justify-between gap-2`}>
+              {it.href ? (
+                <Link href={it.href} className="group min-w-0 flex-1 block">
+                  {bodyContent}
+                </Link>
+              ) : (
+                bodyContent
+              )}
+              {it.action && (
+                <div className="shrink-0 pl-1" onClick={(e) => e.stopPropagation()}>
+                  {it.action}
+                </div>
+              )}
+            </div>
           </motion.li>
         );
       })}

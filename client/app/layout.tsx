@@ -8,6 +8,8 @@ import SidebarDock from '../components/layout/SidebarDock';
 import { WalletProvider } from '../context/WalletContext';
 import { ToastProvider } from '../context/ToastContext';
 import NavProgress from '../components/layout/NavProgress';
+import PresenceBeacon from '../components/layout/PresenceBeacon';
+import ReportIssueDialog from '../components/layout/ReportIssueDialog';
 
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const mono = DM_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-mono', display: 'swap' });
@@ -68,6 +70,8 @@ export default function RootLayout({
         <ToastProvider>
           <WalletProvider>
             <NavProgress />
+            <PresenceBeacon />
+            <ReportIssueDialog />
             <Navbar />
             <div className="flex-grow w-full max-w-full overflow-x-hidden">
               {children}

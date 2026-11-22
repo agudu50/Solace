@@ -527,7 +527,7 @@ export async function updateUserStatus(walletAddress, newStatus) {
 export async function getAllUsers() {
   if (usePostgres) {
     const res = await query(`
-      SELECT u.id, u.wallet_address, u.role, u.status, u.created_at, u.updated_at, u.last_login_at,
+      SELECT u.id, u.name, u.email, u.auth_provider, u.wallet_address, u.role, u.status, u.created_at, u.updated_at, u.last_login_at,
              COALESCE(cb.credit_balance, 0) as credit_balance,
              COALESCE(cb.total_purchased, 0) as total_purchased,
              COALESCE(cb.total_consumed, 0) as total_consumed
@@ -543,8 +543,11 @@ export async function getAllUsers() {
 
   return users.map((u) => {
     const cb = balances.find((b) => b.wallet_address === u.wallet_address) || {};
+    // Never expose credential material to the admin API.
+    // eslint-disable-next-line no-unused-vars
+    const { password_hash, password_salt, reset_token, reset_token_expires_at, ...safe } = u;
     return {
-      ...u,
+      ...safe,
       credit_balance: cb.credit_balance || 0,
       total_purchased: cb.total_purchased || 0,
       total_consumed: cb.total_consumed || 0,

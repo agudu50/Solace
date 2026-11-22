@@ -6,6 +6,9 @@ import auditRoutes from './routes/auditRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import { initDb } from './db/db.js';
+import publicRoutes from './routes/publicRoutes.js';
+import { recordRequest, routeKey } from './services/telemetryService.js';
+import { createIssue } from './services/issueService.js';
 
 dotenv.config();
 
@@ -37,9 +40,35 @@ app.use((req, res, next) => {
   const start = Date.now();
   const timestamp = new Date().toLocaleTimeString();
 
+  // Remember the error message a handler sends, so a 5xx can be filed as an issue.
+  const sendJson = res.json.bind(res);
+  res.json = (body) => {
+    if (body && typeof body === 'object' && body.error) res.locals.errorMessage = String(body.error);
+    return sendJson(body);
+  };
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
+
+    // Live metrics for the admin console
+    recordRequest({ url: req.originalUrl, status: statusCode, ms: duration });
+
+    // Auto-file server errors (grouped by route + message) into the issues queue
+    if (statusCode >= 500 && !req.originalUrl.startsWith('/api/issues')) {
+      const route = routeKey(req.originalUrl);
+      const message = res.locals.errorMessage || 'Unhandled server error';
+      createIssue({
+        source: 'system',
+        kind: 'server_error',
+        severity: statusCode >= 503 ? 'critical' : 'high',
+        title: `${req.method} ${route} failed (${statusCode})`,
+        description: message,
+        page: req.originalUrl,
+        walletAddress: req.user?.address || null,
+        fingerprint: `${req.method} ${route} ${statusCode} ${message.slice(0, 120)}`,
+      }).catch((e) => console.warn('[Issues] Could not record server error:', e.message));
+    }
 
     // ANSI color definitions
     const green = '\x1b[32m';
@@ -74,6 +103,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', publicRoutes); // POST /api/presence, POST /api/issues
 app.use('/api', auditRoutes);
 
 // Root informational endpoint

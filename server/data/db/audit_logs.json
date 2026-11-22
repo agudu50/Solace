@@ -204,5 +204,77 @@
     },
     "ip_address": "127.0.0.1",
     "created_at": "2026-11-17T00:51:47.164Z"
+  },
+  {
+    "id": "log_2100952ce6eebbb0c68254b9ff42bc6a",
+    "actor_wallet": "GDYCLAWJF453Y5YBUS5R3IFYXIPDN44KEPYS62G77CRBSQY5PQPASCQ3",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDVC2VSXVNXWK62BQHWNTHGIFQ4JKNTXUYRNFYCMU4LFH2B6NU4GSUTU",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:29:16.691Z"
+  },
+  {
+    "id": "log_2604568dc6cf4acc015a5fe357caa675",
+    "actor_wallet": "GBS76K3V5SRQBZB3EVAB2XDMRO6PECB2GUQD4LUX3K3ERTDWMQU4CA7A",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GCBNBFFCDU5AHSBKUGETEPIWYWBO772LZJ2W3IUBUKDWUPBN5CGF5HZ6",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:40:53.415Z"
+  },
+  {
+    "id": "log_dce65dad1e23fae0b0356d0f76ecd5b2",
+    "actor_wallet": "GDK5AVWRGHNV3SOBKKNZ7FSPLY7KBXZIXXVAR257PBWBJJINFC4VPESI",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GACFX6DMAV3A3L4PSW6RLDKLRHJ5JZ22A7OOB4AOCE73ZOLAND54A7YS",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:44:11.533Z"
+  },
+  {
+    "id": "log_295a856c956167dbc6f50e98d2d42df1",
+    "actor_wallet": "GAFWZS7XS43S4RO4Q57I3ECUMTX2NIU5F5YMZW6G63T3HIHJODY37EFT",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDV3WQXQTIDWWU5G7O2UWB5AAU2OYEREJTT36VXNJNKQDSDDIMUNWDB7",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:52:41.839Z"
+  },
+  {
+    "id": "log_e31cb95d214b30c5e6219533e6680982",
+    "actor_wallet": "GBO2LYHSPVVNXJNXWLK3SK4ODOWBH6MEVF6FRWEQBKH64MCZIW66WFTB",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GAW3NPKNXWI3LZFWLCZ4OGNP4KZ67DODSDBGII3NQXUXRY3ZMJZ6ZDL4",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T23:05:08.241Z"
+  },
+  {
+    "id": "log_3cd6ea23468d6fe93e6eb0be22ae3dda",
+    "actor_wallet": "GDWPFIXB2Y7MPBSUJL6A5VJTJOIAINY6XUWAEVRYIK2NJK33KRYOX5SX",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GB6PJV2PTL5DDBOOHEFE5ZASVFWPWILMODS4MRF4OAGUCDFDBUAMJ7MG",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T23:08:42.523Z"
   }
 ]

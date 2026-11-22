@@ -42,6 +42,8 @@ export default function Navbar() {
   const router = useRouter();
   const { walletKey, user, network, connecting, connect, disconnect, setNetwork, toggleNetwork, isAdmin } = useWallet();
   const toast = useToast();
+  const isLandingPage = pathname === '/';
+  const isAuthenticated = Boolean(walletKey || user);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
   const [showInvariantsModal, setShowInvariantsModal] = useState<boolean>(false);
@@ -54,6 +56,10 @@ export default function Navbar() {
   const [showAccountMenu, setShowAccountMenu] = useState<boolean>(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const credits = user?.availableCredits ?? 0;
+
+  useEffect(() => {
+    setShowMobileMenu(false);
+  }, [pathname]);
 
   // Close the account menu on outside click or Escape.
   useEffect(() => {
@@ -138,6 +144,16 @@ export default function Navbar() {
     { label: 'FAQ', href: '#faq' },
   ];
 
+  const mobilePublicNavItems = [
+    { label: 'Features', href: '#features', icon: Layers },
+    { label: 'Simulator', href: '#scanner', icon: Terminal },
+    { label: 'How It Works', href: '#how-it-works', icon: Cpu },
+    { label: 'Architecture', href: '#architecture', icon: Lock },
+    { label: 'Audit Studio', href: '#audit', icon: ShieldCheck },
+    { label: 'Reports', href: '#reports', icon: FileText },
+    { label: 'FAQ', href: '#faq', icon: Sparkles },
+  ];
+
   return (
     <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#f7f7f6]/85 dark:bg-[#0e0e0e]/85 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-2 sm:py-2.5 px-4 sm:px-6 lg:px-8">
       <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
@@ -166,7 +182,19 @@ export default function Navbar() {
         </Link>
 
         {/* Primary navigation */}
-        {walletKey ? (
+        {isLandingPage ? (
+          <nav className="hidden lg:flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400" aria-label="Primary">
+            {publicNavItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="px-3 py-1.5 rounded-md hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        ) : isAuthenticated ? (
           <nav className="hidden md:flex items-center gap-1 text-sm" aria-label="App">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -186,22 +214,7 @@ export default function Navbar() {
               );
             })}
           </nav>
-        ) : (
-          <nav className="hidden lg:flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400" aria-label="Primary">
-            {publicNavItems.map((item) => {
-              const targetHref = pathname === '/' ? item.href : `/${item.href}`;
-              return (
-                <a
-                  key={item.label}
-                  href={targetHref}
-                  className="px-3 py-1.5 rounded-md hover:text-slate-900 dark:hover:text-white transition-colors"
-                >
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
-        )}
+        ) : null}
 
         {/* Right side */}
         <div className="flex items-center gap-2 shrink-0">
@@ -352,81 +365,61 @@ export default function Navbar() {
       {showMobileMenu && (
         <div className="lg:hidden border-t border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#161616]/95 backdrop-blur-xl px-4 py-4 space-y-2 animate-in slide-in-from-top-2 duration-200 shadow-xl">
           <div className="flex flex-col gap-1">
-            <a
-              href="#features"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>Features</span>
-              <Layers className="w-3.5 h-3.5 text-accent" />
-            </a>
-            <a
-              href="#scanner"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>Simulator</span>
-              <Terminal className="w-3.5 h-3.5 text-accent" />
-            </a>
-            <a
-              href="#how-it-works"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>How It Works</span>
-              <Cpu className="w-3.5 h-3.5 text-accent" />
-            </a>
-            <a
-              href="#architecture"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>Architecture</span>
-              <Lock className="w-3.5 h-3.5 text-accent" />
-            </a>
-            <a
-              href="#audit"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>Audit Studio</span>
-              <ShieldCheck className="w-4 h-4 text-accent" />
-            </a>
-            <a
-              href="#reports"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>Reports</span>
-              <FileText className="w-4 h-4 text-accent" />
-            </a>
-            <a
-              href="#faq"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>FAQ</span>
-              <Sparkles className="w-3.5 h-3.5 text-accent" />
-            </a>
-            <div className="my-1 border-t border-slate-200/60 dark:border-slate-800/60" />
-            <Link
-              href="/monitor"
-              onClick={() => setShowMobileMenu(false)}
-              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
-            >
-              <span>Live Storage Rent Monitor</span>
-              <Activity className="w-4 h-4 text-accent" />
-            </Link>
-            {walletKey && (
-              <Link
-                href="/dashboard"
-                onClick={() => setShowMobileMenu(false)}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-accent hover:bg-accent-subtle transition flex items-center justify-between"
-              >
-                <span>Auditor Security Dashboard</span>
-                <LayoutDashboard className="w-4 h-4 text-accent" />
-              </Link>
-            )}
+            {isLandingPage ? (
+              <>
+                {mobilePublicNavItems.map(({ label, href, icon: Icon }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    onClick={() => setShowMobileMenu(false)}
+                    className="px-3 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
+                  >
+                    <span>{label}</span>
+                    <Icon className="w-4 h-4 text-accent" />
+                  </a>
+                ))}
+                <div className="my-1 border-t border-slate-200/60 dark:border-slate-800/60" />
+                <Link
+                  href="/monitor"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-between"
+                >
+                  <span>Live Storage Rent Monitor</span>
+                  <Activity className="w-4 h-4 text-accent" />
+                </Link>
+                {isAuthenticated && (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="px-3 py-2 rounded-xl text-xs font-bold text-accent hover:bg-accent-subtle transition flex items-center justify-between"
+                  >
+                    <span>Auditor Security Dashboard</span>
+                    <LayoutDashboard className="w-4 h-4 text-accent" />
+                  </Link>
+                )}
+              </>
+            ) : isAuthenticated ? (
+              navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setShowMobileMenu(false)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between ${
+                      isActive
+                        ? 'text-accent bg-accent-subtle'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <Icon className="w-4 h-4 text-accent" />
+                  </Link>
+                );
+              })
+            ) : null}
           </div>
         </div>
       )}
