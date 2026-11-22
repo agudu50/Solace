@@ -18,6 +18,13 @@ if (!fs.existsSync(DATA_DIR)) {
 let pool = null;
 let usePostgres = false;
 
+// Errors raised while *acquiring* a connection: the SQL was never sent, so the
+// query is safe to retry. Neon computes scale to zero when idle and can take a
+// few seconds to wake. Errors after a query was sent are never retried, so a
+// write (e.g. a credit deduction) can't be applied twice.
+const CONNECT_ERROR = /connection terminated due to connection timeout|timeout exceeded when trying to connect|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/i;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 /**
  * Initialize PostgreSQL connection if DATABASE_URL is configured
  */
@@ -33,11 +40,30 @@ export async function initDb() {
         },
         max: 10,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
+        // Neon cold starts can exceed 5s; give the compute time to wake.
+        connectionTimeoutMillis: 15000,
+        keepAlive: true,
       });
 
-      // Test connection
-      const client = await pool.connect();
+      // Neon drops idle connections when the compute suspends. pg reports that
+      // as an 'error' event on the pool; with no listener Node crashes the whole
+      // server. The pool discards the dead client and reconnects on next use.
+      pool.on('error', (err) => {
+        console.warn(' [DB] Idle Postgres client error (will reconnect on next query):', err.message);
+      });
+
+      // Test connection, retrying while a suspended compute wakes up
+      let client;
+      for (let attempt = 1; ; attempt++) {
+        try {
+          client = await pool.connect();
+          break;
+        } catch (err) {
+          if (attempt >= 3 || !CONNECT_ERROR.test(err.message)) throw err;
+          console.warn(` [DB] Neon connection attempt ${attempt} failed (${err.message}); retrying…`);
+          await sleep(1000 * attempt);
+        }
+      }
       console.log(' [DB] Connected successfully to Neon PostgreSQL database.');
       client.release();
 
@@ -385,7 +411,15 @@ function writeTable(table, data) {
  */
 export async function query(sql, params = []) {
   if (usePostgres && pool) {
-    return await pool.query(sql, params);
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await pool.query(sql, params);
+      } catch (err) {
+        if (attempt >= 3 || !CONNECT_ERROR.test(err.message)) throw err;
+        console.warn(` [DB] Query could not connect (${err.message}); retry ${attempt}/2…`);
+        await sleep(500 * attempt);
+      }
+    }
   }
 
   // Otherwise, use structured file storage methods

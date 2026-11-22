@@ -12,8 +12,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize Database (Neon PostgreSQL with resilient fallback)
-initDb().catch((err) => console.error('[!] Database initialization error:', err));
+// Initialize Database (Neon PostgreSQL with resilient fallback).
+// Awaited on purpose: if requests were accepted while Postgres is still
+// connecting, they'd be written to the local file store and later reads would
+// go to Postgres (e.g. "Authentication challenge not found or expired").
+await initDb().catch((err) => console.error('[!] Database initialization error:', err));
 
 // Middleware
 app.use(

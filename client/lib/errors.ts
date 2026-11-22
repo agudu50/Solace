@@ -29,6 +29,12 @@ const RULES: { test: RegExp; title: string; message: string; kind?: 'error' | 'i
     kind: 'info',
   },
   {
+    // Challenge took longer than its 5-minute lifetime to sign, or was already used.
+    test: /challenge (not found|has expired|.*expired|has already been used)/i,
+    title: 'Sign-in request expired',
+    message: 'The wallet sign-in request timed out. Click Connect wallet to start a fresh one.',
+  },
+  {
     test: /FREIGHTER_NOT_INSTALLED|freighter.*not (installed|found|detected)/i,
     title: 'Freighter not found',
     message: 'Install the Freighter browser extension to sign in with a Stellar wallet.',

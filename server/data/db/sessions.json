@@ -358,5 +358,17 @@
     "ip_address": null,
     "user_agent": null,
     "created_at": "2026-11-17T00:51:47.154Z"
+  },
+  {
+    "id": "ses_0410685291df889559f82d957788f576",
+    "user_id": "usr_4fcb17536e4c0e12593a991e6f6863ef",
+    "wallet_address": "GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI",
+    "role": "super_admin",
+    "token_hash": "d6cfa3cd4456620e90afd6041f1dc3b2b9da8233f3b63dcb51776ce22426e99b",
+    "expires_at": "2026-11-23T19:40:34.498Z",
+    "revoked": false,
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/8.11.0",
+    "created_at": "2026-11-22T19:40:34.498Z"
   }
 ]
