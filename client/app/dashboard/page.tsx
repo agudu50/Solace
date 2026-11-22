@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, ArrowUpRight, Check, Coins, Copy, FileCode, Link2, Lock, Plus, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Check, Coins, Copy, FileCode, Link2, Plus, ShieldCheck } from 'lucide-react';
 import { fetchUserCreditBalance, fetchUserCreditHistory } from '../../utils/solaceService';
 import { useWallet } from '../../context/WalletContext';
 import { useToast } from '../../context/ToastContext';
@@ -640,38 +640,16 @@ export default function DashboardPage() {
   /* Auth gates                                                        */
   /* ---------------------------------------------------------------- */
 
-  if (sessionLoading) {
+  if (sessionLoading || !isAuth) {
     return (
       <div className="w-full min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e]">
-        <div className="text-center">
+        <div className="text-center" role="status" aria-live="polite">
           <Orb active>
             <ShieldCheck className="w-5 h-5 text-accent" />
           </Orb>
-          <p className="mt-6 font-mono text-xs text-slate-500 tracking-wider">Verifying auditor credentials…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuth) {
-    return (
-      <div className="w-full min-h-[calc(100vh-65px)] grid place-items-center p-6 bg-[#f7f7f6] dark:bg-[#0e0e0e] text-center">
-        <div className="w-full max-w-md rounded-[18px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141414] p-8">
-          <span className="mx-auto grid place-items-center w-11 h-11 rounded-xl bg-accent-subtle text-accent">
-            <Lock className="w-5 h-5" />
-          </span>
-          <h2 className="mt-5 text-xl font-medium tracking-tight text-slate-900 dark:text-white">Auditor access restricted</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Please log in or connect your Stellar auditor wallet to access the security dashboard.
+          <p className="mt-6 font-mono text-xs text-slate-500 tracking-wider">
+            {sessionLoading ? 'Verifying auditor credentials…' : 'Returning to sign in…'}
           </p>
-          <div className="mt-6 flex flex-col gap-2">
-            <Link href="/login?redirect=/dashboard" className={btn.primary}>
-              Sign in / connect wallet
-            </Link>
-            <Link href="/" className={btn.secondary}>
-              Return to homepage
-            </Link>
-          </div>
         </div>
       </div>
     );
