@@ -447,7 +447,7 @@ export default function DashboardPage() {
       detail: hit(/admin|init|overwrite|governance/) ? 'Unprotected initialization or privilege escalation' : 'Admin roles and constructor initialization guarded',
       score: !isScanningActive ? 0 : hit(/admin|init|overwrite|governance/) ? 60 : 100,
       status: !isScanningActive ? 'Standby' : hit(/admin|init|overwrite|governance/) ? 'Escalation' : 'Enforced',
-      color: hit(/admin|init|overwrite|governance/) ? '#ef4444' : '#fdda24',
+      color: hit(/admin|init|overwrite|governance/) ? '#ef4444' : '#f59e0b',
       whatChecks: 'Guards administrative governance, role updates, and constructor initialization.',
       whyText: hit(/admin|init|overwrite|governance/)
         ? 'Score: 60% (40% penalty) — Unprotected initialization or missing role checks allow privilege escalation.'
@@ -810,7 +810,7 @@ export default function DashboardPage() {
                       </span>
                     )}
                     {activeAudit?.contractHash && (
-                      <span className="font-mono text-[11px] text-accent font-semibold" title={activeAudit.contractHash}>
+                      <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-accent/20 border border-accent/40 text-amber-950 dark:text-amber-300 font-bold" title={activeAudit.contractHash}>
                         #{activeAudit.contractHash.slice(0, 8)}
                       </span>
                     )}
@@ -821,7 +821,7 @@ export default function DashboardPage() {
                     </span>
                     <span>•</span>
                     <span>
-                      Security Status: <strong className={activeAudit?.isSecure ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-accent font-medium'}>{activeAudit?.isSecure ? 'Verified Secure' : 'Action Required'}</strong>
+                      Security Status: <strong className={activeAudit?.isSecure ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'}>{activeAudit?.isSecure ? 'Verified Secure' : 'Action Required'}</strong>
                     </span>
                     {activeAudit?.linesCount ? (
                       <>
@@ -1041,7 +1041,7 @@ function Pill({ tone, children }: { tone: 'neutral' | 'ok' | 'warn' | 'bad'; chi
     neutral: 'bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300',
     ok: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
     warn: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    bad: 'bg-accent/10 text-accent',
+    bad: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 font-semibold',
   }[tone];
   return <span className={`shrink-0 inline-flex items-center h-5 px-2 rounded-md text-[10px] font-medium whitespace-nowrap ${cls}`}>{children}</span>;
 }

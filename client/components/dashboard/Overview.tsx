@@ -130,6 +130,8 @@ export function ScoreStrip({ items }: { items: { id: string; score: number; labe
   return (
     <div>
       <div className={`relative h-14 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/[0.07] ${hatch}`}>
+        {/* Track line */}
+        <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-slate-200 dark:bg-white/10" />
         {/* Bands: risk zones */}
         <div aria-hidden className="absolute inset-y-0 left-[70%] right-0 rounded-r-xl bg-accent/[0.06]" />
         {avg !== null && (
@@ -151,7 +153,7 @@ export function ScoreStrip({ items }: { items: { id: string; score: number; labe
             initial={{ left: reduce ? `${it.score}%` : '0%', opacity: 0 }}
             animate={{ left: `${it.score}%`, opacity: 1 }}
             transition={{ duration: 0.9, delay: 0.3 + i * 0.05, ease: EASE_OUT }}
-            className={`absolute top-1/2 w-2.5 h-2.5 -ml-[5px] rounded-full ring-2 ring-white dark:ring-[#1a1a1a] ${it.secure ? 'bg-emerald-500' : 'bg-accent'}`}
+            className={`absolute top-1/2 w-3.5 h-3.5 -ml-[7px] -mt-[7px] rounded-full ring-2 ring-white dark:ring-[#141414] shadow-sm ${it.secure ? 'bg-emerald-500' : 'bg-rose-500'}`}
             style={{ marginTop: (i % 3) * 8 - 13 }}
           />
         ))}
@@ -255,7 +257,7 @@ export function SurfaceGauge({
                   className="w-3 h-3 rounded-[3px] shrink-0"
                   style={{ background: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.1})` }}
                 />
-                <span className="text-slate-800 dark:text-slate-200 font-medium flex-1 text-xs sm:text-sm group-hover/item:text-accent transition-colors">
+                <span className="text-slate-800 dark:text-slate-200 font-medium flex-1 text-xs sm:text-sm group-hover/item:text-amber-600 dark:group-hover/item:text-accent transition-colors">
                   {s.label}
                 </span>
                 <span className="tabular-nums font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">{s.value}</span>
@@ -311,7 +313,7 @@ export function FeedList({ items, empty }: { items: FeedItem[]; empty: string })
         const bodyContent = (
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className={`text-sm ${it.resolved ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'} truncate group-hover:text-accent transition-colors`}>
+              <p className={`text-sm ${it.resolved ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'} truncate group-hover:text-amber-600 dark:group-hover:text-accent transition-colors`}>
                 {it.title}
               </p>
               {it.resolved && (

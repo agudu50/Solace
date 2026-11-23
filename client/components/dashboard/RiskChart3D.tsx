@@ -9,6 +9,7 @@ import {
   useTransform,
   type MotionValue,
 } from 'framer-motion';
+import { HelpCircle } from 'lucide-react';
 import { EASE_OUT, usePointerDepth } from '../landing/motion';
 
 export interface RiskBar {
@@ -24,9 +25,9 @@ export interface RiskBar {
   penalty?: number;
 }
 
-const BAR = 30; // footprint (px)
-const GAP = 22;
-const MAX_H = 230;
+const BAR = 38; // footprint (px) - thicker and more visible
+const GAP = 18;
+const MAX_H = 220;
 
 /**
  * Isometric 3D bar chart: CSS prisms standing on a tilted grid floor.
@@ -45,7 +46,7 @@ export default function RiskChart3D({
   const stageRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { x, y } = usePointerDepth(stageRef);
-  const rotateX = useTransform(y, [-0.5, 0.5], [78, 70]);
+  const rotateX = useTransform(y, [-0.5, 0.5], [68, 60]);
   const rotateZ = useTransform(x, [-0.5, 0.5], [10, -10]);
   const [hover, setHover] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState<boolean>(false);
@@ -79,9 +80,10 @@ export default function RiskChart3D({
         <button
           type="button"
           onClick={() => setShowGuide(!showGuide)}
-          className="text-xs text-accent hover:underline cursor-pointer font-medium flex items-center gap-1"
+          className="text-xs text-amber-900 dark:text-amber-300 font-semibold hover:underline cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/20 hover:bg-accent/30 dark:bg-accent/20 dark:hover:bg-accent/30 border border-accent/40 transition-colors"
         >
-          {showGuide ? 'Hide explanation' : 'Why these percentages?'}
+          <HelpCircle className="w-3.5 h-3.5 text-amber-800 dark:text-amber-400" />
+          <span>{showGuide ? 'Hide explanation' : 'Why these percentages?'}</span>
         </button>
       </div>
 
@@ -105,7 +107,7 @@ export default function RiskChart3D({
           <p>
             • <strong>Scores below 75% are bad/breached</strong>: Any dimension scoring under 75% represents a critical security invariant failure that can lead to contract drain, state erasure, or runtime host aborts.
           </p>
-          <p className="pt-1 text-[11px] text-accent font-medium">
+          <p className="pt-1 text-[11px] text-amber-900 dark:text-amber-300 font-semibold">
             💡 Click any bar or legend item to open the full explanation modal with Soroban Rust fix patterns.
           </p>
         </motion.div>
@@ -124,7 +126,7 @@ export default function RiskChart3D({
       >
         <motion.div
           style={{
-            rotateX: reduce ? 74 : rotateX,
+            rotateX: reduce ? 64 : rotateX,
             rotateZ: reduce ? 0 : rotateZ,
             width: floorW,
             height: floorD,
@@ -294,8 +296,8 @@ function Prism({
       <Face h={h} color={color} shade={0.82} side="left" />
       {/* Top cap */}
       <motion.div
-        className="absolute inset-0 border border-white/30"
-        style={{ transform: topT, background: color, boxShadow: active ? `0 0 24px ${color}` : 'none' }}
+        className="absolute inset-0 border border-black/20 dark:border-white/40 shadow-sm"
+        style={{ transform: topT, background: color, boxShadow: active ? `0 0 24px ${color}88` : 'none' }}
       />
     </div>
   );
@@ -336,5 +338,5 @@ function Face({
       transform: 'rotateY(-90deg)',
     });
   }
-  return <motion.div aria-hidden className="absolute" style={style as any} />;
+  return <motion.div aria-hidden className="absolute border border-black/15 dark:border-white/25 shadow-xs" style={style as any} />;
 }
