@@ -180,7 +180,7 @@ export function SurfaceGauge({
   centerLabel,
   onSelectSegment,
 }: {
-  segments: { label: string; value: number; description?: string }[];
+  segments: { label: string; value: number; description?: string; color?: string; severity?: string }[];
   centerLabel: string;
   onSelectSegment?: (segment: { label: string; value: number }) => void;
 }) {
@@ -210,13 +210,14 @@ export function SurfaceGauge({
               const offset = -start;
               start += len;
               if (s.value === 0) return null;
+              const segmentStroke = s.color || `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.1})`;
               return (
                 <motion.path
                   key={s.label}
                   d="M 20 100 A 80 80 0 0 1 180 100"
                   fill="none"
                   strokeWidth="26"
-                  style={{ stroke: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.1})` }}
+                  style={{ stroke: segmentStroke }}
                   strokeDashoffset={offset}
                   initial={{ strokeDasharray: reduce ? `${seg} ${C * 2}` : `0 ${C * 2}` }}
                   animate={{ strokeDasharray: `${seg} ${C * 2}` }}
@@ -243,32 +244,49 @@ export function SurfaceGauge({
       </div>
 
       <ul className="mt-5 space-y-1">
-        {segments.map((s, i) => (
-          <li key={s.label}>
-            <button
-              type="button"
-              onClick={() => onSelectSegment?.(s)}
-              className="group/item w-full flex flex-col gap-0.5 text-left p-2 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.04] active:bg-slate-100 dark:active:bg-white/[0.08] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              title={`Click to inspect ${s.label} rules & remediation code`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="w-3 h-3 rounded-[3px] shrink-0"
-                  style={{ background: `rgb(var(--e-global-color-accent-rgb) / ${TINTS[i] ?? 0.1})` }}
-                />
-                <span className="text-slate-800 dark:text-slate-200 font-medium flex-1 text-xs sm:text-sm group-hover/item:text-amber-600 dark:group-hover/item:text-accent transition-colors">
-                  {s.label}
-                </span>
-                <span className="tabular-nums font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">{s.value}</span>
-              </div>
-              {s.description && (
-                <p className="pl-5 text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
-                  {s.description}
-                </p>
-              )}
-            </button>
-          </li>
-        ))}
+        {segments.map((s, i) => {
+          const swatchBg = s.value > 0 ? (s.color || '#ef4444') : (s.color ? `${s.color}35` : '#94a3b8');
+          return (
+            <li key={s.label}>
+              <button
+                type="button"
+                onClick={() => onSelectSegment?.(s)}
+                className="group/item w-full flex flex-col gap-0.5 text-left p-2 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.04] active:bg-slate-100 dark:active:bg-white/[0.08] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                title={`Click to inspect ${s.label} rules & remediation code`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="w-3 h-3 rounded-[3px] shrink-0 shadow-xs"
+                    style={{ background: swatchBg }}
+                  />
+                  <span className="text-slate-800 dark:text-slate-200 font-medium flex-1 text-xs sm:text-sm group-hover/item:text-amber-600 dark:group-hover/item:text-accent transition-colors">
+                    {s.label}
+                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {s.value > 0 && s.severity === 'critical' && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                        Critical
+                      </span>
+                    )}
+                    {s.value > 0 && s.severity === 'high' && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25">
+                        High
+                      </span>
+                    )}
+                    <span className="tabular-nums font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">
+                      {s.value}
+                    </span>
+                  </div>
+                </div>
+                {s.description && (
+                  <p className="pl-5 text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                    {s.description}
+                  </p>
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

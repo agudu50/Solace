@@ -349,40 +349,67 @@ export default function DashboardPage() {
   const scopedSecure = scoped.filter((a) => a.isSecure).length;
 
   // Issue surface: Common known vulnerabilities in Soroban smart contracts
-  const CATEGORIES: { label: string; test: RegExp; description: string }[] = [
+  const CATEGORIES: { label: string; test: RegExp; description: string; severity: 'critical' | 'high' | 'medium'; color: string }[] = [
     {
       label: 'Authorization',
       test: /auth|signature|caller|privilege|permission|unauthorized/i,
       description: 'require_auth() signature enforcement on caller entrypoints',
+      severity: 'critical',
+      color: '#ef4444', // Red for Critical authorization invariant breaches
     },
     {
       label: 'State & initialization',
       test: /init|re-init|overwrite|constructor|uninitialized|upgrade/i,
       description: 'Guards against malicious re-initialization and storage key overwrites',
+      severity: 'critical',
+      color: '#f43f5e', // Rose/Pink for Critical state takeover hazards
     },
     {
       label: 'Storage rent (TTL)',
       test: /storage|rent|ttl|evict|ledger entry|instance|persistent/i,
       description: 'extend_ttl() prevention against ledger entry eviction under Protocol 22',
+      severity: 'critical',
+      color: '#fb7185', // Coral/Pink-red for Critical state eviction hazards
     },
     {
       label: 'Host panics',
       test: /panic|unwrap|crash|trap|abort|unhandled/i,
       description: 'Safe error handling avoiding unhandled .unwrap() host traps',
+      severity: 'high',
+      color: '#f59e0b', // Amber for High host panic risks
     },
     {
       label: 'Arithmetic',
       test: /overflow|underflow|arithmetic|checked|precision|rounding|divide/i,
       description: 'Checked math guarding against integer overflow and underflow wrapping',
+      severity: 'high',
+      color: '#eab308', // Gold for High math risks
     },
     {
       label: 'Gas & bytecode',
       test: /gas|bytecode|limit|loop|budget|footprint/i,
       description: 'CPU instruction budget limits and bounded loop iteration',
+      severity: 'medium',
+      color: '#6366f1', // Indigo for bytecode limits
     },
   ];
 
-  const surface = [...CATEGORIES.map((c) => ({ label: c.label, description: c.description, value: 0 })), { label: 'Other', description: 'Miscellaneous contract design findings', value: 0 }];
+  const surface = [
+    ...CATEGORIES.map((c) => ({
+      label: c.label,
+      description: c.description,
+      severity: c.severity,
+      color: c.color,
+      value: 0,
+    })),
+    {
+      label: 'Other',
+      description: 'Miscellaneous contract design findings',
+      severity: 'medium' as const,
+      color: '#8b5cf6',
+      value: 0,
+    },
+  ];
   auditHistory.forEach((a) =>
     vulnsOf(a).forEach((v) => {
       const text = `${v.title || ''} ${v.description || ''}`.toLowerCase();
