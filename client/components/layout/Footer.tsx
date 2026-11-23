@@ -1,9 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { openReportIssue } from './ReportIssueDialog';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   ExternalLink,
@@ -19,9 +19,42 @@ import { useWallet } from '../../context/WalletContext';
 
 export default function Footer() {
   const pathname = usePathname();
+  const router = useRouter();
   const { network, walletKey } = useWallet();
   const [copied, setCopied] = useState<boolean>(false);
   const contractId = 'CAC2TVMF5TZ3CH3FSORD267USQJTRKX6HFE3YBWSLMYHIDNMDV6PNPN2';
+  const logoClicksRef = useRef<number[]>([]);
+  const logoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) {
+      return;
+    }
+    e.preventDefault();
+    const now = Date.now();
+    const recent = logoClicksRef.current.filter((t) => now - t < 1200);
+    recent.push(now);
+    logoClicksRef.current = recent;
+
+    if (logoTimerRef.current) {
+      clearTimeout(logoTimerRef.current);
+    }
+
+    if (recent.length >= 3) {
+      logoClicksRef.current = [];
+      router.push('/admin/login');
+      return;
+    }
+
+    logoTimerRef.current = setTimeout(() => {
+      if (logoClicksRef.current.length < 3) {
+        logoClicksRef.current = [];
+        if (pathname !== '/') {
+          router.push('/');
+        }
+      }
+    }, 280);
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(contractId);
@@ -36,7 +69,7 @@ export default function Footer() {
         <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left: Branding & Status */}
           <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" onClick={handleLogoClick} className="flex items-center gap-2 group cursor-pointer select-none">
               <div className="w-6 h-6 rounded-lg overflow-hidden bg-accent shadow-xs flex items-center justify-center shrink-0">
                 <Image
                   src="/solace-logo.jpg"
@@ -117,7 +150,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 mb-12">
           {/* Brand Info (Cols 1-4) */}
           <div className="lg:col-span-4 flex flex-col items-start">
-            <Link href="/" className="flex items-center gap-2.5 mb-4 group">
+            <Link href="/" onClick={handleLogoClick} className="flex items-center gap-2.5 mb-4 group cursor-pointer select-none">
               <div className="w-9 h-9 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] shrink-0">
                 <div className="w-full h-full overflow-hidden flex items-center justify-center">
                   <Image

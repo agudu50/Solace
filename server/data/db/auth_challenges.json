@@ -766,5 +766,41 @@
     "expires_at": "2026-11-22T23:08:37.468Z",
     "used": false,
     "created_at": "2026-11-22T23:08:42.463Z"
+  },
+  {
+    "id": "ch_ca02526a7b6a9acb9b8eb5ca4c05d917",
+    "wallet_address": "GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP",
+    "nonce": "16011f92ebd7c69b26fa69c3d2c05c82d832531aace89b1bea48546e8ae94188",
+    "domain": "localhost:3000",
+    "action": "solace-auth-login",
+    "message": "Solace Security Auditor Authentication\n\nDomain: localhost:3000\nAuditor Wallet: GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP\nAction: solace-auth-login\nNonce: 16011f92ebd7c69b26fa69c3d2c05c82d832531aace89b1bea48546e8ae94188\nIssued At: 2026-11-23T21:41:39.042Z\nExpires At: 2026-11-23T21:46:39.042Z\n\nNotice: Sign this message with your Stellar keypair to securely authenticate your auditor session. This cryptographic signature operates completely off-chain and will never cost any network fees.",
+    "issued_at": "2026-11-23T21:41:39.042Z",
+    "expires_at": "2026-11-23T21:46:39.042Z",
+    "used": true,
+    "created_at": "2026-11-23T21:41:39.042Z"
+  },
+  {
+    "id": "ch_82aa3895468cb7b07f3571eab56373cd",
+    "wallet_address": "GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP",
+    "nonce": "7fb1237f7e0d044a4f442a01ec6b98f96bfdef661f4ccff6a38b9dc2aea4b817",
+    "domain": "localhost:3000",
+    "action": "solace-auth-login",
+    "message": "Solace Security Auditor Authentication\n\nDomain: localhost:3000\nAuditor Wallet: GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP\nAction: solace-auth-login\nNonce: 7fb1237f7e0d044a4f442a01ec6b98f96bfdef661f4ccff6a38b9dc2aea4b817\nIssued At: 2026-11-23T21:41:39.058Z\nExpires At: 2026-11-23T21:46:39.058Z\n\nNotice: Sign this message with your Stellar keypair to securely authenticate your auditor session. This cryptographic signature operates completely off-chain and will never cost any network fees.",
+    "issued_at": "2026-11-23T21:41:39.058Z",
+    "expires_at": "2026-11-23T21:46:39.058Z",
+    "used": false,
+    "created_at": "2026-11-23T21:41:39.058Z"
+  },
+  {
+    "id": "ch_d0d7c180b97682f80fe00be369aa70ff",
+    "wallet_address": "GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP",
+    "nonce": "0d2c297a96de4d28913faa97e17c909d0319cc22705a25934f03ae46e48184b7",
+    "domain": "localhost:3000",
+    "action": "solace-auth-login",
+    "message": "Solace Security Auditor Authentication\n\nDomain: localhost:3000\nAuditor Wallet: GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP\nAction: solace-auth-login\nNonce: 0d2c297a96de4d28913faa97e17c909d0319cc22705a25934f03ae46e48184b7\nIssued At: 2026-11-23T21:41:39.068Z\nExpires At: 2026-11-23T21:46:39.068Z\n\nNotice: Sign this message with your Stellar keypair to securely authenticate your auditor session. This cryptographic signature operates completely off-chain and will never cost any network fees.",
+    "issued_at": "2026-11-23T21:41:39.068Z",
+    "expires_at": "2026-11-23T21:41:34.074Z",
+    "used": false,
+    "created_at": "2026-11-23T21:41:39.068Z"
   }
 ]

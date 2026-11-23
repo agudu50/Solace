@@ -56,6 +56,38 @@ export default function Navbar() {
   const [showAccountMenu, setShowAccountMenu] = useState<boolean>(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const credits = user?.availableCredits ?? 0;
+  const logoClicksRef = useRef<number[]>([]);
+  const logoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) {
+      return;
+    }
+    e.preventDefault();
+    const now = Date.now();
+    const recent = logoClicksRef.current.filter((t) => now - t < 1200);
+    recent.push(now);
+    logoClicksRef.current = recent;
+
+    if (logoTimerRef.current) {
+      clearTimeout(logoTimerRef.current);
+    }
+
+    if (recent.length >= 3) {
+      logoClicksRef.current = [];
+      router.push('/admin/login');
+      return;
+    }
+
+    logoTimerRef.current = setTimeout(() => {
+      if (logoClicksRef.current.length < 3) {
+        logoClicksRef.current = [];
+        if (pathname !== '/') {
+          router.push('/');
+        }
+      }
+    }, 280);
+  };
 
   useEffect(() => {
     setShowMobileMenu(false);
@@ -158,7 +190,11 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#f7f7f6]/85 dark:bg-[#0e0e0e]/85 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-2 sm:py-2.5 px-4 sm:px-6 lg:px-8">
       <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand (Mobile Responsive: hides subtitle on tiny screens) */}
-        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
+        <Link
+          href="/"
+          onClick={handleLogoClick}
+          className="flex items-center gap-2 sm:gap-2.5 shrink-0 group select-none cursor-pointer"
+        >
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-accent via-emerald-400 to-teal-300 p-[1.5px] shadow-sm shadow-accent/20 dark:shadow-accent/30 group-hover:shadow-accent/40 group-hover:scale-105 transition-all duration-300 shrink-0">
             <div className="w-full h-full rounded-[10px] sm:rounded-[14px] overflow-hidden bg-white dark:bg-[#0a0d16] flex items-center justify-center">
               <Image

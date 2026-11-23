@@ -280,16 +280,13 @@ function LoginContent() {
               )}
             </AnimatePresence>
 
-            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 text-xs">
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 flex items-center justify-center text-xs">
               <span className="text-slate-500">
                 New to Solace?{' '}
                 <Link href={signupHref} className="text-slate-900 dark:text-white font-medium hover:text-accent transition-colors">
                   Create an account
                 </Link>
               </span>
-              <Link href="/admin/login" className="font-mono text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
-                Admin console →
-              </Link>
             </div>
           </motion.div>
         </div>

@@ -518,5 +518,32 @@
     "created_at": "2026-11-22T23:08:42.506Z",
     "updated_at": "2026-11-22T23:08:42.513Z",
     "last_login_at": "2026-11-22T23:08:42.506Z"
+  },
+  {
+    "id": "usr_d52041bd8406db7bee5b7508cf831017",
+    "wallet_address": "GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP",
+    "role": "user",
+    "status": "active",
+    "created_at": "2026-11-23T21:41:39.079Z",
+    "updated_at": "2026-11-23T21:41:39.116Z",
+    "last_login_at": "2026-11-23T21:41:39.079Z"
+  },
+  {
+    "id": "usr_c5541e7385194ed1211705304c5014e1",
+    "wallet_address": "GCS6JRSPTAX33IAATSDOAZ6ZZJUYXCCMQ7R32CFLYMVZP7ATGZ5VOKSR",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2026-11-23T21:41:39.086Z",
+    "updated_at": "2026-11-23T21:41:39.086Z",
+    "last_login_at": "2026-11-23T21:41:39.086Z"
+  },
+  {
+    "id": "usr_1b7cb1d2d3840fd8cd64af39dc8d1139",
+    "wallet_address": "GBLXI46NK3JFMNWMWVQ6KQE64IKB7URGZ35THHKJY6LXJAJZ4QW5A35N",
+    "role": "user",
+    "status": "suspended",
+    "created_at": "2026-11-23T21:41:39.119Z",
+    "updated_at": "2026-11-23T21:41:39.127Z",
+    "last_login_at": "2026-11-23T21:41:39.119Z"
   }
 ]

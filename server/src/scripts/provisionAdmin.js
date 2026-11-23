@@ -87,8 +87,9 @@ async function main() {
     if (user.role === targetRole) {
       console.log(`[✓] Wallet is ALREADY provisioned as "${targetRole}". No change required.`);
     } else {
+      const previousRole = user.role;
       user = await updateUserRole(normalized, targetRole);
-      console.log(`[✓] Successfully updated user role from to "${targetRole}".`);
+      console.log(`[✓] Successfully updated user role from "${previousRole}" to "${targetRole}".`);
     }
   }
 
