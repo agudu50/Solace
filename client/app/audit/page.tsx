@@ -1687,18 +1687,7 @@ impl SolaceContract {
                   eyebrow="Findings"
                   title="Audit report and ledger receipt"
                   action={
-                    report && !anchorResult ? (
-                      <button
-                        type="button"
-                        onClick={handleAnchorOnChain}
-                        disabled={anchoring}
-                        className={`${btn.primary} h-8 px-3 text-xs flex items-center gap-1.5`}
-                        title="Anchor this audit verdict to the Stellar Soroban ledger for permanent cryptographic proof"
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        {anchoring ? 'Anchoring…' : 'Anchor to Ledger'}
-                      </button>
-                    ) : anchorResult ? (
+                    anchorResult ? (
                       <Chip tone="ok">Anchored on-chain</Chip>
                     ) : undefined
                   }

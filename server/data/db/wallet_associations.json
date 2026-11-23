@@ -38,5 +38,29 @@
     "network": "testnet",
     "is_primary": true,
     "verified_at": "2026-11-23T22:16:57.507Z"
+  },
+  {
+    "id": "wa_e2eeeb830f9a8e32a041eecf",
+    "user_id": "usr_c5c477fcda3e44c7cc23ce0861e04d9c",
+    "wallet_address": "GAXUSLP2HAHMJTVAHF2YQNAJOAGUDTQH2WJQXVHMKTYRGXCXSF2VCJCW",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-23T22:30:25.263Z"
+  },
+  {
+    "id": "wa_dfe8f1780223a3dcbeb994e6",
+    "user_id": "usr_a535a4a5d5c5292e4ba14c1f0d7f55c9",
+    "wallet_address": "GA4MMYTQQIDOTCKZU73SIBUKXK2OYZP575ZCS5ESA6PDK2N3D34VGKMQ",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-23T22:30:25.268Z"
+  },
+  {
+    "id": "wa_cd88df815f97bf4740a69208",
+    "user_id": "usr_0e123fbe30e6816362b4f5b6c65fddd3",
+    "wallet_address": "GB5GJCCYLDG63T26DUZRYBUACINXSLGJLNCDVCARGLH2VIZMF7VIJQXN",
+    "network": "testnet",
+    "is_primary": true,
+    "verified_at": "2026-11-23T22:30:25.286Z"
   }
 ]

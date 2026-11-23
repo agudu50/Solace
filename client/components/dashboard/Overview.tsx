@@ -131,7 +131,7 @@ export function ScoreStrip({ items }: { items: { id: string; score: number; labe
     <div>
       <div className={`relative h-14 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/[0.07] ${hatch}`}>
         {/* Track line */}
-        <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-slate-200 dark:bg-white/10" />
+        <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-slate-200/80 dark:bg-white/10" />
         {/* Bands: risk zones */}
         <div aria-hidden className="absolute inset-y-0 left-[70%] right-0 rounded-r-xl bg-accent/[0.06]" />
         {avg !== null && (
@@ -141,7 +141,7 @@ export function ScoreStrip({ items }: { items: { id: string; score: number; labe
             transition={{ duration: 1, delay: 0.4, ease: EASE_OUT }}
             className="absolute -top-3 -translate-x-1/2 z-10"
           >
-            <span className="inline-block px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-medium whitespace-nowrap shadow-sm">
+            <span className="inline-block px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold whitespace-nowrap shadow-sm">
               Avg {avg}
             </span>
           </motion.div>
@@ -153,8 +153,7 @@ export function ScoreStrip({ items }: { items: { id: string; score: number; labe
             initial={{ left: reduce ? `${it.score}%` : '0%', opacity: 0 }}
             animate={{ left: `${it.score}%`, opacity: 1 }}
             transition={{ duration: 0.9, delay: 0.3 + i * 0.05, ease: EASE_OUT }}
-            className={`absolute top-1/2 w-3.5 h-3.5 -ml-[7px] -mt-[7px] rounded-full ring-2 ring-white dark:ring-[#141414] shadow-sm ${it.secure ? 'bg-emerald-500' : 'bg-rose-500'}`}
-            style={{ marginTop: (i % 3) * 8 - 13 }}
+            className={`absolute top-1/2 w-3.5 h-3.5 -ml-[7px] -translate-y-1/2 rounded-full ring-2 ring-white dark:ring-[#141414] shadow-sm ${it.secure ? 'bg-emerald-500' : 'bg-rose-500'}`}
           />
         ))}
         {items.length === 0 && (

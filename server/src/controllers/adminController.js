@@ -161,8 +161,16 @@ export async function updateUserRoleHandler(req, res) {
     const { address } = req.params;
     const { role, reason } = req.body;
 
-    if (!['user', 'admin', 'super_admin'].includes(role)) {
-      return res.status(400).json({ success: false, error: 'Invalid role. Must be user, admin, or super_admin.' });
+    // Strict Authorization: ONLY a super admin can assign or modify administrator roles
+    if (req.user?.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden: Only a super admin can assign or modify administrator roles.',
+      });
+    }
+
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ success: false, error: 'Invalid role. Must be user or admin.' });
     }
 
     const updated = await updateUserRole(address, role);
