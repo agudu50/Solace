@@ -43,7 +43,7 @@ const AGENTS: Agent[] = [
     icon: ShieldCheck,
     summary: 'Walks every entrypoint for require_auth() coverage, caller spoofing and privilege escalation paths.',
     log: ['scan   14 entrypoints', 'miss   transfer() L3', 'flag   CRITICAL'],
-    tone: 'text-[#ff5c93]',
+    tone: 'text-[#fdda24]',
   },
   {
     name: 'Panic Hunter',

@@ -284,7 +284,7 @@ export function CreditPackages({ onBuy }: { onBuy: (pkgId: number) => void }) {
               }`}
             >
               {p.featured && (
-                <span className="absolute -top-2.5 right-4 px-2 h-5 inline-flex items-center rounded-md bg-accent text-white font-mono text-[10px] uppercase tracking-wider">
+                <span className="absolute -top-2.5 right-4 px-2 h-5 inline-flex items-center rounded-md bg-accent text-slate-950 font-mono text-[10px] uppercase tracking-wider">
                   Best value
                 </span>
               )}

@@ -312,7 +312,7 @@ export default function ReportsSection() {
               onClick={() => setFilterMode('ALL')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
                 filterMode === 'ALL'
-                  ? 'bg-accent text-white shadow-xs'
+                  ? 'bg-accent text-slate-950 shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -323,7 +323,7 @@ export default function ReportsSection() {
               onClick={() => setFilterMode('SECURE')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
                 filterMode === 'SECURE'
-                  ? 'bg-accent text-white shadow-xs'
+                  ? 'bg-accent text-slate-950 shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -335,7 +335,7 @@ export default function ReportsSection() {
                 onClick={() => setFilterMode('LOCAL')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
                   filterMode === 'LOCAL'
-                    ? 'bg-accent text-white shadow-xs'
+                    ? 'bg-accent text-slate-950 shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >

@@ -119,7 +119,7 @@ export function WalletCard3D({
   return (
     <TiltCard max={14} className="w-full">
       {/* No overflow-hidden here: it would flatten the 3D context and kill the depth layers. */}
-      <div className="relative aspect-[1.7/1] rounded-xl bg-accent text-white shadow-[0_30px_60px_-25px_rgb(var(--e-global-color-accent-rgb)/0.7)] [transform-style:preserve-3d]">
+      <div className="relative aspect-[1.7/1] rounded-xl bg-accent text-slate-950 shadow-[0_30px_60px_-25px_rgb(var(--e-global-color-accent-rgb)/0.7)] [transform-style:preserve-3d]">
         {/* Surface texture, clipped on its own layer */}
         <div aria-hidden className="absolute inset-0 rounded-xl overflow-hidden">
           <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_top_right,#000,transparent_70%)]" />

@@ -101,7 +101,7 @@ export default function AuditReportView({
               type="button"
               onClick={() => setSelectedModelTab('CONSENSUS')}
               className={`px-3 py-1 rounded transition shrink-0 ${
-                selectedModelTab === 'CONSENSUS' ? 'bg-accent text-white font-bold' : 'text-slate-400 hover:text-white'
+                selectedModelTab === 'CONSENSUS' ? 'bg-accent text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
               Consensus (All 3)

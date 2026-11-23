@@ -47,7 +47,7 @@ export default function HeroSection() {
             onClick={() => setShowPricing(true)}
             className="group inline-flex items-center gap-3 mb-8 pl-1 pr-3 py-1 rounded-full border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.03] backdrop-blur text-xs text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20 transition-colors cursor-pointer"
           >
-            <span className="px-2 py-0.5 rounded-full bg-accent text-white font-mono text-[10px] uppercase tracking-wider">
+            <span className="px-2 py-0.5 rounded-full bg-accent text-slate-950 font-mono text-[10px] uppercase tracking-wider">
               New
             </span>
             <span>Multi-model analysis now cross-checks every finding</span>
@@ -237,7 +237,7 @@ function AgentCard() {
   return (
     <>
       <div className="flex items-center gap-2.5">
-        <span className="grid place-items-center w-7 h-7 rounded-md bg-accent text-white">
+        <span className="grid place-items-center w-7 h-7 rounded-md bg-accent text-slate-950">
           <ShieldCheck className="w-4 h-4" />
         </span>
         <div className="min-w-0">
@@ -271,7 +271,7 @@ function PatchCard() {
       <div className="mt-3 rounded-md bg-[#121212] border border-white/10 font-mono text-[11px] leading-5 overflow-hidden">
         <div className="px-2.5 text-slate-500">  pub fn transfer(…) {'{'}</div>
         <div className="px-2.5 bg-emerald-500/10 text-emerald-300">+   from.require_auth();</div>
-        <div className="px-2.5 bg-accent/15 text-[#ff8fb8]">-   let bal = read(…).unwrap();</div>
+        <div className="px-2.5 bg-accent/15 text-[#fdda24]">-   let bal = read(…).unwrap();</div>
         <div className="px-2.5 bg-emerald-500/10 text-emerald-300">+   let bal = read(…)?;</div>
       </div>
     </>

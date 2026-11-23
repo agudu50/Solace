@@ -571,9 +571,9 @@ export default function AuditStudioPage() {
       gradientStyle: !report
         ? '#64748b'
         : hasAdminVuln
-        ? '#f43f5e'
-        : '#C80552',
-      glowColor: !report ? '#94a3b8' : hasAdminVuln ? '#f43f5e' : '#C80552',
+        ? '#ef4444'
+        : '#fdda24',
+      glowColor: !report ? '#94a3b8' : hasAdminVuln ? '#ef4444' : '#fdda24',
       scoreColor: !report ? 'text-slate-400 dark:text-slate-500' : hasAdminVuln ? 'text-rose-500' : 'text-accent',
       statusColor: !report
         ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'

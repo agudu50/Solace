@@ -188,7 +188,7 @@ export default function RiskChart3D({
           <button
             type="button"
             onClick={() => onSelectBar?.(selectedBar)}
-            className="shrink-0 px-3 py-1.5 rounded-lg bg-accent text-white font-medium text-xs hover:bg-accent-hover transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+            className="shrink-0 px-3 py-1.5 rounded-lg bg-accent text-slate-950 font-medium text-xs hover:bg-accent-hover transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
           >
             <span>Learn what this means</span>
             <span aria-hidden>&rarr;</span>

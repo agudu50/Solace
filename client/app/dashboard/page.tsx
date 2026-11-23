@@ -447,7 +447,7 @@ export default function DashboardPage() {
       detail: hit(/admin|init|overwrite|governance/) ? 'Unprotected initialization or privilege escalation' : 'Admin roles and constructor initialization guarded',
       score: !isScanningActive ? 0 : hit(/admin|init|overwrite|governance/) ? 60 : 100,
       status: !isScanningActive ? 'Standby' : hit(/admin|init|overwrite|governance/) ? 'Escalation' : 'Enforced',
-      color: hit(/admin|init|overwrite|governance/) ? '#ef4444' : '#C80552',
+      color: hit(/admin|init|overwrite|governance/) ? '#ef4444' : '#fdda24',
       whatChecks: 'Guards administrative governance, role updates, and constructor initialization.',
       whyText: hit(/admin|init|overwrite|governance/)
         ? 'Score: 60% (40% penalty) — Unprotected initialization or missing role checks allow privilege escalation.'

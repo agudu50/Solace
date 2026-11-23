@@ -246,7 +246,7 @@ export default function AuditStudioSection() {
               onClick={() => setAuditMode('PRE')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 auditMode === 'PRE'
-                  ? 'bg-accent text-white shadow-xs'
+                  ? 'bg-accent text-slate-950 shadow-xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
               }`}
             >
@@ -257,7 +257,7 @@ export default function AuditStudioSection() {
               onClick={() => setAuditMode('POST')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 auditMode === 'POST'
-                  ? 'bg-accent text-white shadow-xs'
+                  ? 'bg-accent text-slate-950 shadow-xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
               }`}
             >

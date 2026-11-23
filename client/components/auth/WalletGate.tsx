@@ -162,7 +162,7 @@ export default function WalletGate({ children, pageTitle, description }: WalletG
             </span>
           </div>
 
-          {/* Primary Action Button (Brand Accent #C80552) */}
+          {/* Primary Action Button (Brand Accent #fdda24) */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
             <button
               type="button"

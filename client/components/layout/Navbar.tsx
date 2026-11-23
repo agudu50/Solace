@@ -945,7 +945,7 @@ export default function Navbar() {
                     setCopiedKey(true);
                     setTimeout(() => setCopiedKey(false), 2000);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-accent-subtle hover:bg-accent/15 dark:bg-accent/20 dark:hover:bg-accent/30 text-accent dark:text-rose-200 border border-accent/25 dark:border-accent/40 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-accent-subtle hover:bg-accent/15 dark:bg-accent/20 dark:hover:bg-accent/30 text-accent dark:text-amber-200 border border-accent/25 dark:border-accent/40 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                 >
                   {copiedKey ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />

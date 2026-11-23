@@ -101,7 +101,7 @@ pub fn initialize(env: Env, admin: Address) -> Result<(), ContractError> {
     env.storage().instance().set(&DataKey::Admin, &admin);
     Ok(())
 }`,
-    color: '#C80552',
+    color: '#fdda24',
   },
   math: {
     key: 'math',
@@ -254,8 +254,8 @@ export default function InvariantExplanationModal({
             <div className="p-5 sm:p-6 border-b border-slate-200/80 dark:border-white/10 flex items-start justify-between gap-4 shrink-0 bg-slate-50/50 dark:bg-white/[0.02]">
               <div className="flex items-center gap-3">
                 <span
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md"
-                  style={{ background: data.color || '#C80552' }}
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-950 shrink-0 shadow-md"
+                  style={{ background: data.color || '#fdda24' }}
                 >
                   <ShieldCheck className="w-5 h-5" />
                 </span>

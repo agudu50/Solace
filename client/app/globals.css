@@ -3,11 +3,11 @@
 @import "tailwindcss/utilities";
 
 :root {
-  --e-global-color-accent: #C80552;
-  --e-global-color-accent-rgb: 200 5 82; /* channels for Tailwind opacity modifiers (bg-accent/10) */
-  --e-global-color-accent-hover: #A00441;
-  --e-global-color-accent-subtle: rgba(200, 5, 82, 0.12);
-  --e-global-color-accent-border: rgba(200, 5, 82, 0.35);
+  --e-global-color-accent: #fdda24;
+  --e-global-color-accent-rgb: 253 218 36; /* channels for Tailwind opacity modifiers (bg-accent/10) */
+  --e-global-color-accent-hover: #e5c41a;
+  --e-global-color-accent-subtle: rgba(253, 218, 36, 0.15);
+  --e-global-color-accent-border: rgba(253, 218, 36, 0.45);
 }
 
 html {
@@ -77,7 +77,7 @@ body {
 /* Global custom selection styling */
 ::selection {
   background-color: var(--e-global-color-accent);
-  color: #ffffff;
+  color: #0a0d14;
 }
 
 /* Accent utilities mapped directly to var(--e-global-color-accent) */
@@ -87,6 +87,15 @@ body {
 
 .bg-accent {
   background-color: var(--e-global-color-accent);
+}
+
+/* Ensure text inside solid bg-accent buttons / pills is crisp, dark and legible */
+button.bg-accent,
+a.bg-accent,
+.bg-accent.text-white,
+span.bg-accent.text-white,
+div.bg-accent.text-white {
+  color: #0a0d14;
 }
 
 .bg-accent-hover:hover {
@@ -117,14 +126,14 @@ body {
 }
 
 .modern-code-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(200, 5, 82, 0.45);
+  background: rgba(253, 218, 36, 0.45);
   border-radius: 6px;
   border: 1.5px solid rgba(22, 22, 22, 0.7);
   transition: background-color 0.2s ease;
 }
 
 .modern-code-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #C80552;
+  background: #fdda24;
 }
 
 .modern-code-scrollbar::-webkit-scrollbar-corner {
@@ -134,7 +143,7 @@ body {
 /* Firefox standard scrollbar support */
 .modern-code-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(200, 5, 82, 0.45) rgba(22, 22, 22, 0.7);
+  scrollbar-color: rgba(253, 218, 36, 0.45) rgba(22, 22, 22, 0.7);
 }
 
 /* Sleek Remediation Code Horizontal Scrollbar */

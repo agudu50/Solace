@@ -197,7 +197,7 @@ export default function PricingModal({ isOpen, onClose, onPurchaseSuccess }: Pri
                   }`}
                 >
                   {isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-accent text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-accent text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-xs">
                       {pkg.badge}
                     </span>
                   )}

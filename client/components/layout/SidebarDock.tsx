@@ -50,7 +50,7 @@ export default function SidebarDock({ onOpenAudit }: SidebarDockProps) {
             href={item.href}
             className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition border text-center ${
               isActive
-                ? 'bg-accent text-white border-accent shadow-xs'
+                ? 'bg-accent text-slate-950 border-accent shadow-xs'
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
             }`}
             title={item.label}

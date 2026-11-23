@@ -154,7 +154,7 @@ let new_reserves = env.storage().instance().get(&DataKey::Reserve).unwrap()
 ];
 
 const SEV: Record<Severity, { dot: string; text: string; ring: string; bg: string; border: string; badge: string }> = {
-  CRITICAL: { dot: 'bg-accent', text: 'text-[#ff5c93]', ring: 'var(--e-global-color-accent)', bg: 'bg-accent/[0.12]', border: 'border-accent', badge: 'border-accent/40' },
+  CRITICAL: { dot: 'bg-accent', text: 'text-[#fdda24]', ring: 'var(--e-global-color-accent)', bg: 'bg-accent/[0.12]', border: 'border-accent', badge: 'border-accent/40' },
   HIGH: { dot: 'bg-amber-400', text: 'text-amber-400', ring: '#fbbf24', bg: 'bg-amber-400/[0.08]', border: 'border-amber-400', badge: 'border-amber-400/40' },
   MEDIUM: { dot: 'bg-sky-400', text: 'text-sky-400', ring: '#38bdf8', bg: 'bg-sky-400/[0.08]', border: 'border-sky-400', badge: 'border-sky-400/40' },
 };
@@ -182,7 +182,7 @@ function renderRust(line: string) {
   const trimmed = line.trim();
   if (trimmed.startsWith('//')) {
     const warn = /CRITICAL|THREAT|CRASH|FLAW|Missing|Anyone|Writing|Protocol|Raw/.test(trimmed);
-    return <span className={warn ? 'text-[#ff8fb8]' : 'text-slate-500 italic'}>{line}</span>;
+    return <span className={warn ? 'text-[#fdda24]' : 'text-slate-500 italic'}>{line}</span>;
   }
   const parts = line.match(TOKEN) ?? [line];
   return parts.map((t, i) => {

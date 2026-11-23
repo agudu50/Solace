@@ -79,7 +79,7 @@ export interface SeverityCounts {
 
 const SEV_STYLE: Record<keyof SeverityCounts, { label: string; cls: string }> = {
   CRITICAL: { label: 'Critical', cls: 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' },
-  HIGH: { label: 'High', cls: 'bg-accent text-white' },
+  HIGH: { label: 'High', cls: 'bg-accent text-slate-950 font-semibold' },
   MEDIUM: { label: 'Medium', cls: 'bg-slate-200 text-slate-800 dark:bg-white/15 dark:text-slate-100' },
   LOW: { label: 'Low', cls: `bg-slate-100 text-slate-600 dark:bg-white/[0.05] dark:text-slate-300 ${hatch}` },
 };

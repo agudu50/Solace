@@ -10,7 +10,7 @@ export const container = 'w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8';
 
 export const btn = {
   primary:
-    'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0e0e0e] disabled:opacity-50 cursor-pointer',
+    'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-accent hover:bg-accent-hover text-slate-950 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0e0e0e] disabled:opacity-50 cursor-pointer shadow-xs',
   secondary:
     'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md border border-slate-300 dark:border-white/15 bg-white dark:bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 text-slate-900 dark:text-white text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:opacity-50 cursor-pointer',
   link:

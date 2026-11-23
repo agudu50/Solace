@@ -58,14 +58,14 @@ export default function AuthShowcase() {
             </div>
             <div className="mt-3 rounded-md bg-black/40 border border-white/5 font-mono text-[11px] leading-5 overflow-hidden">
               <div className="px-2.5 bg-emerald-500/10 text-emerald-300">+ from.require_auth();</div>
-              <div className="px-2.5 bg-accent/15 text-[#ff8fb8]">- read(…).unwrap();</div>
+              <div className="px-2.5 bg-accent/15 text-[#fdda24]">- read(…).unwrap();</div>
             </div>
           </Layer>
 
           <Layer x={x} y={y} z={0} depth={16} offset={[0, 0]} delay={0.35} main>
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-2 text-sm text-white">
-                <span className="grid place-items-center w-7 h-7 rounded-md bg-accent text-white">
+                <span className="grid place-items-center w-7 h-7 rounded-md bg-accent text-slate-950">
                   <ShieldCheck className="w-4 h-4" />
                 </span>
                 token_vault.rs
