@@ -2,9 +2,9 @@
   "users": {
     "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT": {
       "userAddress": "GA3NOSGPV3YJKWWPG4XAVXFTD23HUZ2MXKNJ5TFWYRAFWVYDXWJH4WYT",
-      "availableCredits": 2,
+      "availableCredits": 1,
       "totalPurchased": 3,
-      "totalConsumed": 1,
+      "totalConsumed": 2,
       "lastPurchaseTimestamp": "2026-11-16T07:46:22.684Z",
       "purchases": [
         {
@@ -20,6 +20,12 @@
         }
       ],
       "consumptions": [
+        {
+          "id": "audit_credit_1795472358020_74uso",
+          "contractHash": "893db2d4f4fb3108f4e8500274b5e421179a369742ead1a16cda1d9dddc7b6ab",
+          "timestamp": "2026-11-23T22:19:18.020Z",
+          "remainingCredits": 1
+        },
         {
           "id": "audit_credit_1794866657725_rs3nj",
           "contractHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

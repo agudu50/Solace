@@ -581,7 +581,7 @@ function ContractChip({
       aria-pressed={active}
       className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs transition-colors cursor-pointer ${
         active
-          ? 'border-accent bg-accent-subtle text-accent'
+          ? 'border-2 border-accent bg-accent text-slate-950 font-semibold shadow-xs'
           : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
       }`}
     >

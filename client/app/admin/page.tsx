@@ -104,6 +104,133 @@ const SEVERITY_TONE: Record<Issue['severity'], 'neutral' | 'warn' | 'bad' | 'acc
 const STATUS_LABEL: Record<IssueStatus, string> = { open: 'Open', in_progress: 'In progress', resolved: 'Resolved' };
 const STATUS_TONE: Record<IssueStatus, 'bad' | 'info' | 'ok'> = { open: 'bad', in_progress: 'info', resolved: 'ok' };
 
+const ENDPOINT_DICTIONARY: Record<string, { name: string; category: string; description: string }> = {
+  '/api/admin/presence': {
+    name: 'Admin Heartbeat Presence',
+    category: 'Console Telemetry',
+    description: 'Real-time operator presence & console sync',
+  },
+  '/api/admin/metrics': {
+    name: 'Platform Performance Metrics',
+    category: 'Monitoring',
+    description: 'Requests per minute, latency and error rates',
+  },
+  '/api/admin/issues': {
+    name: 'System Issues & Incident Log',
+    category: 'System Health',
+    description: 'Error diagnostics, bug reports and alerts',
+  },
+  '/api/admin/users': {
+    name: 'Auditor & Wallet Management',
+    category: 'Governance',
+    description: 'Account directory, roles and status',
+  },
+  '/api/admin/stats': {
+    name: 'Platform Analytics & Growth',
+    category: 'Analytics',
+    description: 'Global audit volume, protocol 22 stats and credits',
+  },
+  '/api/credits/balance': {
+    name: 'Prepaid Audit Credits Balance',
+    category: 'Auditor Billing',
+    description: 'Wallet prepaid audit credits verification',
+  },
+  '/api/credits/consume': {
+    name: 'Audit Credit Deduction',
+    category: 'Auditor Billing',
+    description: 'Consuming non-expiring audit credit upon AST scan',
+  },
+  '/api/credits/purchase': {
+    name: 'Credit Bundle Purchase',
+    category: 'Auditor Billing',
+    description: 'XLM transfer processing on Stellar network',
+  },
+  '/api/contract/fee': {
+    name: 'Soroban Network Fee Estimator',
+    category: 'Stellar RPC',
+    description: 'Gas budget, CPU instructions & ledger storage fees',
+  },
+  '/api/contract/record': {
+    name: 'Stellar Ledger Audit Anchoring',
+    category: 'Stellar Soroban',
+    description: 'Cryptographically anchoring audit receipt on-chain',
+  },
+  '/api/auth/me': {
+    name: 'Auditor Session & Profile',
+    category: 'Authentication',
+    description: 'Validating authenticated wallet session',
+  },
+  '/api/auth/challenge': {
+    name: 'Cryptographic Auth Challenge',
+    category: 'Authentication',
+    description: 'Issuing 256-bit nonce for Ed25519 signature',
+  },
+  '/api/auth/verify': {
+    name: 'Wallet Signature Verification',
+    category: 'Authentication',
+    description: 'Verifying Freighter Ed25519 cryptographic signature',
+  },
+  '/api/audit/run': {
+    name: 'Dual Flash AST Engine',
+    category: 'Security AST',
+    description: 'Multi-LLM consensus audit inspection on Soroban code',
+  },
+};
+
+function getEndpointInfo(route: string) {
+  for (const [key, info] of Object.entries(ENDPOINT_DICTIONARY)) {
+    if (route === key || route.startsWith(key)) {
+      return info;
+    }
+  }
+  const clean = route.replace(/^\/api\//, '').replace(/\/:\w+/g, '');
+  const readable = clean
+    .split('/')
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).replace(/[-_]/g, ' '))
+    .join(' · ');
+  return {
+    name: readable || route,
+    category: 'API Service',
+    description: route,
+  };
+}
+
+function formatIssueHuman(title: string): { title: string; subtitle?: string; technical: string } {
+  if (title.includes('/api/contract/record') || title.toLowerCase().includes('contract/record failed')) {
+    return {
+      title: 'Stellar Ledger Anchoring Failure (HTTP 500)',
+      subtitle: 'The Soroban testnet smart contract rejected the transaction or the RPC node timed out.',
+      technical: 'POST /api/contract/record',
+    };
+  }
+  if (title.includes('/api/auth/challenge')) {
+    return {
+      title: 'Wallet Authentication Challenge Error',
+      subtitle: 'Failed to issue cryptographic challenge nonce for Freighter wallet.',
+      technical: 'POST /api/auth/challenge',
+    };
+  }
+  if (title.includes('/api/credits')) {
+    return {
+      title: 'Credit Accounting Service Error',
+      subtitle: 'Failed to verify or deduct audit credits.',
+      technical: title,
+    };
+  }
+  if (title.startsWith('POST ') || title.startsWith('GET ') || title.startsWith('PUT ')) {
+    const parts = title.split(' ');
+    const method = parts[0];
+    const path = parts[1] || '';
+    const status = parts[parts.length - 1] || '';
+    return {
+      title: `${getEndpointInfo(path).name} Error ${status}`,
+      subtitle: `The server encountered an error while processing the request.`,
+      technical: title,
+    };
+  }
+  return { title, technical: title };
+}
+
 const input =
   'w-full h-10 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e0e0e] px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20';
 
@@ -541,16 +668,47 @@ function OverviewTab({
 
               {metrics && metrics.topRoutes.length > 0 && (
                 <div>
-                  <p className="mb-1 text-xs text-slate-500">Busiest endpoints</p>
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Busiest endpoints & services</p>
+                    <span className="text-[11px] text-slate-500 font-mono">Last 15 minutes</span>
+                  </div>
                   <ul className="divide-y divide-slate-200/70 dark:divide-white/[0.07] text-xs">
-                    {metrics.topRoutes.map((r) => (
-                      <li key={r.route} className="py-2 flex items-center gap-3">
-                        <span className="flex-1 font-mono text-slate-700 dark:text-slate-300 truncate">{r.route}</span>
-                        <span className="tabular-nums text-slate-500">{r.count} req</span>
-                        <span className="tabular-nums text-slate-500 w-16 text-right">{r.avgMs} ms</span>
-                        {r.errors > 0 ? <Pill tone="bad">{r.errors} err</Pill> : <span className="w-11" />}
-                      </li>
-                    ))}
+                    {metrics.topRoutes.map((r) => {
+                      const info = getEndpointInfo(r.route);
+                      return (
+                        <li key={r.route} className="py-2.5 flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-slate-900 dark:text-white truncate">
+                                {info.name}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400">
+                                {info.category}
+                              </span>
+                            </div>
+                            <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5" title={r.route}>
+                              {r.route}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="tabular-nums font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.05] px-2 py-0.5 rounded text-xs">
+                              {r.count} req
+                            </span>
+                            <span className="tabular-nums text-slate-500 w-16 text-right font-mono text-xs">
+                              {r.avgMs} ms
+                            </span>
+                            {r.errors > 0 ? (
+                              <Pill tone="bad">{r.errors} err</Pill>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium w-11 justify-end">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                100%
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -571,14 +729,29 @@ function OverviewTab({
             }
           />
           <ul className="px-4 sm:px-5 pb-4 pt-2 divide-y divide-slate-200/70 dark:divide-white/[0.07]">
-            {issues.filter((i) => i.status !== 'resolved').slice(0, 4).map((i) => (
-              <li key={i.id} className="py-3 flex items-center gap-3">
-                <Pill tone={SEVERITY_TONE[i.severity]}>{i.severity}</Pill>
-                <span className="flex-1 text-sm text-slate-900 dark:text-white truncate">{i.title}</span>
-                {i.occurrences > 1 && <span className="text-[11px] text-slate-500">×{i.occurrences}</span>}
-                <span className="text-[11px] text-slate-500 shrink-0">{ago(i.last_seen_at)}</span>
-              </li>
-            ))}
+            {issues.filter((i) => i.status !== 'resolved').slice(0, 4).map((i) => {
+              const formatted = formatIssueHuman(i.title);
+              return (
+                <li key={i.id} className="py-3 flex items-start gap-3">
+                  <Pill tone={SEVERITY_TONE[i.severity]}>{i.severity}</Pill>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                      {formatted.title}
+                    </p>
+                    {formatted.subtitle && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {formatted.subtitle}
+                      </p>
+                    )}
+                    <span className="inline-block mt-1 font-mono text-[10px] text-slate-500 bg-slate-100 dark:bg-white/[0.05] px-1.5 py-0.5 rounded">
+                      {formatted.technical}
+                    </span>
+                  </div>
+                  {i.occurrences > 1 && <span className="text-[11px] text-slate-500 shrink-0">×{i.occurrences}</span>}
+                  <span className="text-[11px] text-slate-500 shrink-0">{ago(i.last_seen_at)}</span>
+                </li>
+              );
+            })}
             {issues.filter((i) => i.status !== 'resolved').length === 0 && (
               <li className="py-6 flex items-center gap-2 text-sm text-slate-500">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -681,13 +854,18 @@ function IssuesTab({ issues, setIssues }: { issues: Issue[]; setIssues: React.Di
                     }`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-slate-900 dark:text-white">{i.title}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatIssueHuman(i.title).title}</p>
+                    {formatIssueHuman(i.title).subtitle && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatIssueHuman(i.title).subtitle}</p>
+                    )}
                     <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
                       <Pill tone={i.source === 'system' ? 'info' : 'neutral'}>{i.source === 'system' ? 'System' : 'User report'}</Pill>
                       <Pill tone={SEVERITY_TONE[i.severity]}>{i.severity}</Pill>
                       <Pill tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Pill>
                       {i.occurrences > 1 && <span>×{i.occurrences} occurrences</span>}
-                      {i.page && <span className="font-mono truncate max-w-[14rem]">{i.page}</span>}
+                      <span className="font-mono bg-slate-100 dark:bg-white/[0.05] px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
+                        {formatIssueHuman(i.title).technical}
+                      </span>
                       <span>· last {ago(i.last_seen_at)}</span>
                     </p>
                   </div>
@@ -1049,17 +1227,17 @@ function CreditsTab({
                   max={1000}
                   value={amount}
                   onChange={(e) => setAmount(Math.max(0, Math.min(1000, parseInt(e.target.value || '0', 10))))}
-                  className={`${input} w-24 tabular-nums`}
+                  className="w-24 shrink-0 h-10 rounded-md border-2 border-slate-300 dark:border-white/20 bg-white dark:bg-[#0e0e0e] px-3 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 tabular-nums shadow-xs"
                 />
                 {[1, 3, 5, 10].map((n) => (
                   <button
                     key={n}
                     type="button"
                     onClick={() => setAmount(n)}
-                    className={`flex-1 h-10 rounded-md border text-sm transition-colors cursor-pointer ${
+                    className={`flex-1 h-10 rounded-md border-2 text-sm font-bold transition-all cursor-pointer ${
                       amount === n
-                        ? 'border-accent bg-accent-subtle text-accent'
-                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'
+                        ? 'border-accent bg-accent text-slate-950 shadow-sm scale-[1.02]'
+                        : 'border-slate-300 dark:border-white/15 bg-white/70 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30'
                     }`}
                   >
                     {n}
@@ -1100,7 +1278,7 @@ function CreditsTab({
               const amt = Number(p.amount) || 0;
               return (
                 <li key={p.id || i} className="px-4 sm:px-5 py-3 flex items-center gap-3 text-xs">
-                  <span className={`grid place-items-center w-8 h-8 rounded-lg shrink-0 ${adj ? 'bg-accent-subtle text-accent' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                  <span className={`grid place-items-center w-8 h-8 rounded-lg shrink-0 ${adj ? 'bg-accent text-slate-950 font-bold' : 'bg-emerald-500/10 text-emerald-600'}`}>
                     {adj ? <Wrench className="w-3.5 h-3.5" /> : <Coins className="w-3.5 h-3.5" />}
                   </span>
                   <div className="min-w-0 flex-1">

@@ -288,5 +288,17 @@
     },
     "ip_address": "127.0.0.1",
     "created_at": "2026-11-23T21:41:39.139Z"
+  },
+  {
+    "id": "log_b09d427a6717c093df2e906ffee9bd73",
+    "actor_wallet": "GDG62VEY6MABONSZL7FRLU3C7AXF3UMTAJKBSEV4QQQII3YMWUWJL3A2",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDIADW23XYZKBJP42EBHLDYIDYOEBEUUFEYFI7VM6SKRCCNWXDA4ZH6I",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-23T22:16:57.518Z"
   }
 ]

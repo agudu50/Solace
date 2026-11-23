@@ -58,11 +58,36 @@ app.use((req, res, next) => {
     if (statusCode >= 500 && !req.originalUrl.startsWith('/api/issues')) {
       const route = routeKey(req.originalUrl);
       const message = res.locals.errorMessage || 'Unhandled server error';
+      
+      const friendlyTitles = {
+        '/api/contract/record': 'Stellar Ledger Anchoring Failure',
+        '/api/auth/challenge': 'Wallet Authentication Challenge Error',
+        '/api/auth/verify': 'Wallet Signature Verification Failure',
+        '/api/credits/balance': 'Credit Balance Lookup Failure',
+        '/api/credits/consume': 'Prepaid Audit Credit Spend Failure',
+        '/api/contract/fee': 'Soroban Fee Estimation Error',
+        '/api/audit/run': 'Contract AST Audit Engine Failure',
+      };
+      
+      let humanTitle = friendlyTitles[route];
+      if (!humanTitle) {
+        for (const [k, v] of Object.entries(friendlyTitles)) {
+          if (route.startsWith(k)) {
+            humanTitle = v;
+            break;
+          }
+        }
+      }
+
+      const displayTitle = humanTitle
+        ? `${humanTitle} (${statusCode})`
+        : `${req.method} ${route} failed (${statusCode})`;
+
       createIssue({
         source: 'system',
         kind: 'server_error',
         severity: statusCode >= 503 ? 'critical' : 'high',
-        title: `${req.method} ${route} failed (${statusCode})`,
+        title: displayTitle,
         description: message,
         page: req.originalUrl,
         walletAddress: req.user?.address || null,

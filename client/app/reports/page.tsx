@@ -505,7 +505,7 @@ function ReportsContent() {
                   onClick={() => executeLookup(rep.hash)}
                   className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border text-xs transition-colors cursor-pointer ${
                     searchHash === rep.hash
-                      ? 'border-accent bg-accent-subtle text-accent'
+                      ? 'border-2 border-accent bg-accent text-slate-950 font-semibold shadow-xs'
                       : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20'
                   }`}
                 >

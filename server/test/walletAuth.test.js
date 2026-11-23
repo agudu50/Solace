@@ -263,6 +263,22 @@ async function runTests() {
   assert(testLog && testLog.actor_wallet === adminAddress, 'Audit log correctly attributes actor wallet');
 
   // ---------------------------------------------------------
+  // TEARDOWN: Clean up generated test keypairs from DB
+  // ---------------------------------------------------------
+  try {
+    const { readTable, writeTable } = await import('../src/db/db.js');
+    const testKeys = new Set([userAddress, adminAddress, attackerAddress]);
+    const remainingUsers = readTable('users').filter((u) => !testKeys.has(u.wallet_address));
+    writeTable('users', remainingUsers);
+    const remainingBalances = readTable('credit_balances').filter((c) => !testKeys.has(c.wallet_address));
+    writeTable('credit_balances', remainingBalances);
+    const remainingSessions = readTable('sessions').filter((s) => !testKeys.has(s.wallet_address));
+    writeTable('sessions', remainingSessions);
+  } catch (cleanErr) {
+    console.warn('[Teardown] Could not clean test keys:', cleanErr.message);
+  }
+
+  // ---------------------------------------------------------
   // SUMMARY
   // ---------------------------------------------------------
   console.log('\n' + '='.repeat(70));

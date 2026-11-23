@@ -1,0 +1,292 @@
+[
+  {
+    "id": "log_14ee27188453bf08be6869d6c4fc54a4",
+    "actor_wallet": "CLI_BOOTSTRAP_PROVISIONER",
+    "action": "PROVISION_ADMIN_WALLET",
+    "target": "GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI",
+    "details": {
+      "assignedRole": "super_admin",
+      "timestamp": "2026-10-24T18:37:38.564Z",
+      "engine": "local-persistent-store"
+    },
+    "ip_address": null,
+    "created_at": "2026-10-24T18:37:38.564Z"
+  },
+  {
+    "id": "log_964064bc53818c6b5e2496ea7a5cb10c",
+    "actor_wallet": "CLI_BOOTSTRAP_PROVISIONER",
+    "action": "PROVISION_ADMIN_WALLET",
+    "target": "GBWSB2OVP5JIWGJND5C46TAIM7AQH5YJ56576CGOPG3AXAFNHO7FDYPI",
+    "details": {
+      "assignedRole": "super_admin",
+      "timestamp": "2026-10-24T18:37:51.292Z",
+      "engine": "local-persistent-store"
+    },
+    "ip_address": null,
+    "created_at": "2026-10-24T18:37:51.293Z"
+  },
+  {
+    "id": "log_3e22a2641f1cee441389810b994c071c",
+    "actor_wallet": "GCQNN3K2TEXW6HURM2K5X2MD25H5QN5JSJCHDWWO36EBAVQEFHSOIOYV",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GCETKHEOQCYMJPZJ4WYJ7ZFTLHBWRMICENMDJHYVLELPPHI22HI34MEO",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-10-24T18:38:56.564Z"
+  },
+  {
+    "id": "log_05f8a7e0f918f379a8a8af96ab4d20d7",
+    "actor_wallet": "GBIXGORTVTGX3NCZIBQ3JE4QKKUQDTWIPF5BDYKJGS6JZ37WGMKUFUTM",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDQNJ7HOYLBUUFXLN2MCBONDNZWUTF2FXZE2I457NXMTNDXAHAAJ7Z7A",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-10-24T18:39:21.893Z"
+  },
+  {
+    "id": "log_a1c2e8577ab9162d6b0141dd1d73ba07",
+    "actor_wallet": "GCKMMAKB7FWYWAXS32JNXWMM7AI6OSAV2D5T2ZHPOZJGER2JZSU62QFP",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GBVQIZMCCSDRJQP74CCA7DQDPGC4FYWOOUZKUKH63HAPSXLZK3R5J6LI",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-10-24T18:51:01.406Z"
+  },
+  {
+    "id": "log_7dd42430f1f745008989f4eb8b4bb398",
+    "action": "ADMIN_PROVISIONED",
+    "details": {
+      "role": "admin",
+      "provisionedVia": "operator_request",
+      "timestamp": "2026-10-24T18:55:37.850Z"
+    },
+    "ip_address": null,
+    "created_at": "2026-10-24T18:55:37.850Z"
+  },
+  {
+    "id": "log_2a3d3ec35c621db631de4c695d0826e1",
+    "action": "ADMIN_PROVISIONED",
+    "details": {
+      "role": "admin",
+      "provisionedVia": "operator_request",
+      "timestamp": "2026-10-24T18:55:37.856Z"
+    },
+    "ip_address": null,
+    "created_at": "2026-10-24T18:55:37.856Z"
+  },
+  {
+    "id": "log_83706e81bd4f65e3e61d81081aee5eea",
+    "actor_wallet": "OPERATOR_PROVISIONER",
+    "action": "ADMIN_PROVISIONED",
+    "target": "GABQOWDBI5MX6QYKP4JLB3PWJKVI7IXTQCNESBVSUK3SUUR2S3AEKAJX",
+    "details": {
+      "role": "admin",
+      "provisionedVia": "operator_request",
+      "timestamp": "2026-10-24T18:56:24.354Z"
+    },
+    "ip_address": null,
+    "created_at": "2026-10-24T18:56:24.354Z"
+  },
+  {
+    "id": "log_e881bfe2432d8cc6471d890ebf46f703",
+    "actor_wallet": "OPERATOR_PROVISIONER",
+    "action": "ADMIN_PROVISIONED",
+    "target": "GD5NJEVHQMLEDB25UP4C5JSOXCQWHILTE3XQY2EMM657Y3GDDKLHYH7X",
+    "details": {
+      "role": "admin",
+      "provisionedVia": "operator_request",
+      "timestamp": "2026-10-24T18:56:24.358Z"
+    },
+    "ip_address": null,
+    "created_at": "2026-10-24T18:56:24.358Z"
+  },
+  {
+    "id": "log_aa72568a06d7857cfc5df35e9a82e7e8",
+    "actor_wallet": "GATRVARE7ZTQGFJDVCER4ZWH3DNXXAXS2MDO3GG5L3MZUZNVTZ2XN5HE",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GBMRNL3VB67EFEZF7APMSJQLFZNJYVO7QB6Y2WV2TL7PXV25EZA3HKAI",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-11T20:48:55.401Z"
+  },
+  {
+    "id": "log_6ada91e0d2c23c3cfe78933eae813e45",
+    "actor_wallet": "GC6DOXGRYIAEREDJSIIF4VVGUXVOS2VRKIF7GPVPGL575DYX4XQZYUU3",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GCDYPI4YJBAYS6DEBUA462WVYX2WO5KGRBMWKM5RLFQZLN4YEXOFTTAB",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-11T21:01:36.407Z"
+  },
+  {
+    "id": "log_9c34f2f1acefc9f1881b446b0ad88ad8",
+    "actor_wallet": "GDUDCMYH34TZ2JWCAAVVFQJPLK4I4WDXGS2RATLNXQ4JHEJG5ZWIOX77",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GANWWVDIFJJIWPFEPAVMQ4SX62DWUCSEZUG4VA4I3PBN7DMG7FIROGHL",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-11T21:35:04.972Z"
+  },
+  {
+    "id": "log_a59ef757bd2c569dfe2e09ae39f25551",
+    "actor_wallet": "GBEXSTIODVODOVBMA26ALI7FFAZ3RKG3K3YNZS73JUBUVKO2GS3F2MD2",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GCNZKQ3H2TNEGIFNC6UURF5HCD2RLXKMC4HOGPYTMVZ7565EVYO7H5IX",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-11T21:46:10.609Z"
+  },
+  {
+    "id": "log_5bc0bb66f881f1d413fe97da79e1393e",
+    "actor_wallet": "GBPUSEY3UNV5N4OJW7IJLJT44ZCE75W7JHM6DFDYLXDFTSJCFVAYPK6O",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDA6I7GDBW3U2RFJN2FRFTI5665VQT2WGHZNBOS3FEIAFYNSYELJFFBH",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-16T21:10:38.744Z"
+  },
+  {
+    "id": "log_43a04786fb826bf8bf2d197d5b95783a",
+    "actor_wallet": "GBP4DU7AJIJA4TUAOZPDEDJKCZEMRXNVV6CVST2GLO76N2UP4C26WPTV",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GBWXM7TNZGOYQDCSOCWTAYJ5OACY2GMJDPFKTZL6ZFQMGLSNOXC3R4G6",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-16T21:15:49.881Z"
+  },
+  {
+    "id": "log_ecb17fd5251f27732a91840d24f84415",
+    "actor_wallet": "GAJT2JK2553RZSQXFE76M46BOGG4XBJOHWE4SKWL5VO2OW4VNOE6TRS6",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDRJP5AKBW3P24TNLNBUL2KGX7WAJAFWNVBCIWRQA3GEFFI6BO3Z5T25",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-16T22:23:22.937Z"
+  },
+  {
+    "id": "log_0a2a2668bb4aede0bcb915c00e808625",
+    "actor_wallet": "GAOTCM7EFCIJK545EVPXSHPNW4O77KGOWOWYZI2C3ISO4JP736IPIRHU",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GBSGXCN2YRF5BBQ56A26MXKHWM3KIB56YKS6XH2XZ6635ER257L46KX3",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-17T00:51:47.164Z"
+  },
+  {
+    "id": "log_2100952ce6eebbb0c68254b9ff42bc6a",
+    "actor_wallet": "GDYCLAWJF453Y5YBUS5R3IFYXIPDN44KEPYS62G77CRBSQY5PQPASCQ3",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDVC2VSXVNXWK62BQHWNTHGIFQ4JKNTXUYRNFYCMU4LFH2B6NU4GSUTU",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:29:16.691Z"
+  },
+  {
+    "id": "log_2604568dc6cf4acc015a5fe357caa675",
+    "actor_wallet": "GBS76K3V5SRQBZB3EVAB2XDMRO6PECB2GUQD4LUX3K3ERTDWMQU4CA7A",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GCBNBFFCDU5AHSBKUGETEPIWYWBO772LZJ2W3IUBUKDWUPBN5CGF5HZ6",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:40:53.415Z"
+  },
+  {
+    "id": "log_dce65dad1e23fae0b0356d0f76ecd5b2",
+    "actor_wallet": "GDK5AVWRGHNV3SOBKKNZ7FSPLY7KBXZIXXVAR257PBWBJJINFC4VPESI",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GACFX6DMAV3A3L4PSW6RLDKLRHJ5JZ22A7OOB4AOCE73ZOLAND54A7YS",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:44:11.533Z"
+  },
+  {
+    "id": "log_295a856c956167dbc6f50e98d2d42df1",
+    "actor_wallet": "GAFWZS7XS43S4RO4Q57I3ECUMTX2NIU5F5YMZW6G63T3HIHJODY37EFT",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDV3WQXQTIDWWU5G7O2UWB5AAU2OYEREJTT36VXNJNKQDSDDIMUNWDB7",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T22:52:41.839Z"
+  },
+  {
+    "id": "log_e31cb95d214b30c5e6219533e6680982",
+    "actor_wallet": "GBO2LYHSPVVNXJNXWLK3SK4ODOWBH6MEVF6FRWEQBKH64MCZIW66WFTB",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GAW3NPKNXWI3LZFWLCZ4OGNP4KZ67DODSDBGII3NQXUXRY3ZMJZ6ZDL4",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T23:05:08.241Z"
+  },
+  {
+    "id": "log_3cd6ea23468d6fe93e6eb0be22ae3dda",
+    "actor_wallet": "GDWPFIXB2Y7MPBSUJL6A5VJTJOIAINY6XUWAEVRYIK2NJK33KRYOX5SX",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GB6PJV2PTL5DDBOOHEFE5ZASVFWPWILMODS4MRF4OAGUCDFDBUAMJ7MG",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-22T23:08:42.523Z"
+  },
+  {
+    "id": "log_84f3d45e790f74cd8df755b6e84a52c7",
+    "actor_wallet": "GCS6JRSPTAX33IAATSDOAZ6ZZJUYXCCMQ7R32CFLYMVZP7ATGZ5VOKSR",
+    "action": "TEST_CREDIT_ADJUSTMENT",
+    "target": "GDHNMBAMTYBBSD3MUYS3QOR7ZNZJYUSP6SZIOJ7CVWZ4U3VNVRJPBKVP",
+    "details": {
+      "amount": 5,
+      "reason": "Test credit compensation"
+    },
+    "ip_address": "127.0.0.1",
+    "created_at": "2026-11-23T21:41:39.139Z"
+  }
+]
